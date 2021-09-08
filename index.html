@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web BYOND VM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@4.13.0/css/xterm.css">
+    <script src="https://cdn.jsdelivr.net/npm/xterm@4.13.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.5.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="lib/libv86.js"></script>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        #consoleTab {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            border: solid black;
+            border-bottom: none;
+        }
+
+        #collapseConsole {
+            background: black;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        #serialOut {
+            height: 100%;
+            width: 100%;
+        }
+
+        #controlBar {
+            user-select: none;
+        }
+        #controlBar > *:not(:first-child) {
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<!--div id="screenOut">
+    <div id="screen"></div>
+    <canvas id="vga"></canvas>
+</div-->
+<div class="container">
+    <div id="consoleTab" class="d-flex flex-column" >
+        <div class="d-flex px-2 py-1 align-items-center" id="controlBar">
+            <div>Status: <span id="status" class="badge rounded-pill bg-danger">Stopped</span></div>
+            <div>Speed: <span id="speed" class="badge rounded-pill bg-primary">N/A</span></div>
+            <button onclick="toggleConsole()" class="btn btn-primary">Toggle Console</button>
+            <button id="start" class="btn btn-success" onclick="start()">Start</button>
+            <button id="stop" class="btn btn-danger disabled" onclick="stop()">Stop</button>
+        </div>
+        <div class="d-none flex-grow-1" id="collapseConsole">
+            <div id="serialOut"></div>
+        </div>
+    </div>
+</div>
+<script src="emulator.js"></script>
+<script src="terminal.js"></script>
+<script>
+    let collapsed = true;
+
+    let last_instr_counter;
+    let last_tick;
+
+    function update_speed() {
+        const now = Date.now();
+
+        const instruction_counter = emulator.get_instruction_counter();
+
+        if(instruction_counter < last_instr_counter)
+        {
+            // 32-bit wrap-around
+            last_instr_counter -= 0x100000000;
+        }
+
+        const last_ips = instruction_counter - last_instr_counter;
+        last_instr_counter = instruction_counter;
+
+        const delta_time = now - last_tick;
+        last_tick = now;
+
+        const speed = (last_ips / 1000 / delta_time)
+        if(Number.isNaN(speed)) {
+            document.getElementById("speed").textContent = "N/A";
+        } else {
+            document.getElementById("speed").textContent = speed.toFixed(1) + "mIPS";
+        }
+    }
+
+    let origin;
+    let savedSize = window.innerHeight - 350 + "px"
+    const controlBar = document.getElementById("controlBar")
+    const consoleTab = document.getElementById("consoleTab")
+    function startDrag(e) {
+        if(e.eventPhase === Event.BUBBLING_PHASE) return
+        if(collapsed) return
+        origin = e.clientY
+        window.addEventListener("mousemove", moveDrag)
+        window.addEventListener("mouseup", endDrag)
+    }
+
+    function moveDrag(e) {
+        const currentDelta = window.innerHeight - consoleTab.offsetHeight
+        consoleTab.style.top = currentDelta + (e.clientY - origin) + "px"
+        origin = e.clientY
+    }
+
+    function endDrag() {
+        window.removeEventListener("mousemove", moveDrag)
+        window.removeEventListener("mouseup", endDrag)
+        origin = null;
+        fitAddon.fit()
+    }
+    controlBar.addEventListener("mousedown", startDrag)
+
+    let interval
+
+    function start() {
+        emulator.run()
+    }
+
+    function stop() {
+        emulator.stop()
+        emulator.restart()
+    }
+
+    function toggleConsole() {
+        document.getElementById("collapseConsole").classList.toggle("d-none")
+        collapsed = !collapsed;
+        if(collapsed) {
+            savedSize = consoleTab.style.top;
+            consoleTab.style.top = "unset";
+        } else {
+            consoleTab.style.top = savedSize;
+            if(emulator.is_running()) initTerminal()
+        }
+    }
+    
+    console.log("Look at you, hacker, trying to reveal my secrets...")
+    console.log("A bug in firefox causes a memory leak with devtools and WASM so be careful!")
+    console.log("Furthermore, performance tanks while devtools are open.")
+</script>
+</body>
+</html>
