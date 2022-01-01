@@ -8,9 +8,9 @@
     "url": "git+https://github.com/spacestation13/dm-playground.git"
   },
   "scripts": {
-    "start": "vite build src --base /dm-playground-web/dist --outDir ../dist --emptyOutDir -w",
-    "build": "vite build src --base /dm-playground-web/dist --outDir ../dist --emptyOutDir",
-    "build-github": "vite build src --base /dm-playground-web/dist --outDir ../dist --emptyOutDir --base /dm-playground/"
+    "start": "vite build src --outDir ../dist --emptyOutDir -w",
+    "build": "vite build src --outDir ../dist --emptyOutDir",
+    "build-github": "vite build src --outDir ../dist --emptyOutDir --base /dm-playground/"
   },
   "author": "alexkar598",
   "license": "ISC",
