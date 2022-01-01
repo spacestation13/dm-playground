@@ -10,6 +10,7 @@
   "scripts": {
     "start": "vite build src --base /dm-playground-web/dist --outDir ../dist --emptyOutDir -w",
     "build": "vite build src --base /dm-playground-web/dist --outDir ../dist --emptyOutDir"
+    "build-github": "vite build src --base /dm-playground-web/dist --outDir ../dist --emptyOutDir --base /dm-playground/"
   },
   "author": "alexkar598",
   "license": "ISC",
