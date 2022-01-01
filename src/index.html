@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web BYOND VM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@4.13.0/css/xterm.css">
+    <script type="module" src="./scripts/lib/libv86.js"></script>
+    <link rel="stylesheet" href="./styles/main.css">
+
+    <script type="module" src="./scripts/emulator.js"></script>
+    <script type="module" src="./scripts/terminal.js"></script>
+    <script type="module" src="./scripts/speed_counter.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="consoleTab" class="d-flex flex-column">
+            <div class="d-flex px-2 py-1 align-items-center" id="controlBar">
+                <div>Status: <span id="status" class="badge rounded-pill bg-danger">Stopped</span></div>
+                <div>Speed: <span id="speed" class="badge rounded-pill bg-primary">N/A</span></div>
+                <button id="toggleConsole" class="btn btn-primary">Toggle Console</button>
+                <button id="start" class="btn btn-success">Start</button>
+                <button id="stop" class="btn btn-danger disabled">Stop</button>
+                <button id="pause" class="btn btn-warning">Pause</button>
+            </div>
+            <div class="d-none d-flex flex-grow-1 flex-row" id="collapseConsole">
+                <div class="serialCon border-end border-white">
+                    <div class="text-center text-white">Linux console</div>
+                    <div class="fullSize" id="serialOut"></div>
+                </div>
+                <div class="serialCon w-25 border-end border-white">
+                    <div class="text-center text-white">Controller console</div>
+                    <div class="fullSize" id="serialOutCtl"></div>
+                </div>
+                <div class="serialCon w-25 d-flex flex-column">
+                    <div class="text-center text-white">Screen output</div>
+                    <div class="fullSize" id="serialOutSrn"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

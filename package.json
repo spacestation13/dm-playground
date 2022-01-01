@@ -1,0 +1,27 @@
+{
+  "name": "dm-playground-web",
+  "version": "0.0.1",
+  "description": "Web playground for DM",
+  "source": "src/index.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spacestation13/dm-playground.git"
+  },
+  "scripts": {
+    "start": "vite build src --base /dm-playground-web/dist --outDir ../dist --emptyOutDir -w",
+    "build": "vite build src --base /dm-playground-web/dist --outDir ../dist --emptyOutDir"
+  },
+  "author": "alexkar598",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/spacestation13/dm-playground/issues"
+  },
+  "homepage": "https://github.com/spacestation13/dm-playground#readme",
+  "dependencies": {
+    "xterm": "^4.16.0",
+    "xterm-addon-fit": "^0.5.0"
+  },
+  "devDependencies": {
+    "vite": "^2.7.10"
+  }
+}

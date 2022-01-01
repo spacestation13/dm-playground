@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/dm-playground-web.iml" filepath="$PROJECT_DIR$/dm-playground-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../dm-playground_controller/dm-playground_controller.iml" filepath="$PROJECT_DIR$/../dm-playground_controller/dm-playground_controller.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../xtermjs/xtermjs.iml" filepath="$PROJECT_DIR$/../xtermjs/xtermjs.iml" />
+    </modules>
+  </component>
+</project>
