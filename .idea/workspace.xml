@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AnalysisUIOptions">
+    <option name="FILTER_RESOLVED_ITEMS" value="false" />
+    <option name="SCOPE_TYPE" value="4" />
+  </component>
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/../dm-playground_controller/Cargo.toml" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="5d35c481-6c90-41a2-8f43-dbb45f5c5b3e" name="Changes" comment="Simplifies logic">
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/@types/global.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/@types/v86.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/@types/window.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/scripts/command.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../xtermjs/xterm.js.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../xtermjs/xtermjs.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dm-playground-web.iml" beforeDir="false" afterPath="$PROJECT_DIR$/dm-playground-web.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/scripts/emulator.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/scripts/emulator.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/scripts/speed_counter.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/scripts/speed_counter.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/scripts/terminal.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/scripts/terminal.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/static/controller.iso" beforeDir="false" afterPath="$PROJECT_DIR$/src/static/controller.iso" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ChangesViewManager">
+    <option name="groupingKeys">
+      <option value="module" />
+    </option>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="CSS File" />
+        <option value="JavaScript File" />
+        <option value="TypeScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$/../dm-playground_controller" value="d7102411fe6e3833a8eb02e8b753708768ed3c0d" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="SIGN_OFF_COMMIT" value="true" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/subprocess-0.2.8/src/popen.rs" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/subprocess-0.2.8/src/communicate.rs" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="KubernetesApiPersistence">
+    <option name="context" value="yogstation" />
+    <option name="namespace" value="default" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="onsuzzwc" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
+  <component name="ProjectId" id="23280l9qgOninaPHp773ChV37Dh" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="autoscrollFromSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="DefaultHtmlFileTemplate" value="HTML File" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/scripts/terminalDef.ts" />
+    <property name="list.type.of.created.stylesheet" value="CSS" />
+    <property name="nodejs_interpreter_path" value="$USER_HOME$/.nvm/versions/node/v17.3.0/bin/node" />
+    <property name="nodejs_package_manager_path" value="$USER_HOME$/.nvm/versions/node/v17.3.0/lib/node_modules/npm" />
+    <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
+    <property name="prettierjs.PrettierConfiguration.Package" value="$USER_HOME$/.nvm/versions/node/v17.3.0/lib/node_modules/prettier" />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.0" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+    <property name="settings.editor.selected.configurable" value="settings.typescriptcompiler" />
+    <property name="ts.external.directory.path" value="$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/static" />
+      <recent name="$PROJECT_DIR$/src/static/" />
+      <recent name="$PROJECT_DIR$/src/scripts/lib" />
+      <recent name="$PROJECT_DIR$/src/data" />
+      <recent name="$PROJECT_DIR$/src/data/lib" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/scripts/lib" />
+      <recent name="$PROJECT_DIR$/src" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/src/static/lib" />
+    </key>
+    <key name="es6.move.members.recent.items">
+      <recent name="$PROJECT_DIR$/src/scripts/terminalDef.ts" />
+      <recent name="$PROJECT_DIR$/src/scripts/terminalUtils.ts" />
+      <recent name="$PROJECT_DIR$/src/scripts/terminal.ts" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Shell Script.Make">
+    <configuration name="Make" type="ShConfigurationType">
+      <option name="SCRIPT_TEXT" value="make byondvm-controller-rebuild &amp;&amp; make -j16 &amp;&amp; make -j16 &amp;&amp; cp $USER_HOME$/Desktop/buildroot-2021.02.8/output/images/rootfs.iso9660 $PROJECT_DIR$/src/static/controller.iso" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$USER_HOME$/Desktop/buildroot-2021.02.8" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="/bin/bash" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="false" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="build-github" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="build-github" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="start" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="start" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="npm.build-github" />
+      <item itemvalue="npm.start" />
+      <item itemvalue="Shell Script.Make" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="npm.start" />
+        <item itemvalue="npm.build-github" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+    <option name="version" value="2" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="5d35c481-6c90-41a2-8f43-dbb45f5c5b3e" name="Changes" comment="" />
+      <created>1640920600394</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1640920600394</updated>
+      <workItem from="1640920601530" duration="54000" />
+      <workItem from="1640920663659" duration="21882000" />
+      <workItem from="1641001423620" duration="2837000" />
+      <workItem from="1641007111756" duration="740000" />
+      <workItem from="1641066107819" duration="3336000" />
+      <workItem from="1641079205877" duration="44000" />
+      <workItem from="1641079339104" duration="2167000" />
+      <workItem from="1641144612902" duration="2023000" />
+      <workItem from="1641179749780" duration="5200000" />
+      <workItem from="1641246629002" duration="1031000" />
+      <workItem from="1641263931412" duration="206000" />
+      <workItem from="1641264175642" duration="81000" />
+      <workItem from="1641341296699" duration="4776000" />
+      <workItem from="1641398107912" duration="356000" />
+      <workItem from="1641415520786" duration="1005000" />
+      <workItem from="1641419068029" duration="773000" />
+      <workItem from="1641494624846" duration="182000" />
+      <workItem from="1641494810334" duration="691000" />
+      <workItem from="1641564783547" duration="17619000" />
+      <workItem from="1641607744100" duration="2109000" />
+      <workItem from="1641657617475" duration="13060000" />
+    </task>
+    <task id="LOCAL-00001" summary="Simplifies logic">
+      <created>1640984909078</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1640984909078</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Simplifies logic">
+      <created>1640985158788</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1640985158788</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Simplifies logic" />
+    <option name="LAST_COMMIT_MESSAGE" value="Simplifies logic" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

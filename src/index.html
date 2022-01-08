@@ -12,11 +12,12 @@
     <script type="module" src="./scripts/lib/libv86.js"></script>
     <link rel="stylesheet" href="./styles/main.css">
 
-    <script type="module" src="./scripts/emulator.js"></script>
-    <script type="module" src="./scripts/terminal.js"></script>
-    <script type="module" src="./scripts/speed_counter.js"></script>
+    <script type="module" src="./scripts/terminal.ts"></script>
+    <script type="module" src="./scripts/speed_counter.ts"></script>
+    <script type="module" src="./scripts/command.ts"></script>
 </head>
 <body>
+    <span id="testOutput"></span>
     <div class="container">
         <div id="consoleTab" class="d-flex flex-column">
             <div class="d-flex px-2 py-1 align-items-center" id="controlBar">
@@ -35,6 +36,7 @@
                 <div class="serialCon w-25 border-end border-white">
                     <div class="text-center text-white">Controller console</div>
                     <div class="fullSize" id="serialOutCtl"></div>
+                    <span class="d-inline-block" id="serialOutCtlUnlock">Unlock console</span>
                 </div>
                 <div class="serialCon w-25 d-flex flex-column">
                     <div class="text-center text-white">Screen output</div>
