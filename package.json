@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/spacestation13/dm-playground#readme",
   "dependencies": {
+    "ace-builds": "^1.4.13",
     "events": "^3.3.0",
     "tiny-typed-emitter": "^2.1.0",
     "xterm": "^4.16.0",

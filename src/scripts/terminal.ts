@@ -124,6 +124,7 @@ document.getElementById("pause")!.addEventListener("click", () => {
 
 document.getElementById("toggleConsole")!.addEventListener("click", () => {
   document.getElementById("collapseConsole")!.classList.toggle("d-none");
+  document.getElementById("controlBar")!.classList.toggle("d-none");
   collapsed = !collapsed;
   if (collapsed) {
     savedSize = consoleTab.style.top;

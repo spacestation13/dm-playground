@@ -15,18 +15,43 @@
     <script type="module" src="./scripts/terminal.ts"></script>
     <script type="module" src="./scripts/speed_counter.ts"></script>
     <script type="module" src="./scripts/command.ts"></script>
+    <script type="module" src="./scripts/editor.ts"></script>
 </head>
 <body>
-    <span id="testOutput"></span>
-    <div class="container">
-        <div id="consoleTab" class="d-flex flex-column">
-            <div class="d-flex px-2 py-1 align-items-center" id="controlBar">
-                <div>Status: <span id="status" class="badge rounded-pill bg-danger">Stopped</span></div>
-                <div>Speed: <span id="speed" class="badge rounded-pill bg-primary">N/A</span></div>
-                <button id="toggleConsole" class="btn btn-primary">Toggle Console</button>
-                <button id="start" class="btn btn-success">Start</button>
-                <button id="stop" class="btn btn-danger disabled">Stop</button>
-                <button id="pause" class="btn btn-warning">Pause</button>
+    <header class="px-5 py-2 text-center" style="width: 100%; background: lightskyblue">
+        <h3>DM Playground!</h3>
+    </header>
+    <div class="container-fluid d-flex flex-row">
+        <div id="editor" style="height: 80vh; width: 80%"></div>
+        <div class="text-center p-2 flex-grow-1">
+            <h4>Virtual Machine Status</h4>
+            <div>Status: <span id="status" class="badge rounded-pill bg-danger">Stopped</span></div>
+            <div>Speed: <span id="speed" class="badge rounded-pill bg-primary">N/A</span></div>
+            <hr>
+            <h4>Virtual Machine Controls</h4>
+            <button id="start" class="btn btn-success">Start</button>
+            <button id="stop" class="btn btn-danger disabled">Stop</button>
+            <button id="pause" class="btn btn-warning">Pause</button><br>
+            <button id="toggleConsole" class="btn btn-primary">Toggle Console</button>
+        </div>
+        <div class="modal fade" id="optionsModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Options</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        ...
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="consoleTab" class="d-flex flex-column overflow-hidden" style="z-index: 100">
+            <div class="bg-white d-none" id="controlBar" style="min-height: 3rem;flex-basis: min-content">
             </div>
             <div class="d-none d-flex flex-grow-1 flex-row" id="collapseConsole">
                 <div class="serialCon border-end border-white">

@@ -134,7 +134,7 @@ class Process extends TypedEmitter<{
             }
           }, 15000);
         })
-        //An error occured, return that
+        //An error occurred, return that
         .catch((e) => reject(e));
     });
   }
