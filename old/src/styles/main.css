@@ -1,0 +1,38 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+#consoleTab {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border: solid black;
+    border-bottom: none;
+}
+
+#collapseConsole {
+    background: black;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.serialCon {
+    height: 100%;
+    width: 50%;
+}
+
+.fullSize {
+    height: calc(100% - 30px);
+    width: 100%;
+}
+
+#controlBar {
+    user-select: none;
+}
+
+#controlBar > *:not(:first-child) {
+    margin-left: 0.5rem;
+}
