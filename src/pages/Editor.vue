@@ -1,33 +1,75 @@
-<style scoped lang="scss">
+<style lang="scss">
+body {
+  & > * {
+    border-bottom: rgba($grey, 0.5) 1px solid;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+</style>
+<style lang="scss">
 .v-codemirror {
-  max-width: 100%;
-  flex-grow: 1;
+  flex: 1 1 0;
+  min-height: 0;
   display: block !important;
+  padding: var(--dragger-width);
 }
 
-.editor-container {
-  width: 100%;
-  flex-grow: 1;
+.editor-container-h,
+.editor-container-v {
+  flex: 1 1 auto;
   display: flex;
-  flex-direction: row;
 }
 
-.toolbar {
-  width: 100%;
+.editor-container-h {
+  flex-direction: row;
+
+  & > * {
+    border-right: rgba($grey, 0.5) 1px solid;
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+}
+
+.editor-container-v {
+  flex-direction: column;
+  min-width: 0;
+
+  & > * {
+    border-bottom: rgba($grey, 0.5) 1px solid;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
 }
 </style>
 
 <template>
-  <div class="toolbar">
-    <button class="button is-primary">Run Code</button>
+  <ResizablePanel direction="down">Project Commands</ResizablePanel>
+  <ResizablePanel direction="down">Panel n stuff</ResizablePanel>
+  <div class="editor-container-h">
+    <ResizablePanel direction="right">Panel n stuff</ResizablePanel>
+    <div class="editor-container-v">
+      <ResizablePanel direction="down">Editor Commands</ResizablePanel>
+      <ResizablePanel direction="down">Panel n stuff</ResizablePanel>
+      <Codemirror
+        model-value="hiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiii"
+        :extensions="extensions"
+        :indent-with-tab="true"
+        :tab-size="4"
+        @ready="onReady" />
+      <ResizablePanel direction="up">Panel n stuff</ResizablePanel>
+    </div>
+    <ResizablePanel direction="left"
+      >Panel n stuhhhhhhhhhhhhhhhhff</ResizablePanel
+    >
   </div>
-  <div class="editor-container">
-    <Codemirror
-      :extensions="extensions"
-      :indent-with-tab="true"
-      :tab-size="4"
-      @ready="yoink" />
-  </div>
+  <StatusBar />
 </template>
 
 <script setup lang="ts">
@@ -68,8 +110,93 @@ import {
   showPanel,
 } from "@codemirror/view";
 import { dracula as draculaTheme } from "thememirror";
+import {
+  Component,
+  inject,
+  onMounted,
+  onUnmounted,
+  provide,
+  Ref,
+  ref,
+  watch,
+} from "vue";
 import { Codemirror } from "vue-codemirror";
+import ResizablePanel from "../components/ResizablePanel.vue";
+import StatusBar from "../components/StatusBar.vue";
+import { provideLayout } from "../provides";
 
+const editorState = ref<EditorState | null>(null);
+const editorView = ref<EditorView | null>(null);
+const editorContainer = ref<HTMLDivElement | null>(null);
+
+const remainingXSpace = ref(0);
+const remainingYSpace = ref(0);
+
+const observer = new ResizeObserver(entries => {
+  remainingXSpace.value = entries[0].borderBoxSize[0].inlineSize;
+  remainingYSpace.value = entries[0].borderBoxSize[0].blockSize;
+});
+onUnmounted(() => observer.disconnect());
+
+const registeredPanels: Record<"x" | "y", Set<Ref<number>>> = {
+  x: new Set(),
+  y: new Set(),
+};
+provide(provideLayout, {
+  editorElement: editorContainer,
+  remainingXSpace,
+  remainingYSpace,
+  register: (type, size) => {
+    registeredPanels[type].add(size);
+  },
+  unregister: size => {
+    registeredPanels.x.delete(size);
+    registeredPanels.y.delete(size);
+  },
+});
+
+function freeBiggestPanel(type: keyof typeof registeredPanels) {
+  return function (val: number) {
+    if (val >= 100) return;
+
+    const sortedPanels = [...registeredPanels[type].values()].sort(
+      ({ value: a }, { value: b }) => b - a,
+    );
+    const biggestPanel = sortedPanels[0];
+    if (!biggestPanel) return;
+
+    biggestPanel.value = 0;
+  };
+}
+watch(remainingXSpace, freeBiggestPanel("x"));
+watch(remainingYSpace, freeBiggestPanel("y"));
+
+function onReady({
+  state,
+  view,
+  container,
+}: {
+  view: import("@codemirror/view").EditorView;
+  state: import("@codemirror/state").EditorState;
+  container: HTMLDivElement;
+}) {
+  editorState.value = state;
+  editorView.value = view;
+  editorContainer.value = container;
+
+  observer.observe(container);
+}
+
+const noDotted = EditorView.theme({
+  "&.cm-editor.cm-focused": {
+    outline: "none",
+  },
+});
+const panelColorFix = EditorView.theme({
+  ".cm-panels": {
+    backgroundColor: "#282a36",
+  },
+});
 const fullHeight = EditorView.theme({
   "&": {
     height: "100%",
@@ -128,14 +255,11 @@ const extensions: Extension[] = [
 
   fullHeight,
   darkMode,
+  panelColorFix,
+  noDotted,
 
   Prec.high(EditorState.tabSize.of(4)),
 
   controlPanel,
 ];
-
-function yoink(stuff: any) {
-  //@ts-ignore
-  window.lmao = stuff;
-}
 </script>

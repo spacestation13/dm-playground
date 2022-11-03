@@ -1,0 +1,30 @@
+diff --git a/node_modules/pinia/dist/pinia.d.ts b/node_modules/pinia/dist/pinia.d.ts
+index 197e64c..54de5a1 100644
+--- a/node_modules/pinia/dist/pinia.d.ts
++++ b/node_modules/pinia/dist/pinia.d.ts
+@@ -47,6 +47,7 @@ export declare function createPinia(): Pinia;
+ export declare type _DeepPartial<T> = {
+     [K in keyof T]?: _DeepPartial<T[K]>;
+ };
++export declare type _DeepReadonly<T> = { readonly [P in keyof T]: _DeepReadonly<T[P]> }
+ 
+ /**
+  * Options parameter of `defineStore()` for setup stores. Can be extended to
+@@ -102,7 +103,7 @@ export declare interface DefineStoreOptions<Id extends string, S extends StateTr
+     /**
+      * Optional object of getters.
+      */
+-    getters?: G & ThisType<UnwrapRef<S> & _StoreWithGetters<G> & PiniaCustomProperties> & _GettersTree<S>;
++    getters?: G & ThisType<_DeepReadonly<UnwrapRef<S>> & _StoreWithGetters<G> & PiniaCustomProperties> & _GettersTree<S>;
+     /**
+      * Optional object of actions.
+      */
+@@ -597,7 +598,7 @@ export declare type StateTree = Record<string | number | symbol, any>;
+ /**
+  * Store type to build a store.
+  */
+-export declare type Store<Id extends string = string, S extends StateTree = {}, G = {}, A = {}> = _StoreWithState<Id, S, G, A> & UnwrapRef<S> & _StoreWithGetters<G> & (_ActionsTree extends A ? {} : A) & PiniaCustomProperties<Id, S, G, A> & PiniaCustomStateProperties<S>;
++export declare type Store<Id extends string = string, S extends StateTree = {}, G = {}, A = {}> = _StoreWithState<Id, S, G, A> & _DeepReadonly<UnwrapRef<S>> & _StoreWithGetters<G> & (_ActionsTree extends A ? {} : A) & PiniaCustomProperties<Id, S, G, A> & PiniaCustomStateProperties<S>;
+ 
+ /**
+  * Extract the actions of a store type. Works with both a Setup Store or an

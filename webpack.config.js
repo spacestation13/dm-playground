@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { VueLoaderPlugin } = require("vue-loader");
 const { IgnorePlugin } = require("webpack");
+const TerserPlugin = require("terser-webpack-plugin");
 
 const webpackConfig = (_, { mode }) => {
   const isProd = mode === "production";
@@ -44,7 +45,12 @@ const webpackConfig = (_, { mode }) => {
               },
             },
             "postcss-loader",
-            "sass-loader",
+            {
+              loader: "sass-loader",
+              options: {
+                additionalData: '@import "~style/bulma/theme/_variables.scss";',
+              },
+            },
           ],
         },
         {
@@ -85,6 +91,9 @@ const webpackConfig = (_, { mode }) => {
       }),
     ],
     resolve: {
+      alias: {
+        style: path.resolve(__dirname, "src/styles"),
+      },
       extensions: [".js", ".vue", ".tsx", ".ts"],
       fallback: {
         perf_hooks: false,
@@ -109,7 +118,7 @@ const webpackConfig = (_, { mode }) => {
             name: "vendors",
             chunks: "all",
           },
-          mobx: {
+          vendors_big: {
             test: /[\\/]node_modules[\\/]/,
             name(module) {
               // get the name. E.g. node_modules/packageName/not/this/part.js
@@ -127,6 +136,12 @@ const webpackConfig = (_, { mode }) => {
           },
         },
       },
+      minimize: true,
+      minimizer: [
+        new TerserPlugin({
+          exclude: /\?raw$/,
+        }),
+      ],
     },
     devServer: {
       client: {
@@ -137,6 +152,9 @@ const webpackConfig = (_, { mode }) => {
       port: 8080,
     },
     devtool: isProd ? "source-map" : "eval-cheap-module-source-map",
+    stats: {
+      loggingDebug: ["sass-loader"],
+    },
   };
 };
 module.exports = webpackConfig;

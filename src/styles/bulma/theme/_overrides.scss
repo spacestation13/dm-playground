@@ -1,0 +1,147 @@
+/*
+MIT License
+
+Copyright (c) 2017 - Present Jenil Gogari
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+ */
+
+// Overrides
+@if $bulmaswatch-import-font {
+  @import url("https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap");
+}
+
+.section {
+  background-color: $body-background-color;
+}
+
+.hero {
+  background-color: $body-background-color;
+}
+
+.button {
+  &.is-hovered,
+  &:hover {
+    background-color: darken($button-background-color, 3%);
+  }
+  @each $name, $pair in $colors {
+    $color: nth($pair, 1);
+    $color-invert: nth($pair, 2);
+
+    &.is-#{$name} {
+      &.is-hovered,
+      &:hover {
+        background-color: darken($color, 3%);
+      }
+    }
+  }
+
+  &.is-loading:after {
+    border-color: transparent transparent $grey-light $grey-light;
+  }
+}
+
+.label {
+  color: $grey-lighter;
+}
+
+.notification {
+  @each $name, $pair in $colors {
+    $color: nth($pair, 1);
+    $color-invert: nth($pair, 2);
+
+    &.is-#{$name} {
+      a:not(.button) {
+        color: $color-invert;
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+.card {
+  border: 1px solid $border;
+  border-radius: $radius;
+
+  .card-image {
+    img {
+      border-radius: $radius $radius 0 0;
+    }
+  }
+
+  .card-header {
+    border-radius: $radius $radius 0 0;
+  }
+
+  .card-footer,
+  .card-footer-item {
+    border-width: 1px;
+    border-color: $border;
+  }
+}
+
+.modal-card-body {
+  background-color: $body-background-color;
+}
+
+.navbar {
+  &.is-transparent {
+    background-color: transparent;
+  }
+
+  @include touch {
+    .navbar-menu {
+      background-color: transparent;
+    }
+  }
+
+  @each $name, $pair in $colors {
+    $color: nth($pair, 1);
+    $color-invert: nth($pair, 2);
+
+    &.is-#{$name} {
+      @include touch {
+        .navbar-item,
+        .navbar-link {
+          color: $color-invert;
+
+          &.is-active {
+            color: rgba($color-invert, 0.7);
+          }
+        }
+
+        .navbar-burger {
+          span {
+            background-color: $color-invert;
+          }
+        }
+      }
+    }
+  }
+}
+
+.hero {
+  .navbar {
+    .navbar-dropdown {
+      .navbar-item {
+        color: $grey-lighter;
+      }
+    }
+  }
+}
