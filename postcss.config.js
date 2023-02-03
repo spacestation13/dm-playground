@@ -1,14 +1,15 @@
 module.exports = api => {
-  console.log(api.file);
   return {
     plugins: [
       api.file.endsWith("/src/styles/bulma/bulma.scss")
         ? require("postcss-prefixer")({ prefix: "b-" })
         : null,
       require("autoprefixer"),
-      require("cssnano")({
-        preset: "default",
-      }),
+      process.env.NODE_ENV === "production"
+        ? require("cssnano")({
+            preset: "default",
+          })
+        : null,
       require("postcss-flexbugs-fixes"),
       process.env.NODE_ENV === "production" &&
       api.file.endsWith("/src/styles/bulma/bulma.scss")
