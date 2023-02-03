@@ -9,34 +9,38 @@
         class="dragger-inner"
         @pointerdown.prevent="onDragStart"
         @pointermove="onDragMove"
-        @pointerup="onDragEnd"
-        ref="draggerElement"></div>
+        @pointerup="onDragEnd" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onUnmounted, ref, watch } from "vue";
-import { provideLayout } from "../provides";
+import { computed, ref } from "vue";
+import { useLayout } from "../store/layout";
 
 const props = withDefaults(
   defineProps<{
     direction: "up" | "down" | "left" | "right";
+    panelId: string;
     baseSize?: string;
   }>(),
   {
     baseSize: "5em",
   },
 );
+
 const contentsElement = ref<HTMLDivElement | null>(null);
-const draggerElement = ref<HTMLDivElement | null>(null);
-const layout = inject(provideLayout)!;
 const isY = computed(
   () => props.direction === "up" || props.direction === "down",
 );
 const isReversed = computed(
   () => props.direction === "up" || props.direction === "left",
 );
+const layout = useLayout();
+const panelInfo = layout.registerOrFetchPanelInfo({
+  panelId: props.panelId,
+  orientation: isY.value ? "y" : "x",
+});
 
 const cssClass = computed(() => (isY.value ? "dragger-y" : "dragger-x"));
 const flexOrder = computed(() => {
@@ -52,21 +56,17 @@ const flexOrder = computed(() => {
   }
 });
 
-const size = ref(0);
-layout.register(isY ? "y" : "x", size);
-onUnmounted(() => layout.unregister(size));
-
 const mainStyle = computed(() => ({
   [isY.value
     ? "height"
-    : "width"]: `calc(${props.baseSize} + ${size.value}px )`,
+    : "width"]: `calc(${props.baseSize} + ${panelInfo.size}px )`,
 }));
 
 let pointerid: number;
 const dragOrigin = ref<[x: number, y: number] | null>(null);
 function onDragStart(e: PointerEvent) {
   dragOrigin.value = [e.clientX, e.clientY];
-  draggerElement.value!.setPointerCapture(e.pointerId);
+  (e.target as HTMLDivElement).setPointerCapture(e.pointerId);
   pointerid = e.pointerId;
 }
 function onDragEnd(e: PointerEvent) {
@@ -74,7 +74,7 @@ function onDragEnd(e: PointerEvent) {
 
   onDragMove(e);
   dragOrigin.value = null;
-  draggerElement.value!.releasePointerCapture(pointerid);
+  (e.target as HTMLDivElement).releasePointerCapture(pointerid);
 }
 
 /*const tracker = document.createElement("div");
@@ -108,15 +108,15 @@ function onDragMove(e: PointerEvent) {
   delta = isReversed.value ? -delta : delta;
 
   const remainingSpace = isY.value
-    ? layout.editorElement.value!.getBoundingClientRect().height
-    : layout.editorElement.value!.getBoundingClientRect().width;
+    ? layout.editorElement!.getBoundingClientRect().height
+    : layout.editorElement!.getBoundingClientRect().width;
 
   if (remainingSpace - delta < 100) {
     delta = remainingSpace - 100;
 
     newOrigin[isY.value ? 1 : 0] = isY.value
-      ? draggerElement.value!.getBoundingClientRect().y
-      : draggerElement.value!.getBoundingClientRect().x;
+      ? (e.target as HTMLDivElement).getBoundingClientRect().y
+      : (e.target as HTMLDivElement).getBoundingClientRect().x;
     dragOrigin.value = newOrigin;
     originLockedGrowth = true;
   } else {
@@ -124,7 +124,7 @@ function onDragMove(e: PointerEvent) {
   }
 
   contentsElement.value!.style.backgroundPosition = `calc(${props.baseSize} + ${
-    size.value + delta
+    panelInfo.size + delta
   }px )`;
   const computedSize = parseInt(
     getComputedStyle(contentsElement.value!).backgroundPosition.slice(0, -2),
@@ -133,8 +133,8 @@ function onDragMove(e: PointerEvent) {
     delta += 50 - computedSize;
 
     newOrigin[isY.value ? 1 : 0] = isY.value
-      ? draggerElement.value!.getBoundingClientRect().y
-      : draggerElement.value!.getBoundingClientRect().x;
+      ? (e.target as HTMLDivElement).getBoundingClientRect().y
+      : (e.target as HTMLDivElement).getBoundingClientRect().x;
     dragOrigin.value = newOrigin;
     originLockedShrink = true;
   } else {
@@ -144,13 +144,19 @@ function onDragMove(e: PointerEvent) {
   //dont update the origin if we are clamped
   if (!originLockedGrowth && !originLockedShrink) dragOrigin.value = newOrigin;
 
-  size.value += delta;
+  panelInfo.size += delta;
 }
+
+defineExpose({
+  onDragStart,
+  onDragEnd,
+  onDragMove,
+});
 </script>
 
 <style lang="scss" scoped>
 .tool-panel-main {
-  padding: var(--dragger-width);
+  //padding: var(--dragger-width);
   overflow: auto;
   width: 100%;
   height: 100%;
