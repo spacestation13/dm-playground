@@ -119,10 +119,13 @@ const webpackConfig = (_, { mode }) => {
             chunks: "all",
           },
           vendors_big: {
-            test: /[\\/]node_modules[\\/]/,
+            test(module) {
+              return module.context?.match(/[\\/]node_modules[\\/]/);
+            },
             name(module) {
               // get the name. E.g. node_modules/packageName/not/this/part.js
               // or node_modules/packageName
+              //console.log(module);
               const packageName = module.context.match(
                 /[\\/]node_modules[\\/](.*?)([\\/]|$)/,
               )[1];
