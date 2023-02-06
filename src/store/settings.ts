@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, watch } from "vue";
+import { emulator } from "../vm/emulator";
 
 export const useSettings = defineStore("settings", () => {
   const doFunny = ref(false);
@@ -11,6 +12,7 @@ export const useSettings = defineStore("settings", () => {
   function toggleShowConsole() {
     showConsole.value = !showConsole.value;
   }
+  watch(showConsole, emulator.resetTerminal);
 
   return { doFunny, toggleFunny, showConsole, toggleShowConsole };
 });
