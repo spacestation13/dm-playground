@@ -50,25 +50,33 @@ body {
 </style>
 
 <template>
-  <ResizablePanel direction="down">Project Commands</ResizablePanel>
-  <ResizablePanel direction="down">Panel n stuff</ResizablePanel>
+  <ResizablePanel direction="down" panel-id="test1">
+    Project Commands
+  </ResizablePanel>
+  <ResizablePanel direction="down" panel-id="test2">
+    Panel n stuff
+  </ResizablePanel>
   <div class="editor-container-h">
-    <ResizablePanel direction="right">Panel n stuff</ResizablePanel>
+    <TestPanel />
     <div class="editor-container-v">
-      <ResizablePanel direction="down">Editor Commands</ResizablePanel>
-      <ResizablePanel direction="down">Panel n stuff</ResizablePanel>
+      <ResizablePanel direction="down" panel-id="test4">
+        Editor Commands
+      </ResizablePanel>
+      <ResizablePanel direction="down" panel-id="test5">
+        Panel n stuff
+      </ResizablePanel>
       <Codemirror
         model-value="hiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiii"
         :extensions="extensions"
         :indent-with-tab="true"
         :tab-size="4"
         @ready="onReady" />
-      <ResizablePanel direction="up">Panel n stuff</ResizablePanel>
     </div>
-    <ResizablePanel direction="left"
-      >Panel n stuhhhhhhhhhhhhhhhhff</ResizablePanel
-    >
+    <ResizablePanel direction="left" panel-id="test7">
+      Panel n stuhhhhhhhhhhhhhhhhff
+    </ResizablePanel>
   </div>
+  <ConsolePanel />
   <StatusBar />
 </template>
 
@@ -88,7 +96,6 @@ import {
 import {
   bracketMatching,
   defaultHighlightStyle,
-  foldGutter,
   foldKeymap,
   indentOnInput,
   syntaxHighlighting,
@@ -110,66 +117,24 @@ import {
   showPanel,
 } from "@codemirror/view";
 import { dracula as draculaTheme } from "thememirror";
-import {
-  Component,
-  inject,
-  onMounted,
-  onUnmounted,
-  provide,
-  Ref,
-  ref,
-  watch,
-} from "vue";
+import { onUnmounted, ref } from "vue";
 import { Codemirror } from "vue-codemirror";
+import ConsolePanel from "../components/panels/ConsolePanel.vue";
+import TestPanel from "../components/panels/TestPanel.vue";
 import ResizablePanel from "../components/ResizablePanel.vue";
 import StatusBar from "../components/StatusBar.vue";
-import { provideLayout } from "../provides";
+import { useLayout } from "../store/layout";
+
+const layout = useLayout();
 
 const editorState = ref<EditorState | null>(null);
 const editorView = ref<EditorView | null>(null);
-const editorContainer = ref<HTMLDivElement | null>(null);
-
-const remainingXSpace = ref(0);
-const remainingYSpace = ref(0);
 
 const observer = new ResizeObserver(entries => {
-  remainingXSpace.value = entries[0].borderBoxSize[0].inlineSize;
-  remainingYSpace.value = entries[0].borderBoxSize[0].blockSize;
+  layout.setRemainingXSpace(entries[0].borderBoxSize[0].inlineSize);
+  layout.setRemainingYSpace(entries[0].borderBoxSize[0].blockSize);
 });
 onUnmounted(() => observer.disconnect());
-
-const registeredPanels: Record<"x" | "y", Set<Ref<number>>> = {
-  x: new Set(),
-  y: new Set(),
-};
-provide(provideLayout, {
-  editorElement: editorContainer,
-  remainingXSpace,
-  remainingYSpace,
-  register: (type, size) => {
-    registeredPanels[type].add(size);
-  },
-  unregister: size => {
-    registeredPanels.x.delete(size);
-    registeredPanels.y.delete(size);
-  },
-});
-
-function freeBiggestPanel(type: keyof typeof registeredPanels) {
-  return function (val: number) {
-    if (val >= 100) return;
-
-    const sortedPanels = [...registeredPanels[type].values()].sort(
-      ({ value: a }, { value: b }) => b - a,
-    );
-    const biggestPanel = sortedPanels[0];
-    if (!biggestPanel) return;
-
-    biggestPanel.value = 0;
-  };
-}
-watch(remainingXSpace, freeBiggestPanel("x"));
-watch(remainingYSpace, freeBiggestPanel("y"));
 
 function onReady({
   state,
@@ -182,7 +147,7 @@ function onReady({
 }) {
   editorState.value = state;
   editorView.value = view;
-  editorContainer.value = container;
+  layout.setEditorElement(container);
 
   observer.observe(container);
 }
