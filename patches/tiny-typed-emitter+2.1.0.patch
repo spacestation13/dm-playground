@@ -1,0 +1,13 @@
+diff --git a/node_modules/tiny-typed-emitter/lib/index.d.ts b/node_modules/tiny-typed-emitter/lib/index.d.ts
+index eaf02f1..fa1b31a 100644
+--- a/node_modules/tiny-typed-emitter/lib/index.d.ts
++++ b/node_modules/tiny-typed-emitter/lib/index.d.ts
+@@ -7,6 +7,8 @@ export type DefaultListener = {
+ };
+ 
+ export class TypedEmitter<L extends ListenerSignature<L> = DefaultListener> {
++    private _: L;
++
+     static defaultMaxListeners: number;
+     addListener<U extends keyof L>(event: U, listener: L[U]): this;
+     prependListener<U extends keyof L>(event: U, listener: L[U]): this;
