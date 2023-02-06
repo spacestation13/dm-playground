@@ -1,11 +1,5 @@
 import { createPinia } from "pinia";
-import {
-  Component,
-  ComponentInternalInstance,
-  ComponentPublicInstance,
-  createApp,
-  RenderFunction,
-} from "vue";
+import { createApp } from "vue";
 import VueCodemirror from "vue-codemirror";
 import { createWebHistory, createRouter } from "vue-router";
 
@@ -13,9 +7,6 @@ import rootComponent from "./index.vue";
 
 import "./styles/default.scss";
 import "./styles/bulma/bulma.scss";
-
-import "./lib/libv86";
-import { useSettings } from "./store/settings";
 
 import * as Emulator from "./vm/emulator";
 import * as Command from "./vm/command";
@@ -58,10 +49,6 @@ app.config.optionMergeStrategies.render = (_parentVal, _childVal) => {
 const pinia = createPinia();
 
 app.use(pinia);
-
-type ComponentInternalInstanceWithRender = ComponentInternalInstance & {
-  render: Function;
-};
 
 app.use(VueCodemirror, {
   // keep the global default extensions empty
