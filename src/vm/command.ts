@@ -1,4 +1,4 @@
-import { emulator, sendController } from "./emulator";
+import { emulator } from "./emulator";
 import { TypedEmitter } from "tiny-typed-emitter";
 
 export interface CommandResultOK<C extends Command> {
@@ -147,7 +147,7 @@ class CommandQueue {
   public constructor() {
     //It's called from window.setTimeout so this is window otherwise
     this.tickQueue = this.tickQueue.bind(this);
-    emulator.add_listener("serial2-output-char", (chr: string) => {
+    emulator.on("receivedOutputController", chr => {
       try {
         this.receiveChr(chr);
       } catch (error) {
@@ -156,7 +156,6 @@ class CommandQueue {
         alert(errorMsg);
         //We don't really care if suspendQueue errored out, we tried.
         void this.suspendQueue();
-        emulator.destroy();
       }
     });
   }
@@ -228,6 +227,7 @@ class CommandQueue {
 
     //Nothing left on the queue
     if (!command) {
+      return; //TODO: Debug
       command = {
         type: "poll",
         resultCallback: () => {},
@@ -267,7 +267,7 @@ class CommandQueue {
 
     this.activeCommand = command;
 
-    sendController(cmdStr + "\0");
+    emulator.sendController(cmdStr + "\0");
   }
 
   /**
@@ -280,16 +280,13 @@ class CommandQueue {
       return;
     }
 
-    this._tickQueue()
-      .then(() => setTimeout(this.tickQueue, 300))
-      .catch(error => {
-        const errorMsg = `The command queue has encountered an error. Please report the following message and reload the page: ${error}`;
-        console.log(errorMsg, error);
-        alert(errorMsg);
-        //We don't really care if suspendQueue errored out, we tried.
-        void this.suspendQueue();
-        emulator.destroy();
-      });
+    this._tickQueue().catch(error => {
+      const errorMsg = `The command queue has encountered an error. Please report the following message and reload the page: ${error}`;
+      console.log(errorMsg, error);
+      alert(errorMsg);
+      //We don't really care if suspendQueue errored out, we tried.
+      void this.suspendQueue();
+    });
   }
 
   /**
@@ -319,6 +316,12 @@ class CommandQueue {
         this.activeCommand = null;
         this.resultBuffer = "";
       }
+
+      if (this.queue.length) {
+        this.tickQueue();
+      } else {
+        setTimeout(this.tickQueue, 3000);
+      }
       return;
     }
     this.resultBuffer += chr;
@@ -329,6 +332,7 @@ class CommandQueue {
    */
   private processResult() {
     if (!this.activeCommand) {
+      return; //TODO: Debug
       throw new Error("Received result without any active commands");
     }
 
@@ -390,8 +394,7 @@ class CommandQueue {
                 });
               }
               trackedProcess.killed = true;
-              //Let the rest of the queue run then remove the process
-              setTimeout(() => this.trackedProcesses.delete(pollEvent.pid), 0);
+              this.trackedProcesses.delete(pollEvent.pid);
             } else {
               trackedProcess.emit(pollEvent.event, pollEvent.data);
             }
