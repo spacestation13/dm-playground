@@ -1,8 +1,8 @@
 diff --git a/node_modules/pinia/dist/pinia.d.ts b/node_modules/pinia/dist/pinia.d.ts
-index 197e64c..826f80a 100644
+index da09776..bc50835 100644
 --- a/node_modules/pinia/dist/pinia.d.ts
 +++ b/node_modules/pinia/dist/pinia.d.ts
-@@ -47,6 +47,12 @@ export declare function createPinia(): Pinia;
+@@ -48,6 +48,12 @@ export declare function createPinia(): Pinia;
  export declare type _DeepPartial<T> = {
      [K in keyof T]?: _DeepPartial<T[K]>;
  };
@@ -15,7 +15,7 @@ index 197e64c..826f80a 100644
  
  /**
   * Options parameter of `defineStore()` for setup stores. Can be extended to
-@@ -102,7 +108,7 @@ export declare interface DefineStoreOptions<Id extends string, S extends StateTr
+@@ -103,7 +109,7 @@ export declare interface DefineStoreOptions<Id extends string, S extends StateTr
      /**
       * Optional object of getters.
       */
@@ -24,7 +24,7 @@ index 197e64c..826f80a 100644
      /**
       * Optional object of actions.
       */
-@@ -597,7 +603,7 @@ export declare type StateTree = Record<string | number | symbol, any>;
+@@ -603,7 +609,7 @@ export declare type StateTree = Record<string | number | symbol, any>;
  /**
   * Store type to build a store.
   */

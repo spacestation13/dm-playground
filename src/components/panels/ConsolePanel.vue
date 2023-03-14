@@ -75,7 +75,7 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
 import { Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit/src/FitAddon";
+import { FitAddon } from "xterm-addon-fit";
 import { useSettings } from "../../store/settings";
 import { useEventListener } from "../../utils/composables";
 import { emulator } from "../../vm/emulator";
