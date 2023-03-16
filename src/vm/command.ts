@@ -205,6 +205,7 @@ class CommandQueue {
   private suspendingQueue: boolean = false;
 
   private trackedProcesses = new Map<number, Process>();
+  private idlePollDelay = 50;
 
   /**
    * Wrapped function for tickQueue. See {@link #tickQueue}
@@ -227,7 +228,6 @@ class CommandQueue {
 
     //Nothing left on the queue
     if (!command) {
-      return; //TODO: Debug
       command = {
         type: "poll",
         resultCallback: () => {},
@@ -320,7 +320,11 @@ class CommandQueue {
       if (this.queue.length) {
         this.tickQueue();
       } else {
-        setTimeout(this.tickQueue, 3000);
+        if (this.idlePollDelay == -1) {
+          this.tickQueue();
+        } else {
+          setTimeout(this.tickQueue, this.idlePollDelay);
+        }
       }
       return;
     }
@@ -332,7 +336,6 @@ class CommandQueue {
    */
   private processResult() {
     if (!this.activeCommand) {
-      return; //TODO: Debug
       throw new Error("Received result without any active commands");
     }
 
