@@ -1,3 +1,4 @@
+// noinspection NodeCoreCodingAssistance
 import path from "path";
 import vue from "@vitejs/plugin-vue";
 import checker from "vite-plugin-checker";
