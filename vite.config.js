@@ -33,6 +33,7 @@ const config = {
   },
   build: {
     sourcemap: true,
+    outDir: "../dist",
     emptyOutDir: true,
     rollupOptions: {
       external: ["old/**"],
