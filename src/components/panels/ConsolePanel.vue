@@ -144,7 +144,6 @@ useEventListener(emulator, "receivedOutputConsole", chr => {
 });
 useEventListener(emulator, "receivedOutputScreen", chr => termSrn.write(chr));
 useEventListener(emulator, "receivedOutputController", chr => {
-  console.log(chr);
   if (chr === "\n") {
     chr = "\n< ";
   }
