@@ -60,8 +60,9 @@
   "main": "src/index.ts",
   "scripts": {
     "postinstall": "npx patch-package",
-    "start": "npx vue-tsc --noEmit -p . --watch & npx webpack serve",
-    "build": "npx webpack --mode production"
+    "start": "npx vite",
+    "build": "npx vite build",
+    "preview": "npm run build && npx vite preview"
   },
   "repository": {
     "type": "git",
