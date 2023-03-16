@@ -23,14 +23,20 @@ async function runCursed() {
     `/world/New()
     world.log << "meow"
     ..()
+    eval("")
     shutdown()`,
   );
+
   const compiler = await commandQueue.runProcess(
     "/byond/bin/DreamMaker",
     "/mnt/host/code.dme",
     new Map([["LD_LIBRARY_PATH", "/byond/bin"]]),
   );
+  compiler.on("stdout", val => {
+    output.value += val;
+  });
   await new Promise(r => compiler.on("exit", r));
+
   const server = await commandQueue.runProcess(
     "/byond/bin/DreamDaemon",
     "/mnt/host/code.dmb\0-trusted",
@@ -39,6 +45,7 @@ async function runCursed() {
   server.on("stderr", val => {
     output.value += val;
   });
+  await new Promise(r => server.on("exit", r));
 }
 
 function poll() {
