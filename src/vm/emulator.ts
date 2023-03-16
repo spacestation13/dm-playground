@@ -1,4 +1,5 @@
 import { TypedEmitter } from "tiny-typed-emitter";
+import VMWorker from "./worker?worker";
 
 export interface EmulatorEvents {
   receivedOutputConsole: (output: string) => void;
@@ -13,7 +14,7 @@ export interface EmulatorEvents {
 const encoder = new TextEncoder();
 
 class Emulator extends TypedEmitter<EmulatorEvents> {
-  private worker = new Worker(new URL("./worker.ts", import.meta.url));
+  private worker = new VMWorker();
 
   constructor() {
     super();

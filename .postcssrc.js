@@ -1,18 +1,18 @@
-module.exports = api => {
+module.exports = function ({ env }) {
   return {
     plugins: [
-      api.file.endsWith("/src/styles/bulma/bulma.scss")
-        ? require("postcss-prefixer")({ prefix: "b-" })
-        : null,
+      require("postcss-filter-stream")(
+        ["**", "!**/src/styles/bulma/bulma.scss"],
+        require("postcss-prefixer")({ prefix: "b-" }),
+      ),
       require("autoprefixer"),
-      process.env.NODE_ENV === "production"
+      env === "production"
         ? require("cssnano")({
             preset: "default",
           })
         : null,
       require("postcss-flexbugs-fixes"),
-      process.env.NODE_ENV === "production" &&
-      api.file.endsWith("/src/styles/bulma/bulma.scss")
+      env === "never"
         ? require("@fullhuman/postcss-purgecss")({
             content: [`./src/**/*.html`, `./src/**/*.vue`],
             defaultExtractor(content) {

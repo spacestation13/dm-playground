@@ -1,9 +1,10 @@
-import wasmUrl from "../lib/v86.wasm";
+import wasmUrl from "../lib/v86.wasm?url";
 //import isoUrl from "val-loader!../../fetchIso.js?raw";
-import isoUrl from "../../../buildroot/output/images/rootfs.iso9660?raw";
+import isoUrl from "../../../buildroot/output/images/rootfs.iso9660?url";
 
-import v86url from "../lib/libv86.js?raw";
-importScripts(v86url);
+self.importScripts = () => {};
+
+import "../lib/libv86.js";
 
 interface MsgSendTerminal {
   command: "sendTerminal";
