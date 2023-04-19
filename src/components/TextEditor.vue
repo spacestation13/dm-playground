@@ -32,7 +32,6 @@ import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
 import {
   EditorState,
   Extension,
-  Facet,
   Prec,
   StateEffect,
   StateField,
@@ -52,8 +51,8 @@ import {
 } from "@codemirror/view";
 import { dracula as draculaTheme } from "thememirror";
 import { onUnmounted, ref } from "vue";
+import { Codemirror } from "vue-codemirror";
 import { useLayout } from "../store/layout";
-import { emulator } from "../vm/emulator";
 
 const layout = useLayout();
 
