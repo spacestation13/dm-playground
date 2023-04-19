@@ -1,5 +1,5 @@
 <template>
-  <ResizablePanel direction="right" panel-id="test-panel">
+  <ResizablePanel direction="down" panel-id="test-panel">
     <button class="b-btn b-is-primary" @click="runCursed">Run test code</button>
     <button class="b-btn b-is-primary" @click="poll">Poll</button>
     <h5>Output:</h5>

@@ -50,181 +50,19 @@ body {
 </style>
 
 <template>
-  <ResizablePanel direction="down" panel-id="test1">
-    Project Commands
-  </ResizablePanel>
-  <ResizablePanel direction="down" panel-id="test2">
-    Panel n stuff
-  </ResizablePanel>
   <div class="editor-container-h">
-    <TestPanel />
     <div class="editor-container-v">
-      <ResizablePanel direction="down" panel-id="test4">
-        Editor Commands
-      </ResizablePanel>
-      <ResizablePanel direction="down" panel-id="test5">
-        Panel n stuff
-      </ResizablePanel>
-      <Codemirror
-        model-value="hiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiii"
-        :extensions="extensions"
-        :indent-with-tab="true"
-        :tab-size="4"
-        @ready="onReady" />
+      <TestPanel />
+      <TextEditor />
     </div>
-    <ResizablePanel direction="left" panel-id="test7">
-      Panel n stuhhhhhhhhhhhhhhhhff
-    </ResizablePanel>
   </div>
   <ConsolePanel />
   <StatusBar />
 </template>
 
 <script setup lang="ts">
-import {
-  autocompletion,
-  closeBrackets,
-  closeBracketsKeymap,
-  completionKeymap,
-} from "@codemirror/autocomplete";
-import {
-  defaultKeymap,
-  history,
-  historyKeymap,
-  indentWithTab,
-} from "@codemirror/commands";
-import {
-  bracketMatching,
-  defaultHighlightStyle,
-  foldKeymap,
-  indentOnInput,
-  syntaxHighlighting,
-} from "@codemirror/language";
-import { lintKeymap } from "@codemirror/lint";
-import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
-import { EditorState, Extension, Prec } from "@codemirror/state";
-import {
-  crosshairCursor,
-  drawSelection,
-  dropCursor,
-  EditorView,
-  highlightActiveLine,
-  highlightActiveLineGutter,
-  highlightSpecialChars,
-  keymap,
-  lineNumbers,
-  rectangularSelection,
-  showPanel,
-} from "@codemirror/view";
-import { dracula as draculaTheme } from "thememirror";
-import { onUnmounted, ref } from "vue";
-import { Codemirror } from "vue-codemirror";
 import ConsolePanel from "../components/panels/ConsolePanel.vue";
 import TestPanel from "../components/panels/TestPanel.vue";
-import ResizablePanel from "../components/ResizablePanel.vue";
 import StatusBar from "../components/StatusBar.vue";
-import { useLayout } from "../store/layout";
-
-const layout = useLayout();
-
-const editorState = ref<EditorState | null>(null);
-const editorView = ref<EditorView | null>(null);
-
-const observer = new ResizeObserver(entries => {
-  layout.setRemainingXSpace(entries[0].borderBoxSize[0].inlineSize);
-  layout.setRemainingYSpace(entries[0].borderBoxSize[0].blockSize);
-});
-onUnmounted(() => observer.disconnect());
-
-function onReady({
-  state,
-  view,
-  container,
-}: {
-  view: import("@codemirror/view").EditorView;
-  state: import("@codemirror/state").EditorState;
-  container: HTMLDivElement;
-}) {
-  editorState.value = state;
-  editorView.value = view;
-  layout.setEditorElement(container);
-
-  observer.observe(container);
-}
-
-const noDotted = EditorView.theme({
-  "&.cm-editor.cm-focused": {
-    outline: "none",
-  },
-});
-const panelColorFix = EditorView.theme({
-  ".cm-panels": {
-    backgroundColor: "#282a36",
-  },
-});
-const fullHeight = EditorView.theme({
-  "&": {
-    height: "100%",
-  },
-  ".cm-scroller": {
-    flexGrow: 1,
-  },
-});
-const darkMode = EditorView.theme({}, { dark: true });
-
-const controlPanel = showPanel.of(() => {
-  const dom = document.createElement("div");
-  dom.className = "cm-help-panel";
-
-  const btn = document.createElement("button");
-  btn.innerText = "Run Code";
-  btn.className = "button is-primary";
-
-  dom.appendChild(btn);
-
-  return { top: true, dom };
-});
-
-const extensions: Extension[] = [
-  lineNumbers(),
-  highlightActiveLineGutter(),
-  highlightSpecialChars(),
-  history(),
-  //foldGutter(), TODO: fix dis shiet
-  drawSelection(),
-  dropCursor(),
-  EditorState.allowMultipleSelections.of(true),
-  indentOnInput(),
-  syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-  bracketMatching({
-    brackets: "()[]",
-  }),
-  closeBrackets(),
-  autocompletion(), //todo: the smart
-  rectangularSelection(),
-  crosshairCursor(),
-  highlightActiveLine(),
-  highlightSelectionMatches(),
-  keymap.of([
-    ...closeBracketsKeymap,
-    ...defaultKeymap,
-    ...searchKeymap,
-    ...historyKeymap,
-    ...foldKeymap,
-    ...completionKeymap,
-    ...lintKeymap,
-    indentWithTab,
-  ]),
-
-  draculaTheme,
-
-  fullHeight,
-  darkMode,
-  panelColorFix,
-  noDotted,
-
-  Prec.high(EditorState.tabSize.of(4)),
-
-  controlPanel,
-];
+import TextEditor from "../components/TextEditor.vue";
 </script>
