@@ -396,6 +396,7 @@ class CommandQueue {
                   code: pollEvent.exit,
                 });
               }
+              trackedProcess.removeAllListeners();
               trackedProcess.killed = true;
               this.trackedProcesses.delete(pollEvent.pid);
             } else {

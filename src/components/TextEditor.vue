@@ -1,9 +1,13 @@
 <template>
   <Codemirror
-    model-value="hiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiiihiiiiii"
+    :model-value="`/world/New()
+  world.log << &quot;meow&quot;
+  ..()
+  eval(&quot;&quot;)
+  shutdown()`"
     :extensions="extensions"
     :indent-with-tab="true"
-    :tab-size="4"
+    :tab-size="2"
     @ready="onReady" />
 </template>
 
@@ -53,10 +57,11 @@ import { dracula as draculaTheme } from "thememirror";
 import { onUnmounted, ref } from "vue";
 import { Codemirror } from "vue-codemirror";
 import { useLayout } from "../store/layout";
+import { executor } from "../vm/executor";
 
 const layout = useLayout();
 
-const editorView = ref<EditorView | null>(null);
+let editorView: EditorView;
 
 const observer = new ResizeObserver(entries => {
   layout.setRemainingXSpace(entries[0].borderBoxSize[0].inlineSize);
@@ -71,7 +76,7 @@ function onReady({
   view: EditorView;
   container: HTMLDivElement;
 }): void {
-  editorView.value = view;
+  editorView = view;
   layout.setEditorElement(container);
 
   observer.observe(container);
@@ -101,7 +106,7 @@ const runCodeEffect = StateEffect.define<void>();
 const runCodeField = StateField.define<void>({
   update(state, tr) {
     if (tr.effects.some(e => e.is(runCodeEffect))) {
-      debugger;
+      executor.executeImmediate(tr.newDoc.toString());
     }
   },
   create() {},
@@ -114,10 +119,11 @@ const controlPanel = showPanel.of(() => {
   btn.innerText = "Run Code";
   btn.className = "button is-primary";
   btn.onclick = function () {
-    const transaction = editorView.value!.state.update({
-      effects: [runCodeEffect.of()],
-    });
-    editorView.value!.dispatch(transaction);
+    editorView.dispatch(
+      editorView.state.update({
+        effects: [runCodeEffect.of()],
+      }),
+    );
   };
 
   dom.appendChild(btn);
@@ -163,7 +169,7 @@ const extensions: Extension[] = [
   panelColorFix,
   noDotted,
 
-  Prec.high(EditorState.tabSize.of(4)),
+  Prec.high(EditorState.tabSize.of(2)),
 
   [controlPanel],
   [runCodeField],

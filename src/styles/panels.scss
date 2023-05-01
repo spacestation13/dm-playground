@@ -1,0 +1,32 @@
+.panel-container-h,
+.panel-container-v {
+  flex: 1 1 auto;
+  display: flex;
+  height: 100%;
+  width: 100%s;
+}
+
+.panel-container-h {
+  flex-direction: row;
+
+  & > * {
+    border-right: rgba($grey, 0.5) 1px solid;
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+}
+
+.panel-container-v {
+  flex-direction: column;
+  min-width: 0;
+
+  & > * {
+    border-bottom: rgba($grey, 0.5) 1px solid;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}

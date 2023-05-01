@@ -31,19 +31,43 @@ interface MsgSendFile {
   name: string;
   data: Uint8Array;
 }
+interface MsgDeleteFile {
+  command: "deleteFile";
+  name: string;
+}
 interface MsgResetTerminal {
   command: "resetTerminal";
   data?: undefined;
 }
 
-type WorkerMsg =
+export type WorkerMsgWithoutCID =
   | MsgSendTerminal
   | MsgSendScreen
   | MsgSendController
   | MsgStart
   | MsgPause
   | MsgSendFile
-  | MsgResetTerminal;
+  | MsgDeleteFile
+  | MsgResetTerminal
+
+export type WorkerMsg = WorkerMsgWithoutCID & {
+  commandID: number;
+};
+
+export type WorkerResponseMsg = {
+  command: "asyncResponse";
+  commandID: number;
+} | WorkerEventResponseMsg;
+
+export type WorkerEventResponseMsg = {
+  event: "receivedOutputConsole", data: [string]
+} | {
+  event: "receivedOutputScreen", data: [string]
+} | {
+  event: "receivedOutputController", data: [string]
+} | {
+  event: "resetOutputConsole", data: void
+}
 
 const emulator = new V86Starter({
   //Emulator binaries
@@ -137,7 +161,7 @@ function sendController(message: string) {
     emulator.bus.send("serial2-input", message.charCodeAt(i));
   }
 }
-onmessage = async ({ data: e }: MessageEvent<WorkerMsg>) => {
+onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
   switch (e.command) {
     case "sendTerminal": {
       sendTerminal(e.data);
@@ -152,15 +176,34 @@ onmessage = async ({ data: e }: MessageEvent<WorkerMsg>) => {
       break;
     }
     case "start": {
-      await emulator.run();
+      emulator.run().then(() => {
+        postMessage({
+          command: "asyncResponse",
+          commandID: e.commandID
+        } satisfies WorkerResponseMsg);
+      });
       break;
     }
     case "pause": {
-      await emulator.stop();
+      emulator.stop().then(() => {
+        postMessage({
+          command: "asyncResponse",
+          commandID: e.commandID
+        } satisfies WorkerResponseMsg);
+      });
       break;
     }
     case "sendFile": {
-      await emulator.create_file(e.name, e.data);
+      emulator.create_file(e.name, e.data).then(() => {
+        postMessage({
+          command: "asyncResponse",
+          commandID: e.commandID
+        } satisfies WorkerResponseMsg);
+      });
+      break;
+    }
+    case "deleteFile": {
+      emulator.fs9p.DeleteNode(e.name);
       break;
     }
     case "resetTerminal": {

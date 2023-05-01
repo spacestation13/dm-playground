@@ -16,45 +16,18 @@ body {
   display: block !important;
   padding: var(--dragger-width);
 }
-
-.editor-container-h,
-.editor-container-v {
-  flex: 1 1 auto;
-  display: flex;
-}
-
-.editor-container-h {
-  flex-direction: row;
-
-  & > * {
-    border-right: rgba($grey, 0.5) 1px solid;
-
-    &:last-child {
-      border-right: none;
-    }
-  }
-}
-
-.editor-container-v {
-  flex-direction: column;
-  min-width: 0;
-
-  & > * {
-    border-bottom: rgba($grey, 0.5) 1px solid;
-
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-}
 </style>
 
 <template>
-  <div class="editor-container-h">
-    <div class="editor-container-v">
+  <div class="panel-container-h">
+    <div class="panel-container-v">
       <TestPanel />
       <TextEditor />
     </div>
+    <ResizablePanel panel-id="test-panel-right-2" direction="left">
+      <h5>Output:</h5>
+      <pre style="overflow: auto"></pre>
+    </ResizablePanel>
   </div>
   <ConsolePanel />
   <StatusBar />
@@ -63,6 +36,7 @@ body {
 <script setup lang="ts">
 import ConsolePanel from "../components/panels/ConsolePanel.vue";
 import TestPanel from "../components/panels/TestPanel.vue";
+import ResizablePanel from "../components/ResizablePanel.vue";
 import StatusBar from "../components/StatusBar.vue";
 import TextEditor from "../components/TextEditor.vue";
 </script>
