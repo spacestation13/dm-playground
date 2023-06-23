@@ -24,6 +24,9 @@ jobs:
             - name: Install NPM Dependencies
               run: npm ci
 
+            - name: Create iso placeholder
+              run: touch rootfs.iso9660
+
             - name: Compile
               run: npx vite build --base=/dm-playground
               env:
