@@ -1,6 +1,6 @@
 import wasmUrl from "../lib/v86.wasm?url";
 
-import isoUrl from "../../../buildroot/output/images/rootfs.iso9660?url";
+import isoUrl from "../../rootfs.iso9660?url";
 let overrideIsoUrl: string | undefined = import.meta.env.VITE_ISO_URL;
 
 self.importScripts = () => {};
