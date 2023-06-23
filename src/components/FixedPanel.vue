@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 const props = defineProps<{
   direction: "up" | "down" | "left" | "right";
 }>();
-
-import { computed } from "vue";
 
 const flexOrder = computed(() => {
   switch (props.direction) {
