@@ -1,7 +1,7 @@
 import { createPinia } from "pinia";
 import { createApp } from "vue";
 import VueCodemirror from "vue-codemirror";
-import { createWebHistory, createRouter } from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router";
 
 import rootComponent from "./index.vue";
 
@@ -12,7 +12,7 @@ import * as Emulator from "./vm/emulator";
 import * as Command from "./vm/command";
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes: [
     {
       name: "edit",
