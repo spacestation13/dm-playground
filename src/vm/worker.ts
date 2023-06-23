@@ -1,6 +1,13 @@
 import wasmUrl from "../lib/v86.wasm?url";
 //import isoUrl from "val-loader!../../fetchIso.js?raw";
+
+// @ts-ignore
+// #v-ifdef DEV
+// noinspection ES6UnusedImports
 import isoUrl from "../../../buildroot/output/images/rootfs.iso9660?url";
+// #v-else
+const isoUrl = import.meta.env.VITE_ISO_URL;
+// #v-endif
 
 self.importScripts = () => {};
 

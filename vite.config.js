@@ -2,11 +2,13 @@
 import path from "path";
 import vue from "@vitejs/plugin-vue";
 import checker from "vite-plugin-checker";
+import ConditionalCompile from "vite-plugin-conditional-compiler";
 
 /** @type {import("vite").UserConfig} */
 const config = {
   root: "./src",
   plugins: [
+    ConditionalCompile(),
     vue(),
     checker({
       typescript: true,
