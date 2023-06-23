@@ -26,6 +26,8 @@ jobs:
 
             - name: Compile
               run: npx vite build --base=/dm-playground
+              env:
+                  VITE_ISO_URL: https://spacestation13.github.io/dm-playground-linux/rootfs.iso9660
 
             - name: Create workdir
               run: |
