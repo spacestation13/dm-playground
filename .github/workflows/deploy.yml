@@ -35,9 +35,9 @@ jobs:
             - name: Create workdir
               run: |
                   git fetch origin dist
-                  git worktree add --detach $HOME/distbranch origin/dist
+                  git worktree add --detach $HOME/distbranch
                   cd $HOME/distbranch
-                  git checkout --orphan tmp-deploy
+                  git switch --orphan tmp-deploy
                   touch .nojekyll
 
             - name: Copy files
