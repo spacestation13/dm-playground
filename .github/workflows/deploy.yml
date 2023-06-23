@@ -1,53 +1,55 @@
 name: Deploy code
 
 on:
-    push:
-        branches:
-            - master
-    workflow_dispatch:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v2
+    steps:
+    - uses: actions/checkout@v2
 
-            - name: Use Node.js
-              uses: actions/setup-node@v1
-              with:
-                  node-version: 18.x
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 18.x
 
-            - name: Upgrade NPM
-              run: npm install -g npm
+    - name: Upgrade NPM
+      run: npm install -g npm
 
-            - name: Install NPM Dependencies
-              run: npm ci
+    - name: Install NPM Dependencies
+      run: npm ci
 
-            - name: Create iso placeholder
-              run: touch rootfs.iso9660
+    - name: Create iso placeholder
+      run: touch rootfs.iso9660
 
-            - name: Compile
-              run: npx vite build --base=/dm-playground
-              env:
-                  VITE_ISO_URL: https://spacestation13.github.io/dm-playground-linux/rootfs.iso9660
+    - name: Compile
+      run: npx vite build --base=/dm-playground
+      env:
+        VITE_ISO_URL: https://spacestation13.github.io/dm-playground-linux/rootfs.iso9660
 
-            - name: Create workdir
-              run: |
-                  git fetch origin dist
-                  git worktree add --detach $HOME/distbranch
-                  cd $HOME/distbranch
-                  git switch --orphan tmp-deploy
-                  touch .nojekyll
+    - name: Upload GitHub Pages artifact
+    uses: actions/upload-pages-artifact@v1
+    with:
+      path: dist
 
-            - name: Copy files
-              run: |
-                  cp $GITHUB_WORKSPACE/dist/* . -R
+  deploy:
+    needs: build
 
-            - name: Deploy to Github
-              run: |
-                  git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-                  git config --local user.name "github-actions[bot]"
-                  git add .
-                  git commit -m "Update dist"
-                  git push origin HEAD:dist --force
+    permissions:
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
