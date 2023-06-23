@@ -83,10 +83,6 @@ class Emulator extends TypedEmitter<EmulatorEvents> {
       this.once(`async-${commandID}`, resolve);
     });
 
-  public deleteFile = (name: string) => {
-    this.sendCommand({ command: "deleteFile", name });
-  };
-
   public resetTerminal = () => {
     this.sendCommand({ command: "resetTerminal" });
   };

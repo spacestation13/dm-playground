@@ -32,10 +32,6 @@ interface MsgSendFile {
   name: string;
   data: Uint8Array;
 }
-interface MsgDeleteFile {
-  command: "deleteFile";
-  name: string;
-}
 interface MsgResetTerminal {
   command: "resetTerminal";
   data?: undefined;
@@ -48,7 +44,6 @@ export type WorkerMsgWithoutCID =
   | MsgStart
   | MsgPause
   | MsgSendFile
-  | MsgDeleteFile
   | MsgResetTerminal
 
 export type WorkerMsg = WorkerMsgWithoutCID & {
@@ -201,10 +196,6 @@ onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
           commandID: e.commandID
         } satisfies WorkerResponseMsg);
       });
-      break;
-    }
-    case "deleteFile": {
-      emulator.fs9p.DeleteNode(e.name);
       break;
     }
     case "resetTerminal": {

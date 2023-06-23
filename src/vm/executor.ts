@@ -59,8 +59,10 @@ class Executor extends TypedEmitter<ExecutorEvents> {
       })
       .finally(() => {
         if (stageAbort) stageAbort();
-        emulator.deleteFile(filename + ".dme");
-        emulator.deleteFile(filename + ".dmb");
+        commandQueue.runProcess(
+          "/bin/rm",
+          `/mnt/host/${filename}.dme\0/mnt/host/${filename}.dmb`,
+        );
       }, true);
   }
 }
