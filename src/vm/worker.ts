@@ -1,12 +1,7 @@
 import wasmUrl from "../lib/v86.wasm?url";
-//import isoUrl from "val-loader!../../fetchIso.js?raw";
 
-let prodIsoUrl: string | undefined;
-// #v-ifdef DEV
 import isoUrl from "../../../buildroot/output/images/rootfs.iso9660?url";
-// #v-else
-prodIsoUrl = import.meta.env.VITE_ISO_URL;
-// #v-endif
+let overrideIsoUrl: string | undefined = import.meta.env.VITE_ISO_URL;
 
 self.importScripts = () => {};
 
@@ -133,7 +128,7 @@ const emulator = new V86Starter({
     url: "https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin",
   },
   cdrom: {
-    url: prodIsoUrl ?? isoUrl,
+    url: overrideIsoUrl ?? isoUrl,
   },
   hda: null,
   hdb: null,
