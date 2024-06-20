@@ -29,6 +29,7 @@
     "@taiga-ui/kit": "^3.84.0",
     "@taiga-ui/layout": "^3.84.0",
     "@taiga-ui/styles": "^3.84.0",
+    "cancelable-promise": "^4.3.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"

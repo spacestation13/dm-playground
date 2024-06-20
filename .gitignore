@@ -41,4 +41,4 @@ testem.log
 .DS_Store
 Thumbs.db
 
-rootfs.iso9660
+public/lib/rootfs.iso
