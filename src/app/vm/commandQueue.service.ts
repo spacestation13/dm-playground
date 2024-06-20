@@ -63,8 +63,6 @@ export interface PollCommand {
   type: 'poll';
 }
 
-type SuspendCallbackArray = Array<(suspended: boolean) => void>;
-
 /**
  * This singleton serves to track the command queue for the virtual machine controller and to issue new commands.
  */
@@ -72,7 +70,7 @@ type SuspendCallbackArray = Array<(suspended: boolean) => void>;
   providedIn: 'root',
 })
 export class CommandQueueService {
-  public constructor(private emulator: EmulatorService) {
+  public constructor(public emulator: EmulatorService) {
     //It's called from window.setTimeout so this is window otherwise
     this.tickQueue = this.tickQueue.bind(this);
     emulator.receivedOutputController.subscribe((chr) => {
@@ -82,8 +80,7 @@ export class CommandQueueService {
         const errorMsg = `The command queue has encountered an error. Please report the following message and reload the page: ${error}`;
         console.log(errorMsg, error);
         alert(errorMsg);
-        //We don't really care if suspendQueue errored out, we tried.
-        void this.suspendQueue();
+        this.suspendQueue();
       }
     });
   }
@@ -104,15 +101,9 @@ export class CommandQueueService {
    */
   private resultBuffer: string = '';
   /**
-   * true: Queue has been suspended
-   *
-   * false: Queue has is not suspended
-   *
-   * (() => void)[]: Array of callbacks to run once the queue has been suspended
-   *
-   * @type {boolean | (SuspendCallbackArray => void>)[]}
+   * Queue has errored and quit
    */
-  private queueSuspended: boolean | SuspendCallbackArray = true;
+  private queueSuspended = false;
 
   /**
    * True when the queue loop has been broken because it was empty. If true, {@link #queueCommand} will call {@link #tickQueue} and set it to false.
@@ -124,12 +115,6 @@ export class CommandQueueService {
    */
   private initialized = false;
 
-  /**
-   * True when {@link #queueSuspended} is an array of callbacks, and they are being executed. Used to error if the queue is unsuspended while inside a callback.
-   * @type {boolean}
-   */
-  private suspendingQueue: boolean = false;
-
   private trackedProcesses = new Map<number, Process>();
   private idlePollDelay = 50;
 
@@ -138,17 +123,8 @@ export class CommandQueueService {
    * @returns {Promise<void>}
    */
   private async _tickQueue(): Promise<void> {
-    //Suspend queue is an array, call the callbacks and stop processing
-    if (typeof this.queueSuspended !== 'boolean') {
-      this.suspendingQueue = true;
-      this.queueSuspended.forEach((fn) => fn(true));
-      this.suspendingQueue = false;
-      this.queueSuspended = true;
-      return;
-    }
-
     //Queue is suspended
-    if (this.queueSuspended) return;
+    if (this.queueSuspended || !this.initialized) return;
 
     let command = this.queue.shift();
 
@@ -210,8 +186,7 @@ export class CommandQueueService {
       const errorMsg = `The command queue has encountered an error. Please report the following message and reload the page: ${error}`;
       console.log(errorMsg, error);
       alert(errorMsg);
-      //We don't really care if suspendQueue errored out, we tried.
-      void this.suspendQueue();
+      this.suspendQueue();
     });
   }
 
@@ -230,7 +205,7 @@ export class CommandQueueService {
       console.debug('Controller initialized.');
       this.initialized = true;
       this.resultBuffer = '';
-      this.unsuspendQueue();
+      this.tickQueue();
       return;
     }
 
@@ -357,50 +332,9 @@ export class CommandQueueService {
     }
   }
 
-  /**
-   * Asynchronous function to suspend the queue, resolves with true if the queue has been suspended or false if it was already suspended. This function cannot be called from a callback to {@link #suspendQueue}
-   * @returns {Promise<boolean>} Promise returns true if the queue was suspended or false if it could not be suspended.
-   */
-  public suspendQueue(): Promise<boolean> {
-    if (this.suspendingQueue)
-      throw Error('Cannot suspend queue in a callback for suspendQueue');
-
-    console.debug('Suspending command queue');
-    return new Promise<boolean>((resolve) => {
-      if (this.queueSuspended === true) {
-        return resolve(false);
-      }
-      let cbArray: SuspendCallbackArray;
-      if (this.queueSuspended === false) {
-        cbArray = this.queueSuspended = [];
-      } else {
-        cbArray = this.queueSuspended;
-      }
-      cbArray.push((suspended) => {
-        console.debug('Suspended command queue');
-        resolve(suspended);
-      });
-    });
-  }
-
-  /**
-   * Function to unsuspend the queue. This function cannot be called from a callback to {@link #suspendQueue}
-   */
-  public unsuspendQueue() {
-    if (this.suspendingQueue)
-      throw Error('Cannot unsuspend queue in a callback for suspendQueue');
-    if (!this.initialized)
-      throw Error('Cannot unsuspend queue before controller is initialized');
-
-    console.debug('Unsuspending command queue');
-    if (typeof this.queueSuspended !== 'boolean') {
-      this.suspendingQueue = true;
-      this.queueSuspended.forEach((fn) => fn(false));
-      this.suspendingQueue = false;
-    }
-    this.queueSuspended = false;
-    console.debug('Unsuspended command queue');
-    this.tickQueue();
+  private suspendQueue() {
+    console.debug('Suspended command queue');
+    this.queueSuspended = true;
   }
 
   /**
