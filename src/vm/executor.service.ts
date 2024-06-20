@@ -2,7 +2,7 @@ import CancelablePromise from 'cancelable-promise';
 import { EventEmitter, Injectable, Output } from '@angular/core';
 import { CommandQueueService } from './commandQueue.service';
 import { EmulatorService } from './emulator.service';
-import { once } from '../../utils/misc';
+import { once } from '../utils/misc';
 import { resolve } from '@angular/compiler-cli';
 
 @Injectable({

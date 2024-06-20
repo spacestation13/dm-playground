@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 // @ts-ignore
-import { dynamic_import } from '../../utils/misc';
+import { dynamic_import } from '../utils/misc';
 
 await dynamic_import('/lib/libv86.js');
 
