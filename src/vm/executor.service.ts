@@ -3,7 +3,6 @@ import { EventEmitter, Injectable, Output } from '@angular/core';
 import { CommandQueueService } from './commandQueue.service';
 import { EmulatorService } from './emulator.service';
 import { once } from '../utils/misc';
-import { resolve } from '@angular/compiler-cli';
 
 @Injectable({
   providedIn: 'root',
@@ -59,9 +58,7 @@ export class ExecutorService {
       .then((server) => {
         console.debug('Waiting for server');
         server.stderr.subscribe((val) => {
-          for (const line of val.split('\n')) {
-            this.output.emit(line);
-          }
+          this.output.emit(val);
         });
         stageAbort = server.kill;
         return once(server.exit);
