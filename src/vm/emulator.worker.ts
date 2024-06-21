@@ -1,9 +1,8 @@
 /// <reference lib="webworker" />
 
-// @ts-ignore
-import { dynamic_import } from '../utils/misc';
+import { isoUrlSearchParameter } from '../utils/literalConstants';
 
-await dynamic_import('./lib/libv86.js');
+importScripts('./lib/libv86.js');
 
 interface MsgSendTerminal {
   command: 'sendTerminal';
@@ -73,6 +72,7 @@ export type WorkerEventResponseMsg =
       data: void;
     };
 
+const parameters = new URLSearchParams(location.search);
 const emulator = new V86({
   //Emulator binaries
   wasm_path: 'lib/v86.wasm',
@@ -131,7 +131,7 @@ const emulator = new V86({
     url: 'https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin',
   },
   cdrom: {
-    url: './lib/rootfs.iso', //TODO: Use github url
+    url: parameters.get(isoUrlSearchParameter),
   },
   hda: null,
   hdb: null,

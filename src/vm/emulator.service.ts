@@ -1,5 +1,7 @@
 import { EventEmitter, Injectable, Output } from '@angular/core';
 import type { WorkerMsgWithoutCID, WorkerResponseMsg } from './emulator.worker';
+import { environment } from '../environments/environment';
+import { isoUrlSearchParameter } from '../utils/literalConstants';
 
 const encoder = new TextEncoder();
 
@@ -16,11 +18,20 @@ export class EmulatorService {
   @Output()
   public receivedOutputController = new EventEmitter<string>();
 
-  private worker = new Worker(new URL('./emulator.worker', import.meta.url));
+  private worker;
 
   private asyncCallbacks = new Map<number, Function>();
 
   constructor() {
+    interface FakeWorker {
+      new (url: URL): Worker;
+    }
+    const Worker = function (url: URL) {
+      url.searchParams.set(isoUrlSearchParameter, environment.isoUrl);
+      return new window.Worker(url);
+    } as unknown as FakeWorker;
+    this.worker = new Worker(new URL('./emulator.worker', import.meta.url));
+
     this.worker.onmessage = (event: MessageEvent<WorkerResponseMsg>) => {
       let e = event.data;
       if ('event' in e) {

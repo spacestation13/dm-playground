@@ -24,9 +24,6 @@ jobs:
       - name: Install NPM Dependencies
         run: npm ci
 
-      - name: Download ISO
-        run: wget https://spacestation13.github.io/dm-playground-linux/rootfs.iso9660 -O public/lib/rootfs.iso
-
       - name: Build project
         run: npx ng build --base-href /dm-playground/
 
