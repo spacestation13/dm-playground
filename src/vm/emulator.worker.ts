@@ -3,7 +3,7 @@
 // @ts-ignore
 import { dynamic_import } from '../utils/misc';
 
-await dynamic_import('/lib/libv86.js');
+await dynamic_import('./lib/libv86.js');
 
 interface MsgSendTerminal {
   command: 'sendTerminal';
