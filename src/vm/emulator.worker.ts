@@ -77,7 +77,7 @@ const emulator = new V86({
   //Emulator binaries
   wasm_path: 'lib/v86.wasm',
   //Hell is this?
-  acpi: false,
+  acpi: true,
 
   //Log level, debugging?
   log_level: 0,
