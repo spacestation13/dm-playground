@@ -41,7 +41,7 @@ export class EditorPageComponent {
       .subscribe((value) => {
         this.screen.write(value);
       });
-    emulator.receivedOutputController
+    emulator.receivedOutputController //TODO: need feature parity with the old version
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((value) => {
         this.controller.write(value.replace(/[\u0000\n]/, '\r\n'));
