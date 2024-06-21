@@ -131,7 +131,7 @@ const emulator = new V86({
     url: 'https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin',
   },
   cdrom: {
-    url: 'lib/rootfs.iso',
+    url: './lib/rootfs.iso',
   },
   hda: null,
   hdb: null,
