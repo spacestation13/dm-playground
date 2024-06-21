@@ -19,7 +19,6 @@
     "@angular/forms": "^18.0.0",
     "@angular/platform-browser": "^18.0.0",
     "@angular/platform-browser-dynamic": "^18.0.0",
-    "@angular/router": "^18.0.0",
     "@codemirror/autocomplete": "^6.16.3",
     "@codemirror/commands": "^6.6.0",
     "@codemirror/language": "^6.10.2",
