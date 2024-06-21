@@ -145,7 +145,7 @@ const emulator = new V86({
   filesystem: {},
   //Loads bzimage and initrd from 9p filesystem
   bzimage_initrd_from_filesystem: false,
-  autostart: false,
+  autostart: true,
 });
 
 let resetting = false;

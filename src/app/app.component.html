@@ -1,4 +1,14 @@
 <app-editor />
+Output log:
 <code>
   <pre>{{ output }}</pre>
 </code>
+Controller log:
+<code>
+  <pre>{{ controllerLog }}</pre>
+</code>
+Screen log:
+<code>
+  <pre>{{ screenLog }}</pre>
+</code>
+<app-terminal #terminal (input)="emulator.sendTerminal($event)" />
