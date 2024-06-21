@@ -24,13 +24,16 @@ jobs:
       - name: Install NPM Dependencies
         run: npm ci
 
-      - name: Create iso placeholder
-        run: touch rootfs.iso9660
+      - name: Download ISO
+        run: wget https://spacestation13.github.io/dm-playground-linux/rootfs.iso9660
+
+      - name: Build project
+        run: npx ng build --deploy-url dm-playground/
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: dist
+          path: dist/dm-playground/browser
 
   deploy:
     needs: build
