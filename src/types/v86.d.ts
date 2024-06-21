@@ -1134,7 +1134,7 @@ declare class FSLockRegion {
 /**
  * Constructor for emulator instances.
  *
- * Usage: `var emulator = new V86Starter(options);`
+ * Usage: `var emulator = new V86(options);`
  *
  * Options can have the following properties (all optional, default in parenthesis):
  *
@@ -1219,11 +1219,11 @@ declare class FSLockRegion {
  * @param {Object} options Options to initialize the emulator with.
  * @constructor
  */
-declare class V86Starter {
+declare class V86 {
   /**
    * Constructor for emulator instances.
    *
-   * Usage: `var emulator = new V86Starter(options);`
+   * Usage: `var emulator = new V86(options);`
    *
    * Options can have the following properties (all optional, default in parenthesis):
    *
@@ -1593,30 +1593,30 @@ declare type _CPU = CPU;
 declare type _MemoryFileStorage = typeof MemoryFileStorage;
 declare type _ServerFileStorageWrapper = typeof ServerFileStorageWrapper;
 declare type _print_stats = typeof print_stats;
-declare type _V86Starter = typeof V86Starter;
+declare type _V86 = typeof V86;
 
 declare global {
   declare const CPU: _CPU;
   declare const MemoryFileStorage: _MemoryFileStorageClass;
   declare const ServerFileStorageWrapper: _ServerFileStorageWrapperClass;
   declare const print_stats: _print_stats;
-  declare const V86Starter: _V86Starter;
-  declare const V86: _V86Starter;
+  declare const V86: _V86;
+  declare const V86: _V86;
 
   interface Window {
     CPU: typeof CPU;
     MemoryFileStorage: typeof MemoryFileStorage;
     ServerFileStorageWrapper: typeof ServerFileStorageWrapper;
     print_stats: typeof print_stats;
-    V86Starter: typeof V86Starter;
-    V86: typeof V86Starter;
+    V86: typeof V86;
+    V86: typeof V86;
   }
 }
 
 export declare type CPUType = _CPU;
 export declare type MemoryFileStorageType = _MemoryFileStorage;
 export declare type ServerFileStorageWrapperType = _ServerFileStorageWrapper;
-export declare type V86StarterType = _V86Starter;
-export declare type V86Type = _V86Starter;
+export declare type V86Type = _V86;
+export declare type V86Type = _V86;
 
 export {};

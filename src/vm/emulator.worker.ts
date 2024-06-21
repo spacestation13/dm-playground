@@ -73,7 +73,7 @@ export type WorkerEventResponseMsg =
       data: void;
     };
 
-const emulator = new V86Starter({
+const emulator = new V86({
   //Emulator binaries
   wasm_path: 'lib/v86.wasm',
   //Hell is this?
@@ -228,12 +228,24 @@ onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
   }
 };
 
-emulator.add_listener('serial0-output-char', (chr: string) =>
-  postMessage({ event: 'receivedOutputConsole', data: [chr] }),
-);
-emulator.add_listener('serial1-output-char', (chr: string) =>
-  postMessage({ event: 'receivedOutputScreen', data: [chr] }),
-);
-emulator.add_listener('serial2-output-char', (chr: string) =>
-  postMessage({ event: 'receivedOutputController', data: [chr] }),
-);
+emulator.add_listener('serial0-output-byte', (byte: number) => {
+  if (byte == 255) return;
+  postMessage({
+    event: 'receivedOutputConsole',
+    data: [String.fromCharCode(byte)],
+  });
+});
+emulator.add_listener('serial1-output-byte', (byte: number) => {
+  if (byte == 255) return;
+  postMessage({
+    event: 'receivedOutputScreen',
+    data: [String.fromCharCode(byte)],
+  });
+});
+emulator.add_listener('serial2-output-byte', (byte: number) => {
+  if (byte == 255) return;
+  postMessage({
+    event: 'receivedOutputController',
+    data: [String.fromCharCode(byte)],
+  });
+});
