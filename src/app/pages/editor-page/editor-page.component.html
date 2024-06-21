@@ -1,0 +1,28 @@
+<as-split direction="vertical">
+  <as-split-area>
+    <as-split>
+      <as-split-area>
+        <app-editor />
+      </as-split-area>
+
+      <app-panel title="Output log" as-split-area size="20">
+        <code>
+          <pre>{{ output }}</pre>
+        </code>
+      </app-panel>
+    </as-split>
+  </as-split-area>
+  <as-split-area size="45">
+    <as-split>
+      <app-panel title="Terminal" as-split-area>
+        <app-terminal #terminal (input)="emulator.sendTerminal($event)" />
+      </app-panel>
+      <app-panel title="Controller log" as-split-area>
+        <app-terminal #controller (input)="emulator.sendTerminal($event)" />
+      </app-panel>
+      <app-panel title="Screen log" as-split-area>
+        <app-terminal #screen (input)="emulator.sendTerminal($event)" />
+      </app-panel>
+    </as-split>
+  </as-split-area>
+</as-split>

@@ -2,3 +2,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.as-split-gutter {
+  background-color: var(--tui-base-03) !important;
+  flex-basis: 8px !important;
+}
