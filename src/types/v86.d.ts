@@ -1601,7 +1601,6 @@ declare global {
   declare const ServerFileStorageWrapper: _ServerFileStorageWrapperClass;
   declare const print_stats: _print_stats;
   declare const V86: _V86;
-  declare const V86: _V86;
 
   interface Window {
     CPU: typeof CPU;
@@ -1609,14 +1608,12 @@ declare global {
     ServerFileStorageWrapper: typeof ServerFileStorageWrapper;
     print_stats: typeof print_stats;
     V86: typeof V86;
-    V86: typeof V86;
   }
 }
 
 export declare type CPUType = _CPU;
 export declare type MemoryFileStorageType = _MemoryFileStorage;
 export declare type ServerFileStorageWrapperType = _ServerFileStorageWrapper;
-export declare type V86Type = _V86;
 export declare type V86Type = _V86;
 
 export {};

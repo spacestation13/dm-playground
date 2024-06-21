@@ -1,11 +1,9 @@
 import {
   AfterViewInit,
   Component,
-  DestroyRef,
   ElementRef,
   EventEmitter,
   OnDestroy,
-  OnInit,
   Output,
   ViewChild,
 } from '@angular/core';
@@ -25,7 +23,7 @@ export class TerminalComponent implements AfterViewInit, OnDestroy {
   @Output()
   public input = new EventEmitter<string>();
 
-  constructor(private destroyRef: DestroyRef) {}
+  constructor() {}
 
   public write(value: string) {
     this.terminal.write(value);
