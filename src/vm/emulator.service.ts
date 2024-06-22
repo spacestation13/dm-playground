@@ -1,7 +1,7 @@
 import { EventEmitter, Injectable, Output } from '@angular/core';
 import type { WorkerMsgWithoutCID, WorkerResponseMsg } from './emulator.worker';
 import { environment } from '../environments/environment';
-import { isoUrlSearchParameter } from '../utils/literalConstants';
+import { vmRemoteUrlSearchParameter } from '../utils/literalConstants';
 
 const encoder = new TextEncoder();
 
@@ -27,7 +27,7 @@ export class EmulatorService {
       new (url: URL): Worker;
     }
     const Worker = function (url: URL) {
-      url.searchParams.set(isoUrlSearchParameter, environment.isoUrl);
+      url.searchParams.set(vmRemoteUrlSearchParameter, environment.vmSourceUrl);
       return new window.Worker(url);
     } as unknown as FakeWorker;
     this.worker = new Worker(new URL('./emulator.worker', import.meta.url));

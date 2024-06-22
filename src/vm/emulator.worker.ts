@@ -1,6 +1,5 @@
 /// <reference lib="webworker" />
-
-import { isoUrlSearchParameter } from '../utils/literalConstants';
+import { vmRemoteUrlSearchParameter } from '../utils/literalConstants';
 
 importScripts('./lib/libv86.js');
 
@@ -130,17 +129,20 @@ const emulator = new V86({
   vga_bios: {
     url: 'https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin',
   },
-  cdrom: {
-    url: parameters.get(isoUrlSearchParameter),
-  },
+  cdrom: null,
   hda: null,
   hdb: null,
   fda: null,
   fdb: null,
   initial_state: null,
   multiboot: null,
-  bzimage: null,
-  initrd: null,
+  bzimage: {
+    url: parameters.get(vmRemoteUrlSearchParameter) + 'bzImage',
+  },
+  initrd: {
+    url: parameters.get(vmRemoteUrlSearchParameter) + 'rootfs.cpio.lz4',
+    async: true,
+  },
   //9p filesystem, { basefs: string, baseurl: string } or {}
   filesystem: {},
   //Loads bzimage and initrd from 9p filesystem

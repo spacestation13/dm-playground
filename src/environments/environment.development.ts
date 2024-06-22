@@ -1,3 +1,3 @@
 export const environment = {
-  isoUrl: './lib/rootfs.iso',
+  vmSourceUrl: './lib/',
 };

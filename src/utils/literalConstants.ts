@@ -1,1 +1,1 @@
-export const isoUrlSearchParameter = 'isoUrl';
+export const vmRemoteUrlSearchParameter = 'vmRemoteUrl';

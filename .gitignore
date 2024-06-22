@@ -42,3 +42,5 @@ testem.log
 Thumbs.db
 
 public/lib/rootfs.iso
+public/lib/*.cpio*
+public/lib/bzImage
