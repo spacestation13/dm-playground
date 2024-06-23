@@ -1,46 +1,31 @@
 /// <reference lib="webworker" />
-import { vmRemoteUrlSearchParameter } from '../utils/literalConstants';
+import { Port, vmRemoteUrlSearchParameter } from '../utils/literalConstants';
 
 importScripts('./lib/libv86.js');
 
-interface MsgSendTerminal {
-  command: 'sendTerminal';
-  data: string;
+export interface MsgSendPort {
+  command: 'sendPort';
+  data: [Port, string];
 }
-interface MsgSendScreen {
-  command: 'sendScreen';
-  data: string;
-}
-interface MsgSendController {
-  command: 'sendController';
-  data: string;
-}
-interface MsgStart {
+export interface MsgStart {
   command: 'start';
   data?: undefined;
 }
-interface MsgPause {
+export interface MsgPause {
   command: 'pause';
   data?: undefined;
 }
-interface MsgSendFile {
+export interface MsgSendFile {
   command: 'sendFile';
   name: string;
   data: Uint8Array;
 }
-interface MsgResetTerminal {
-  command: 'resetTerminal';
-  data?: undefined;
-}
 
 export type WorkerMsgWithoutCID =
-  | MsgSendTerminal
-  | MsgSendScreen
-  | MsgSendController
+  | MsgSendPort
   | MsgStart
   | MsgPause
-  | MsgSendFile
-  | MsgResetTerminal;
+  | MsgSendFile;
 
 export type WorkerMsg = WorkerMsgWithoutCID & {
   commandID: number;
@@ -55,16 +40,8 @@ export type WorkerResponseMsg =
 
 export type WorkerEventResponseMsg =
   | {
-      event: 'receivedOutputConsole';
-      data: [string];
-    }
-  | {
-      event: 'receivedOutputScreen';
-      data: [string];
-    }
-  | {
-      event: 'receivedOutputController';
-      data: [string];
+      event: 'receivedOutput';
+      data: [Port, string];
     }
   | {
       event: 'resetOutputConsole';
@@ -152,41 +129,13 @@ const emulator = new V86({
   virtio_console: true,
 });
 
-//@ts-ignore
-self.emulator = emulator;
-
-let resetting = false;
-
-function sendTerminal(message: string) {
-  emulator.bus.send(
-    'virtio-console0-input-bytes',
-    [...message].map((x) => x.charCodeAt(0)),
-  );
-}
-function sendScreen(message: string) {
-  emulator.bus.send(
-    'virtio-console1-input-bytes',
-    [...message].map((x) => x.charCodeAt(0)),
-  );
-}
-function sendController(message: string) {
-  emulator.bus.send(
-    'virtio-console2-input-bytes',
-    [...message].map((x) => x.charCodeAt(0)),
-  );
-}
 onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
   switch (e.command) {
-    case 'sendTerminal': {
-      sendTerminal(e.data);
-      break;
-    }
-    case 'sendScreen': {
-      sendScreen(e.data);
-      break;
-    }
-    case 'sendController': {
-      sendController(e.data);
+    case 'sendPort': {
+      emulator.bus.send(
+        `virtio-console${e.data[0]}-input-bytes`,
+        [...e.data[1]].map((x) => x.charCodeAt(0)),
+      );
       break;
     }
     case 'start': {
@@ -216,43 +165,17 @@ onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
       });
       break;
     }
-    case 'resetTerminal': {
-      if (!emulator.is_running()) return;
-      if (resetting) return;
-      resetting = true;
-      const uart0: {
-        lsr: number;
-      } = emulator.v86.cpu.devices.uart0;
-      uart0.lsr |= 0b00010000;
-      setTimeout(() => {
-        sendTerminal(' ');
-        setTimeout(() => {
-          uart0.lsr &= ~0b00010000;
-          sendTerminal('k');
-          postMessage({ event: 'resetOutputConsole' });
-          sendTerminal('\n');
-          resetting = false;
-        }, 1);
-      }, 1);
-    }
   }
 };
 
-emulator.add_listener('virtio-console0-output-bytes', (bytes: Uint8Array) => {
-  postMessage({
-    event: 'receivedOutputConsole',
-    data: [decoder.decode(bytes)],
-  });
-});
-emulator.add_listener('virtio-console1-output-bytes', (bytes: Uint8Array) => {
-  postMessage({
-    event: 'receivedOutputScreen',
-    data: [decoder.decode(bytes)],
-  });
-});
-emulator.add_listener('virtio-console2-output-bytes', (bytes: Uint8Array) => {
-  postMessage({
-    event: 'receivedOutputController',
-    data: [decoder.decode(bytes)],
-  });
-});
+for (let i = 0; i < 3; i++) {
+  emulator.add_listener(
+    `virtio-console${i}-output-bytes`,
+    (bytes: Uint8Array) => {
+      postMessage({
+        event: 'receivedOutput',
+        data: [i, decoder.decode(bytes)],
+      });
+    },
+  );
+}

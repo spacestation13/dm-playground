@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { EmulatorService } from './emulator.service';
 import { Process } from './process';
+import { Port } from '../utils/literalConstants';
 
 export interface CommandResultOK<C extends Command> {
   status: 'OK';
@@ -73,7 +74,9 @@ export class CommandQueueService {
   public constructor(public emulator: EmulatorService) {
     //It's called from window.setTimeout so this is window otherwise
     this.tickQueue = this.tickQueue.bind(this);
-    emulator.receivedOutputController.subscribe((data) => {
+    emulator.receivedOutput.subscribe(([port, data]) => {
+      if (port != Port.Controller) return;
+
       for (const chr of data) {
         //TODO: Rewrite the receive function to receive chunks instead of character by character
         try {
@@ -172,7 +175,7 @@ export class CommandQueueService {
 
     this.activeCommand = command;
 
-    this.emulator.sendController(cmdStr + '\0');
+    this.emulator.sendPort(Port.Controller, cmdStr + '\0');
   }
 
   /**

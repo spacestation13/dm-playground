@@ -1,7 +1,11 @@
 import { EventEmitter, Injectable, Output } from '@angular/core';
-import type { WorkerMsgWithoutCID, WorkerResponseMsg } from './emulator.worker';
+import type {
+  MsgSendPort,
+  WorkerMsgWithoutCID,
+  WorkerResponseMsg,
+} from './emulator.worker';
 import { environment } from '../environments/environment';
-import { vmRemoteUrlSearchParameter } from '../utils/literalConstants';
+import { Port, vmRemoteUrlSearchParameter } from '../utils/literalConstants';
 
 const encoder = new TextEncoder();
 
@@ -12,11 +16,7 @@ export class EmulatorService {
   @Output()
   public resetOutputConsole = new EventEmitter<void>();
   @Output()
-  public receivedOutputConsole = new EventEmitter<string>();
-  @Output()
-  public receivedOutputScreen = new EventEmitter<string>();
-  @Output()
-  public receivedOutputController = new EventEmitter<string>();
+  public receivedOutput = new EventEmitter<[Port, string]>();
 
   private worker;
 
@@ -38,7 +38,7 @@ export class EmulatorService {
         if (e.event === 'resetOutputConsole')
           return this.resetOutputConsole.emit();
 
-        return this[e.event].emit(...(e.data ?? []));
+        return this[e.event].emit(e.data);
       }
 
       const callback = this.asyncCallbacks.get(e.commandID);
@@ -70,16 +70,9 @@ export class EmulatorService {
     );
   }
 
-  public sendTerminal(data: string) {
-    this.sendCommand({ command: 'sendTerminal', data });
+  public sendPort(...data: MsgSendPort['data']) {
+    this.sendCommand({ command: 'sendPort', data });
   }
-  public sendScreen(data: string) {
-    this.sendCommand({ command: 'sendScreen', data });
-  }
-  public sendController(data: string) {
-    this.sendCommand({ command: 'sendController', data });
-  }
-
   public pause() {
     return this.sendCommandAsync({ command: 'pause' });
   }
@@ -93,8 +86,5 @@ export class EmulatorService {
       name: name,
       data: new Uint8Array(content),
     });
-  }
-  public resetTerminal() {
-    this.sendCommand({ command: 'resetTerminal' });
   }
 }

@@ -6,6 +6,7 @@ import { EmulatorService } from '../../../vm/emulator.service';
 import { ExecutorService } from '../../../vm/executor.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PanelComponent } from '../../components/panel/panel.component';
+import { Port } from '../../../utils/literalConstants';
 
 @Component({
   selector: 'app-editor-page',
@@ -36,21 +37,19 @@ export class EditorPageComponent {
     executor.output.pipe(takeUntilDestroyed(destroyRef)).subscribe((value) => {
       this.output += value;
     });
-    emulator.receivedOutputScreen
+    emulator.receivedOutput
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((value) => {
-        this.screen.write(value);
-      });
-    emulator.receivedOutputController //TODO: need feature parity with the old version
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((value) => {
-        this.controller.write(value.replace(/[\u0000\n]/, '\r\n'));
-      });
-
-    emulator.receivedOutputConsole
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((value) => {
-        this.terminal.write(value);
+      .subscribe(([port, value]) => {
+        switch (port) {
+          case Port.Console:
+            return this.terminal.write(value);
+          case Port.Screen:
+            return this.screen.write(value);
+          case Port.Controller: //TODO: need feature parity with the old version for controller pretty print
+            return this.controller.write(value.replace(/[\u0000\n]/, '\r\n'));
+        }
       });
   }
+
+  protected readonly Port = Port;
 }

@@ -14,14 +14,17 @@
   </as-split-area>
   <as-split-area size="45">
     <as-split>
-      <app-panel title="Terminal" as-split-area>
-        <app-terminal #terminal (input)="emulator.sendTerminal($event)" />
-      </app-panel>
-      <app-panel title="Controller log" as-split-area>
-        <app-terminal #controller (input)="emulator.sendTerminal($event)" />
+      <app-panel title="Console" as-split-area>
+        <app-terminal
+          #terminal
+          (input)="emulator.sendPort(Port.Console, $event)"
+        />
       </app-panel>
       <app-panel title="Screen log" as-split-area>
-        <app-terminal #screen (input)="emulator.sendTerminal($event)" />
+        <app-terminal #screen />
+      </app-panel>
+      <app-panel title="Controller log" as-split-area>
+        <app-terminal #controller />
       </app-panel>
     </as-split>
   </as-split-area>
