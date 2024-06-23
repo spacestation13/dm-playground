@@ -43,7 +43,6 @@ export class TerminalComponent implements AfterViewInit, OnDestroy {
   private fit() {
     this.fitAddon.fit();
     const dimensions = this.fitAddon.proposeDimensions();
-    console.log(dimensions);
     if (!dimensions) {
       console.warn('Cannot resolve dimensions');
       return;
