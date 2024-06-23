@@ -71,6 +71,7 @@ export type WorkerEventResponseMsg =
       data: void;
     };
 
+const decoder = new TextDecoder();
 const parameters = new URLSearchParams(location.search);
 const emulator = new V86({
   //Emulator binaries
@@ -148,24 +149,31 @@ const emulator = new V86({
   //Loads bzimage and initrd from 9p filesystem
   bzimage_initrd_from_filesystem: false,
   autostart: true,
+  virtio_console: true,
 });
+
+//@ts-ignore
+self.emulator = emulator;
 
 let resetting = false;
 
 function sendTerminal(message: string) {
-  for (let i = 0; i < message.length; i++) {
-    emulator.bus.send('serial0-input', message.charCodeAt(i));
-  }
+  emulator.bus.send(
+    'virtio-console0-input-bytes',
+    [...message].map((x) => x.charCodeAt(0)),
+  );
 }
 function sendScreen(message: string) {
-  for (let i = 0; i < message.length; i++) {
-    emulator.bus.send('serial1-input', message.charCodeAt(i));
-  }
+  emulator.bus.send(
+    'virtio-console1-input-bytes',
+    [...message].map((x) => x.charCodeAt(0)),
+  );
 }
 function sendController(message: string) {
-  for (let i = 0; i < message.length; i++) {
-    emulator.bus.send('serial2-input', message.charCodeAt(i));
-  }
+  emulator.bus.send(
+    'virtio-console2-input-bytes',
+    [...message].map((x) => x.charCodeAt(0)),
+  );
 }
 onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
   switch (e.command) {
@@ -230,24 +238,21 @@ onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
   }
 };
 
-emulator.add_listener('serial0-output-byte', (byte: number) => {
-  if (byte == 255) return;
+emulator.add_listener('virtio-console0-output-bytes', (bytes: Uint8Array) => {
   postMessage({
     event: 'receivedOutputConsole',
-    data: [String.fromCharCode(byte)],
+    data: [decoder.decode(bytes)],
   });
 });
-emulator.add_listener('serial1-output-byte', (byte: number) => {
-  if (byte == 255) return;
+emulator.add_listener('virtio-console1-output-bytes', (bytes: Uint8Array) => {
   postMessage({
     event: 'receivedOutputScreen',
-    data: [String.fromCharCode(byte)],
+    data: [decoder.decode(bytes)],
   });
 });
-emulator.add_listener('serial2-output-byte', (byte: number) => {
-  if (byte == 255) return;
+emulator.add_listener('virtio-console2-output-bytes', (bytes: Uint8Array) => {
   postMessage({
     event: 'receivedOutputController',
-    data: [String.fromCharCode(byte)],
+    data: [decoder.decode(bytes)],
   });
 });

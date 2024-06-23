@@ -73,14 +73,17 @@ export class CommandQueueService {
   public constructor(public emulator: EmulatorService) {
     //It's called from window.setTimeout so this is window otherwise
     this.tickQueue = this.tickQueue.bind(this);
-    emulator.receivedOutputController.subscribe((chr) => {
-      try {
-        this.receiveChr(chr);
-      } catch (error) {
-        const errorMsg = `The command queue has encountered an error. Please report the following message and reload the page: ${error}`;
-        console.log(errorMsg, error);
-        alert(errorMsg);
-        this.suspendQueue();
+    emulator.receivedOutputController.subscribe((data) => {
+      for (const chr of data) {
+        //TODO: Rewrite the receive function to receive chunks instead of character by character
+        try {
+          this.receiveChr(chr);
+        } catch (error) {
+          const errorMsg = `The command queue has encountered an error. Please report the following message and reload the page: ${error}`;
+          console.log(errorMsg, error);
+          alert(errorMsg);
+          this.suspendQueue();
+        }
       }
     });
   }
