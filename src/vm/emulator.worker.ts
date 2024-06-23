@@ -1,11 +1,16 @@
 /// <reference lib="webworker" />
 import { Port, vmRemoteUrlSearchParameter } from '../utils/literalConstants';
+import type { TerminalDimensions } from './emulator.service';
 
 importScripts('./lib/libv86.js');
 
 export interface MsgSendPort {
   command: 'sendPort';
   data: [Port, string];
+}
+export interface MsgResizePort {
+  command: 'resizePort';
+  data: [Port, TerminalDimensions];
 }
 export interface MsgStart {
   command: 'start';
@@ -23,6 +28,7 @@ export interface MsgSendFile {
 
 export type WorkerMsgWithoutCID =
   | MsgSendPort
+  | MsgResizePort
   | MsgStart
   | MsgPause
   | MsgSendFile;
@@ -132,19 +138,23 @@ const emulator = new V86({
 onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
   switch (e.command) {
     case 'sendPort': {
+      const [port, value] = e.data;
       emulator.bus.send(
-        `virtio-console${e.data[0]}-input-bytes`,
-        [...e.data[1]].map((x) => x.charCodeAt(0)),
+        `virtio-console${port}-input-bytes`,
+        [...value].map((x) => x.charCodeAt(0)),
       );
       break;
     }
+    case 'resizePort': {
+      const [port, dimensions] = e.data;
+      emulator.bus.send(`virtio-console${port}-resize`, [
+        dimensions.cols,
+        dimensions.rows,
+      ]);
+      break;
+    }
     case 'start': {
-      emulator.run().then(() => {
-        postMessage({
-          command: 'asyncResponse',
-          commandID: e.commandID,
-        } satisfies WorkerResponseMsg);
-      });
+      void emulator.run();
       break;
     }
     case 'pause': {

@@ -209,6 +209,7 @@ export class CommandQueueService {
       if (this.initialized)
         throw Error('Controller initialized twice. It probably crashed.');
       console.debug('Controller initialized.');
+      this.emulator.resolveSystemBooted();
       this.initialized = true;
       this.resultBuffer = '';
       this.tickQueue();

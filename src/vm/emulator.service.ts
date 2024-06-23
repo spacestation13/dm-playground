@@ -1,11 +1,17 @@
 import { EventEmitter, Injectable, Output } from '@angular/core';
 import type {
+  MsgResizePort,
   MsgSendPort,
   WorkerMsgWithoutCID,
   WorkerResponseMsg,
 } from './emulator.worker';
 import { environment } from '../environments/environment';
 import { Port, vmRemoteUrlSearchParameter } from '../utils/literalConstants';
+
+export interface TerminalDimensions {
+  rows: number;
+  cols: number;
+}
 
 const encoder = new TextEncoder();
 
@@ -14,15 +20,28 @@ const encoder = new TextEncoder();
 })
 export class EmulatorService {
   @Output()
-  public resetOutputConsole = new EventEmitter<void>();
+  public readonly resetOutputConsole = new EventEmitter<void>();
   @Output()
-  public receivedOutput = new EventEmitter<[Port, string]>();
+  public readonly receivedOutput = new EventEmitter<[Port, string]>();
 
-  private worker;
+  private readonly worker;
 
-  private asyncCallbacks = new Map<number, Function>();
+  private readonly asyncCallbacks = new Map<number, Function>();
+
+  public resolveSystemBooted!: Function;
+  public readonly systemBooted = new Promise<void>(
+    (resolve) => (this.resolveSystemBooted = resolve),
+  );
+
+  private readonly savedDimensions = new Map<Port, TerminalDimensions>();
 
   constructor() {
+    this.systemBooted.then(() => {
+      for (const [port, dims] of this.savedDimensions) {
+        this.resizePort(port, dims);
+      }
+    });
+
     interface FakeWorker {
       new (url: URL): Worker;
     }
@@ -73,11 +92,16 @@ export class EmulatorService {
   public sendPort(...data: MsgSendPort['data']) {
     this.sendCommand({ command: 'sendPort', data });
   }
+  public resizePort(...data: MsgResizePort['data']) {
+    this.savedDimensions.set(data[0], data[1]);
+    this.sendCommand({ command: 'resizePort', data });
+  }
   public pause() {
     return this.sendCommandAsync({ command: 'pause' });
   }
   public start() {
-    return this.sendCommandAsync({ command: 'start' });
+    this.sendCommand({ command: 'start' });
+    return this.systemBooted;
   }
   public sendFile(name: string, content: Uint8Array | string) {
     if (typeof content === 'string') content = encoder.encode(content);

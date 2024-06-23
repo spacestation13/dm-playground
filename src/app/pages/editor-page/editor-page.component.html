@@ -18,6 +18,7 @@
         <app-terminal
           #terminal
           (input)="emulator.sendPort(Port.Console, $event)"
+          (resize)="emulator.resizePort(Port.Console, $event)"
         />
       </app-panel>
       <app-panel title="Screen log" as-split-area>
