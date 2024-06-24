@@ -23,6 +23,8 @@ export class EmulatorService {
   public readonly resetOutputConsole = new EventEmitter<void>();
   @Output()
   public readonly receivedOutput = new EventEmitter<[Port, string]>();
+  @Output()
+  public readonly receivedInput = new EventEmitter<[Port, string]>();
 
   private readonly worker;
 
@@ -90,6 +92,7 @@ export class EmulatorService {
   }
 
   public sendPort(...data: MsgSendPort['data']) {
+    this.receivedInput.emit(data);
     this.sendCommand({ command: 'sendPort', data });
   }
   public resizePort(...data: MsgResizePort['data']) {

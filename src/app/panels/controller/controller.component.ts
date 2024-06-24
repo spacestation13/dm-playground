@@ -23,13 +23,28 @@ export default class ControllerPanel {
     protected emulatorService: EmulatorService,
     destroyRef: DestroyRef,
   ) {
+    emulatorService.receivedInput
+      .pipe(
+        takeUntilDestroyed(destroyRef),
+        filter(([port]) => port === Port.Controller),
+      )
+      .subscribe(([, value]) =>
+        this.terminal.write(
+          value.replaceAll(/\x00/g, '\n---\n< ').replaceAll('\n', '\r\n'),
+        ),
+      );
     emulatorService.receivedOutput
       .pipe(
         takeUntilDestroyed(destroyRef),
         filter(([port]) => port === Port.Controller),
-      ) //TODO: need feature parity with the old version for controller pretty print
+      )
       .subscribe(([, value]) =>
-        this.terminal.write(value.replace(/[\u0000\n]/, '\r\n')),
+        this.terminal.write(
+          value
+            .replaceAll('\n', '\n< ')
+            .replaceAll('\x00', '\n---\n> ')
+            .replaceAll('\n', '\r\n'),
+        ),
       );
   }
 }
