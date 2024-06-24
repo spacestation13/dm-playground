@@ -9,6 +9,7 @@ export enum Panel {
   Controller,
   Editor,
   Output,
+  Byond,
 }
 
 @Component({
@@ -45,6 +46,9 @@ export class PanelComponent {
         break;
       case Panel.Output:
         this.panelComponent = import('../../panels/output/output.component');
+        break;
+      case Panel.Byond:
+        this.panelComponent = import('../../panels/byond/byond.component');
         break;
     }
   }

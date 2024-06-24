@@ -9,10 +9,11 @@ const LOCAL_STORAGE_KEY = 'layout';
   providedIn: 'root',
 })
 export class ShellService {
+  private minimumVersion = 1;
   public layout?: PanelTreeRoot;
   private defaultLayout = JSON.stringify({
-    version: 0,
-    nextBranchId: 3,
+    version: 1,
+    nextBranchId: 4,
     id: 0,
     type: 'branch',
     split: 'vertical',
@@ -29,14 +30,27 @@ export class ShellService {
             size: 70,
           },
           {
-            id: Panel.Output,
-            type: 'leaf',
+            id: 2,
+            type: 'branch',
+            split: 'vertical',
             size: 30,
+            children: [
+              {
+                id: Panel.Output,
+                type: 'leaf',
+                size: 70,
+              },
+              {
+                id: Panel.Byond,
+                type: 'leaf',
+                size: 30,
+              },
+            ],
           },
         ],
       },
       {
-        id: 2,
+        id: 3,
         type: 'branch',
         split: 'horizontal',
         size: 30,
@@ -78,5 +92,8 @@ export class ShellService {
         localStorage.getItem(LOCAL_STORAGE_KEY) ?? '',
       )) || this.defaultLayout,
     );
+    if (this.layout!.version < this.minimumVersion) {
+      this.layout = JSON.parse(this.defaultLayout);
+    }
   }
 }
