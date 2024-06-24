@@ -27,15 +27,12 @@ export class ExecutorService {
 
     this.reset.emit();
     const promise = new CancelablePromise<void>((resolve) => {
-      console.debug('Starting Emulator');
       resolve(this.emulator.start());
     })
       .then(() => {
-        console.debug('Sending file');
         return this.emulator.sendFile(filename + '.dme', code);
       })
       .then(() => {
-        console.debug('Starting compiler');
         return this.commandQueue.runProcess(
           '/byond/bin/DreamMaker',
           '/mnt/host/' + filename + '.dme',
@@ -43,12 +40,12 @@ export class ExecutorService {
         );
       })
       .then((compiler) => {
-        console.debug('Waiting for compiler');
+        this.output.emit('=== Compile stage ===\n');
+        compiler.stdout.subscribe((val) => this.output.emit(val));
         stageAbort = compiler.kill;
         return once(compiler.exit);
       })
       .then(() => {
-        console.debug('Starting server');
         return this.commandQueue.runProcess(
           '/byond/bin/DreamDaemon',
           `/mnt/host/${filename}.dmb\0-trusted`,
@@ -56,10 +53,8 @@ export class ExecutorService {
         );
       })
       .then((server) => {
-        console.debug('Waiting for server');
-        server.stderr.subscribe((val) => {
-          this.output.emit(val);
-        });
+        this.output.emit('\n=== Run stage ===\n');
+        server.stderr.subscribe((val) => this.output.emit(val));
         stageAbort = server.kill;
         return once(server.exit);
       })
