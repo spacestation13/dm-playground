@@ -1,34 +1,15 @@
-import {
-  TuiAlertModule,
-  TuiButtonModule,
-  TuiDialogModule,
-  TuiModeModule,
-  TuiRootModule,
-  TuiThemeNightModule,
-} from '@taiga-ui/core';
+import { TuiRootModule, TuiThemeNightModule } from '@taiga-ui/core';
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { EditorComponent } from './components/editor/editor.component';
-import { TerminalComponent } from './components/terminal/terminal.component';
-import { EditorPageComponent } from './pages/editor-page/editor-page.component';
+import { PanelTreeComponent } from './components/panel-tree/panel-tree.component';
+import { ShellService } from './service/shell.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [
-    RouterOutlet,
-    TuiRootModule,
-    TuiDialogModule,
-    TuiAlertModule,
-    TuiButtonModule,
-    EditorComponent,
-    TerminalComponent,
-    EditorPageComponent,
-    TuiModeModule,
-    TuiThemeNightModule,
-    TuiModeModule,
-  ],
+  imports: [TuiRootModule, PanelTreeComponent, TuiThemeNightModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent {}
+export class AppComponent {
+  constructor(protected shellService: ShellService) {}
+}

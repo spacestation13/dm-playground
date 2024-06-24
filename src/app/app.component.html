@@ -1,4 +1,6 @@
 <tui-theme-night></tui-theme-night>
 <tui-root tuiTheme="night" class="size-full">
-  <app-editor-page />
+  @if (shellService.layout) {
+    <app-panel-tree [panelTree]="shellService.layout" />
+  }
 </tui-root>

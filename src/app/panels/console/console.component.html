@@ -1,0 +1,5 @@
+<app-terminal
+  #terminal
+  (input)="emulatorService.sendPort(Port.Console, $event)"
+  (resize)="emulatorService.resizePort(Port.Console, $event)"
+/>
