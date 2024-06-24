@@ -1,1 +1,12 @@
-<p>byond works!</p>
+@if (byondService.latestVersion | async; as latestVersions) {
+  <p>
+    Latest stable: <span class="font-bold">{{ latestVersions.stable }}</span>
+  </p>
+  @if (latestVersions.beta) {
+    <p>
+      Latest beta: <span class="font-bold">{{ latestVersions.beta }}</span>
+    </p>
+  }
+} @else {
+  Loading latest version...
+}
