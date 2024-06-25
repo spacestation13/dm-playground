@@ -28,7 +28,6 @@ export class PanelComponent {
 
   @Input()
   public set id(panel: Panel) {
-    console.log(panel);
     switch (panel) {
       case Panel.Controller:
         this.panelComponent = import(

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { EmulatorService } from './emulator.service';
 import { Process } from './process';
 import { Port } from '../utils/literalConstants';
+import { firstValueFrom } from 'rxjs';
 
 export interface CommandResultOK<C extends Command> {
   status: 'OK';
@@ -392,5 +393,24 @@ export class CommandQueueService {
     if (!trackedProcess) throw Error('Process was created but not tracked');
 
     return trackedProcess;
+  }
+
+  public async runToCompletion(...args: Parameters<typeof this.runProcess>) {
+    let process = await this.runProcess(...args);
+    let exit = await firstValueFrom(process.exit);
+    if (exit.cause == 'exit' && exit.code != 0)
+      throw new Error('Process exited abnormally: exit code ' + exit.code, {
+        cause: exit,
+      });
+    return exit;
+  }
+
+  public async runToSuccess(...args: Parameters<typeof this.runProcess>) {
+    let exit = await this.runToCompletion(...args);
+    if (exit.cause == 'exit' && exit.code != 0)
+      throw new Error('Process exited abnormally: exit code ' + exit.code, {
+        cause: exit,
+      });
+    return exit;
   }
 }

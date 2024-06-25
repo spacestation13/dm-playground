@@ -168,6 +168,7 @@ onmessage = ({ data: e }: MessageEvent<WorkerMsg>) => {
     }
     case 'sendFile': {
       emulator.create_file(e.name, e.data).then(() => {
+        //TODO: wrap promise for errors
         postMessage({
           command: 'asyncResponse',
           commandID: e.commandID,

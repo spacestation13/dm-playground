@@ -1,12 +1,48 @@
 @if (byondService.latestVersion | async; as latestVersions) {
   <p>
     Latest stable: <span class="font-bold">{{ latestVersions.stable }}</span>
+    <button
+      tuiButton
+      size="xs"
+      (click)="byondService.getVersion(latestVersions.stable)"
+    >
+      Fetch
+    </button>
   </p>
   @if (latestVersions.beta) {
     <p>
       Latest beta: <span class="font-bold">{{ latestVersions.beta }}</span>
+      <button
+        tuiButton
+        size="xs"
+        (click)="byondService.getVersion(latestVersions.beta)"
+      >
+        Fetch
+      </button>
     </p>
   }
 } @else {
   Loading latest version...
 }
+
+<ul>
+  @for (version of byondService.versions; track version[0]) {
+    {{ version[0] }} ({{ statusToMessage[version[1]] }})
+    <button
+      tuiButton
+      appearance="primary"
+      size="xs"
+      (click)="byondService.setActive(version[0])"
+    >
+      Set active
+    </button>
+    <button
+      tuiButton
+      appearance="secondary-destructive"
+      size="xs"
+      (click)="byondService.deleteVersion(version[0])"
+    >
+      Delete
+    </button>
+  }
+</ul>
