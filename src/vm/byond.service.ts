@@ -19,39 +19,7 @@ export enum VersionStatus {
 export class ByondService {
   public latestVersion: Promise<{ beta?: string; stable: string }>;
   private lock = new SharedLock();
-
-  constructor(
-    private httpClient: HttpClient,
-    private commandQueueService: CommandQueueService,
-    private emulatorService: EmulatorService,
-  ) {
-    this.latestVersion = firstValueFrom(
-      httpClient.get('https://secure.byond.com/download/version.txt', {
-        responseType: 'text',
-      }),
-    ).then((x) => {
-      const [stable, beta] = x.split('\n').filter((x) => x);
-      return { stable, beta };
-    });
-    void this.lock.run(() =>
-      commandQueueService.runToSuccess(
-        '/bin/mkdir',
-        '-p\0/mnt/host/byond\0/var/lib/byond',
-      ),
-    );
-    void this.lock.run(async () => {
-      for await (const version of (await this.getByondFolder()).keys()) {
-        this._versions.set(version, VersionStatus.Fetched);
-      }
-    });
-  }
-
-  private _versions = new Map<string, VersionStatus>();
-
-  public get versions(): ReadonlyMap<string, VersionStatus> {
-    return this._versions;
-  }
-
+  private active: string | null = null;
   public deleteVersion = this.lock.wrap(async (version: string) => {
     const installs = await this.getByondFolder();
     await installs.removeEntry(version.toString());
@@ -60,6 +28,46 @@ export class ByondService {
       '/bin/rm',
       `-rf\0/var/lib/byond/${version}.zip\0/var/lib/byond/${version}`,
     );
+    if (this.active === version) this.active = null;
+  });
+
+  private _versions = new Map<string, VersionStatus>();
+
+  public get versions(): ReadonlyMap<string, VersionStatus> {
+    return this._versions;
+  }
+  public setActive = this.lock.wrap(async (version: string) => {
+    const status = this._versions.get(version);
+    if (status == null || status < VersionStatus.Fetched) return;
+
+    if (status < VersionStatus.Loaded) {
+      try {
+        this._versions.set(version, VersionStatus.Loading);
+        const zipFile = await this.getVersion(version, true);
+        await this.emulatorService.sendFile(
+          `byond/${version}.zip`,
+          new Uint8Array(await zipFile.arrayBuffer()),
+        );
+        this._versions.set(version, VersionStatus.Extracting);
+        await this.commandQueueService.runToSuccess(
+          '/bin/unzip',
+          `/mnt/host/byond/${version}.zip\0byond/bin*\0-j\0-d\0/var/lib/byond/${version}`,
+        );
+        await this.commandQueueService.runToSuccess(
+          '/bin/rm',
+          `/mnt/host/byond/${version}.zip`,
+        );
+        this._versions.set(version, VersionStatus.Loaded);
+        this.active = version;
+      } catch (e) {
+        this._versions.set(version, VersionStatus.Fetched);
+        await this.commandQueueService.runToCompletion(
+          '/bin/rm',
+          `-rf\0/var/lib/byond/${version}.zip\0/var/lib/byond/${version}`,
+        );
+        throw e;
+      }
+    }
   });
   public getVersion = this.lock.wrap(async (version: string) => {
     try {
@@ -89,45 +97,41 @@ export class ByondService {
       throw e;
     }
   });
-  public setActive = this.lock.wrap(async (version: string) => {
-    const status = this._versions.get(version);
-    if (status == null || status < VersionStatus.Fetched) return;
 
-    if (status < VersionStatus.Loaded) {
-      try {
-        this._versions.set(version, VersionStatus.Loading);
-        const zipFile = await this.getVersion(version, true);
-        await this.emulatorService.sendFile(
-          `byond/${version}.zip`,
-          new Uint8Array(await zipFile.arrayBuffer()),
-        );
-        this._versions.set(version, VersionStatus.Extracting);
-        await this.commandQueueService.runToSuccess(
-          '/bin/mv',
-          `/mnt/host/byond/${version}.zip\0/var/lib/byond/`,
-        );
-        await this.commandQueueService.runToSuccess(
-          '/bin/unzip',
-          `/var/lib/byond/${version}.zip\0byond/bin*\0-j\0-d\0/var/lib/byond/${version}`,
-        );
-        await this.commandQueueService.runToSuccess(
-          '/bin/rm',
-          `/var/lib/byond/${version}.zip`,
-        );
-        this._versions.set(version, VersionStatus.Loaded);
-      } catch (e) {
+  constructor(
+    private httpClient: HttpClient,
+    private commandQueueService: CommandQueueService,
+    private emulatorService: EmulatorService,
+  ) {
+    this.latestVersion = firstValueFrom(
+      httpClient.get('https://secure.byond.com/download/version.txt', {
+        responseType: 'text',
+      }),
+    ).then((x) => {
+      const [stable, beta] = x.split('\n').filter((x) => x);
+      return { stable, beta };
+    });
+    void this.lock.run(async () => {
+      for await (const version of (await this.getByondFolder()).keys()) {
         this._versions.set(version, VersionStatus.Fetched);
-        await this.commandQueueService.runToCompletion(
-          '/bin/rm',
-          `-rf\0/var/lib/byond/${version}.zip\0/var/lib/byond/${version}`,
-        );
-        throw e;
       }
-    }
-  });
+    });
+    void this.lock.run(() =>
+      commandQueueService.runToSuccess(
+        '/bin/mkdir',
+        '-p\0/mnt/host/byond\0/var/lib/byond',
+      ),
+    );
+  }
 
   private async getByondFolder() {
     const opfs = await navigator.storage.getDirectory();
     return await opfs.getDirectoryHandle('byond', { create: true });
+  }
+
+  public useActive<T extends (path: string | null) => any>(fn: T) {
+    this.lock.run(() =>
+      fn(this.active ? `/var/lib/byond/${this.active}/` : null),
+    );
   }
 }
