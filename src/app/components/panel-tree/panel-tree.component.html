@@ -1,4 +1,4 @@
-@if (panelTree.type == "leaf") {
+@if (panelTree.type === "leaf") {
   <app-panel [title]="panelTree.id.toString()" [id]="panelTree.id" />
 } @else {
   <as-split

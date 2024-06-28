@@ -197,6 +197,80 @@ export class CommandQueueService {
     });
   }
 
+  public async runToCompletion(...args: Parameters<typeof this.runProcess>) {
+    let process = await this.runProcess(...args);
+    let exit = await firstValueFrom(process.exit);
+    if (exit.cause === 'exit' && exit.code != 0)
+      throw new Error('Process exited abnormally: exit code ' + exit.code, {
+        cause: exit,
+      });
+    return exit;
+  }
+
+  public async runToSuccess(...args: Parameters<typeof this.runProcess>) {
+    let exit = await this.runToCompletion(...args);
+    if (exit.cause === 'exit' && exit.code != 0)
+      throw new Error('Process exited abnormally: exit code ' + exit.code, {
+        cause: exit,
+      });
+    return exit;
+  }
+
+  private suspendQueue() {
+    console.debug('Suspended command queue');
+    this.queueSuspended = true;
+  }
+
+  /**
+   * Queue a command to run
+   * @param command {Command} Command to run
+   * @returns {Promise<number | null | PollEvent[]>} Depending on the type of the command, this can be a number or an array of poll results. Run: pid returned as number. Signal: null. Poll: PollResult[]
+   */
+  public queueCommand<C extends Command>(
+    command: C,
+  ): Promise<CommandResult<C>> {
+    return new Promise((resolve) => {
+      const queuedCommand: QueuedCommand<C> = {
+        ...command,
+        resultCallback: resolve,
+      };
+      //Since the object is created, we can now turn it into the generic variant
+      this.queue.push(queuedCommand as unknown as QueuedCommand<Command>);
+      //We added the only element onto the queue and there was no tracked processes, resume the queue loop
+      if (this.queueEmpty) {
+        this.queueEmpty = false;
+        this.tickQueue();
+      }
+    });
+  }
+
+  /**
+   * Friendly function to run a process
+   * @param path Path of the executable to run
+   * @param args Arguments to pass to the executable
+   * @param env Map of environment variables
+   * @return {Promise<Process>}
+   */
+  public async runProcess(
+    path: string,
+    args = '',
+    env = new Map<string, string>(),
+  ): Promise<Process> {
+    const result = await this.queueCommand({
+      type: 'run',
+      binary: path,
+      args,
+      env,
+    });
+    if (result.status === 'ERR')
+      throw Error('Failed to created process: ' + result.error);
+
+    const trackedProcess = this.trackedProcesses.get(result.result);
+    if (!trackedProcess) throw Error('Process was created but not tracked');
+
+    return trackedProcess;
+  }
+
   /**
    * Appends a character to the result buffer and starts processing the result with {@link #processResult} if the character is a null byte
    * @param chr {string} Character received
@@ -229,7 +303,7 @@ export class CommandQueueService {
       if (this.queue.length) {
         this.tickQueue();
       } else {
-        if (this.idlePollDelay == -1) {
+        if (this.idlePollDelay === -1) {
           this.tickQueue();
         } else {
           setTimeout(this.tickQueue, this.idlePollDelay);
@@ -295,7 +369,7 @@ export class CommandQueueService {
                   cause: 'signal',
                   signal: pollEvent.exit - 256,
                 });
-              } else if (pollEvent.exit == 256) {
+              } else if (pollEvent.exit === 256) {
                 trackedProcess.exit.emit({
                   cause: 'unknown',
                 });
@@ -338,79 +412,5 @@ export class CommandQueueService {
         }
       }
     }
-  }
-
-  private suspendQueue() {
-    console.debug('Suspended command queue');
-    this.queueSuspended = true;
-  }
-
-  /**
-   * Queue a command to run
-   * @param command {Command} Command to run
-   * @returns {Promise<number | null | PollEvent[]>} Depending on the type of the command, this can be a number or an array of poll results. Run: pid returned as number. Signal: null. Poll: PollResult[]
-   */
-  public queueCommand<C extends Command>(
-    command: C,
-  ): Promise<CommandResult<C>> {
-    return new Promise((resolve) => {
-      const queuedCommand: QueuedCommand<C> = {
-        ...command,
-        resultCallback: resolve,
-      };
-      //Since the object is created, we can now turn it into the generic variant
-      this.queue.push(queuedCommand as unknown as QueuedCommand<Command>);
-      //We added the only element onto the queue and there was no tracked processes, resume the queue loop
-      if (this.queueEmpty) {
-        this.queueEmpty = false;
-        this.tickQueue();
-      }
-    });
-  }
-
-  /**
-   * Friendly function to run a process
-   * @param path Path of the executable to run
-   * @param args Arguments to pass to the executable
-   * @param env Map of environment variables
-   * @return {Promise<Process>}
-   */
-  public async runProcess(
-    path: string,
-    args = '',
-    env = new Map<string, string>(),
-  ): Promise<Process> {
-    const result = await this.queueCommand({
-      type: 'run',
-      binary: path,
-      args,
-      env,
-    });
-    if (result.status === 'ERR')
-      throw Error('Failed to created process: ' + result.error);
-
-    const trackedProcess = this.trackedProcesses.get(result.result);
-    if (!trackedProcess) throw Error('Process was created but not tracked');
-
-    return trackedProcess;
-  }
-
-  public async runToCompletion(...args: Parameters<typeof this.runProcess>) {
-    let process = await this.runProcess(...args);
-    let exit = await firstValueFrom(process.exit);
-    if (exit.cause == 'exit' && exit.code != 0)
-      throw new Error('Process exited abnormally: exit code ' + exit.code, {
-        cause: exit,
-      });
-    return exit;
-  }
-
-  public async runToSuccess(...args: Parameters<typeof this.runProcess>) {
-    let exit = await this.runToCompletion(...args);
-    if (exit.cause == 'exit' && exit.code != 0)
-      throw new Error('Process exited abnormally: exit code ' + exit.code, {
-        cause: exit,
-      });
-    return exit;
   }
 }
