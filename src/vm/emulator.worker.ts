@@ -60,7 +60,7 @@ const emulator = new V86({
   //Emulator binaries
   wasm_path: 'lib/v86.wasm',
   //Hell is this?
-  acpi: true,
+  acpi: false,
 
   //Log level, debugging?
   log_level: 0,
@@ -73,9 +73,9 @@ const emulator = new V86({
   //Skips boot menu delay on boch BIOS apparently
   fastboot: true,
   //From my understanding, these control serial terminals
-  uart1: true, //Terminal
-  uart2: true, //Screen
-  uart3: true, //Controller
+  uart1: false, //Terminal
+  uart2: false, //Screen
+  uart3: false, //Controller
   //Used for weird ass automatic kernel image loading
   cmdline: null,
   //Presumably saves the mac address in the state
