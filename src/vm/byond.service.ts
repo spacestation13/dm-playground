@@ -19,7 +19,12 @@ export enum VersionStatus {
 export class ByondService {
   public latestVersion: Promise<{ beta?: string; stable: string }>;
   private lock = new SharedLock();
-  private active: string | null = null;
+
+  private _activeVersion: string | null = null;
+  public get activeVersion() {
+    return this._activeVersion;
+  }
+
   public deleteVersion = this.lock.wrap(async (version: string) => {
     const installs = await this.getByondFolder();
     await installs.removeEntry(version.toString());
@@ -28,7 +33,7 @@ export class ByondService {
       '/bin/rm',
       `-rf\0/var/lib/byond/${version}.zip\0/var/lib/byond/${version}`,
     );
-    if (this.active === version) this.active = null;
+    if (this._activeVersion === version) this._activeVersion = null;
   });
 
   private _versions = new Map<string, VersionStatus>();
@@ -58,7 +63,7 @@ export class ByondService {
           `/mnt/host/byond/${version}.zip`,
         );
         this._versions.set(version, VersionStatus.Loaded);
-        this.active = version;
+        this._activeVersion = version;
       } catch (e) {
         this._versions.set(version, VersionStatus.Fetched);
         await this.commandQueueService.runToCompletion(
@@ -131,7 +136,7 @@ export class ByondService {
 
   public useActive<T extends (path: string | null) => any>(fn: T) {
     this.lock.run(() =>
-      fn(this.active ? `/var/lib/byond/${this.active}/` : null),
+      fn(this._activeVersion ? `/var/lib/byond/${this._activeVersion}/` : null),
     );
   }
 }

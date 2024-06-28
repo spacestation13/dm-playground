@@ -27,15 +27,20 @@
 
 <ul>
   @for (version of byondService.versions; track version[0]) {
-    {{ version[0] }} ({{ statusToMessage[version[1]] }})
-    <button
-      tuiButton
-      appearance="primary"
-      size="xs"
-      (click)="byondService.setActive(version[0])"
-    >
-      Set active
-    </button>
+    {{ version[0] }}
+    @if (version[0] === byondService.activeVersion) {
+      (Active)
+    } @else {
+      ({{ statusToMessage[version[1]] }})
+      <button
+        tuiButton
+        appearance="primary"
+        size="xs"
+        (click)="byondService.setActive(version[0])"
+      >
+        Set active
+      </button>
+    }
     <button
       tuiButton
       appearance="secondary-destructive"
