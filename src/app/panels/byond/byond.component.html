@@ -1,3 +1,41 @@
+<span class="font-bold text-lg">Downloaded versions</span>
+<ul>
+  @for (version of byondService.versions; track version[0]) {
+    <li class="[&:not(:last-child)]:mb-2">
+      <span class="mr-2">
+        {{ version[0] }}
+        @if (version[0] === byondService.activeVersion) {
+          (Active)
+        } @else {
+          ({{ statusToMessage[version[1]] }})
+        }
+      </span>
+      @if (version[0] !== byondService.activeVersion) {
+        <button
+          tuiButton
+          appearance="primary"
+          size="xs"
+          (click)="byondService.load(version[0], true)"
+          class="mr-1.5"
+        >
+          Set active
+        </button>
+      }
+      <button
+        tuiButton
+        appearance="secondary-destructive"
+        size="xs"
+        (click)="byondService.deleteVersion(version[0])"
+      >
+        Delete
+      </button>
+    </li>
+  } @empty {
+    <li>No versions</li>
+  }
+</ul>
+
+<span class="font-bold text-lg">Latest versions</span>
 @if (byondService.latestVersion | async; as latestVersions) {
   <p>
     Latest stable: <span class="font-bold">{{ latestVersions.stable }}</span>
@@ -5,6 +43,8 @@
       tuiButton
       size="xs"
       (click)="byondService.getVersion(latestVersions.stable)"
+      class="ml-2"
+      [disabled]="byondService.versions.has(latestVersions.stable)"
     >
       Fetch
     </button>
@@ -16,6 +56,8 @@
         tuiButton
         size="xs"
         (click)="byondService.getVersion(latestVersions.beta)"
+        class="ml-2"
+        [disabled]="byondService.versions.has(latestVersions.beta)"
       >
         Fetch
       </button>
@@ -25,29 +67,36 @@
   Loading latest version...
 }
 
-<ul>
-  @for (version of byondService.versions; track version[0]) {
-    {{ version[0] }}
-    @if (version[0] === byondService.activeVersion) {
-      (Active)
-    } @else {
-      ({{ statusToMessage[version[1]] }})
-      <button
-        tuiButton
-        appearance="primary"
-        size="xs"
-        (click)="byondService.setActive(version[0])"
-      >
-        Set active
-      </button>
-    }
-    <button
-      tuiButton
-      appearance="secondary-destructive"
-      size="xs"
-      (click)="byondService.deleteVersion(version[0])"
+<span class="font-bold text-lg">Custom version</span>
+<form
+  (ngSubmit)="this.byondService.getVersion(resolveVersion())"
+  [formGroup]="this.form"
+  class="flex flex-row"
+>
+  <div class="flex-grow" tuiGroup>
+    <tui-input-number
+      [step]="1"
+      decimal="never"
+      formControlName="major"
+      tuiTextfieldSize="s"
     >
-      Delete
-    </button>
-  }
-</ul>
+      Major version
+    </tui-input-number>
+    <tui-input-number
+      [step]="1"
+      decimal="never"
+      formControlName="minor"
+      tuiTextfieldSize="s"
+    >
+      Minor version
+    </tui-input-number>
+  </div>
+  <button
+    [disabled]="byondService.versions.has(resolveVersion())"
+    class="ml-2"
+    size="s"
+    tuiButton
+  >
+    Fetch
+  </button>
+</form>
