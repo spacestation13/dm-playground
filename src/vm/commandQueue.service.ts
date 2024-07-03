@@ -252,10 +252,15 @@ export class CommandQueueService {
    * @return {Promise<Process>}
    */
   public async runProcess(
-    path: string,
+    path: string | string[],
     args = '',
     env = new Map<string, string>(),
   ): Promise<Process> {
+    if (Array.isArray(path)) {
+      args = `-e\0-u\0-o\0pipefail\0-c\0${path.join(';')}\0${args}`;
+      path = '/bin/sh';
+    }
+
     const result = await this.queueCommand({
       type: 'run',
       binary: path,
