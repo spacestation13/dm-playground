@@ -9,7 +9,6 @@ export enum VersionStatus {
   Fetching,
   Fetched,
   Loading,
-  Extracting,
   Loaded,
 }
 
@@ -31,7 +30,7 @@ export class ByondService {
     this._versions.delete(version.toString());
     await this.commandQueueService.runToCompletion(
       '/bin/rm',
-      `-rf\0/var/lib/byond/${version}.zip\0/var/lib/byond/${version}`,
+      `-rf\0/var/lib/byond/${version}.zip\0/mnt/host/byond/${version}`,
     );
     if (this._activeVersion === version) this._activeVersion = null;
   });
@@ -41,11 +40,18 @@ export class ByondService {
   public get versions(): ReadonlyMap<string, VersionStatus> {
     return this._versions;
   }
-  public setActive = this.lock.wrap(async (version: string) => {
+
+  public load = this.lock.wrap(async (version: string, setActive?: boolean) => {
+    setActive ??= true;
+
     const status = this._versions.get(version);
     if (status == null || status < VersionStatus.Fetched) return;
 
+    let destination = `/mnt/host/byond/${version}`;
     if (status < VersionStatus.Loaded) {
+      if (setActive) {
+        destination = '/var/lib/byond_staging';
+      }
       try {
         this._versions.set(version, VersionStatus.Loading);
         const zipFile = await this.getVersion(version, true);
@@ -53,26 +59,32 @@ export class ByondService {
           `byond/${version}.zip`,
           new Uint8Array(await zipFile.arrayBuffer()),
         );
-        this._versions.set(version, VersionStatus.Extracting);
-        await this.commandQueueService.runToSuccess(
-          '/bin/unzip',
-          `/mnt/host/byond/${version}.zip\0byond/bin*\0-j\0-d\0/var/lib/byond/${version}`,
-        );
-        await this.commandQueueService.runToSuccess(
-          '/bin/rm',
-          `/mnt/host/byond/${version}.zip`,
-        );
+        await this.commandQueueService.runToSuccess([
+          `/bin/unzip /mnt/host/byond/${version}.zip 'byond/bin*' -j -d ${destination}`,
+          `/bin/rm /mnt/host/byond/${version}.zip`,
+        ]);
         this._versions.set(version, VersionStatus.Loaded);
-        this._activeVersion = version;
       } catch (e) {
         this._versions.set(version, VersionStatus.Fetched);
         await this.commandQueueService.runToCompletion(
           '/bin/rm',
-          `-rf\0/var/lib/byond/${version}.zip\0/var/lib/byond/${version}`,
+          `-rf\0${destination}`,
         );
         throw e;
       }
     }
+    if (setActive) {
+      if (this._activeVersion)
+        await this.commandQueueService.runToSuccess(
+          '/bin/mv',
+          `/var/lib/byond\0/mnt/host/byond/${this._activeVersion}`,
+        );
+      await this.commandQueueService.runToSuccess(
+        '/bin/mv',
+        `${destination}\0/var/lib/byond`,
+      );
+    }
+    this._activeVersion = version;
   });
   public getVersion = this.lock.wrap(async (version: string) => {
     try {
@@ -122,10 +134,7 @@ export class ByondService {
       }
     });
     void this.lock.run(() =>
-      commandQueueService.runToSuccess(
-        '/bin/mkdir',
-        '-p\0/mnt/host/byond\0/var/lib/byond',
-      ),
+      commandQueueService.runToSuccess('/bin/mkdir', '-p\0/mnt/host/byond'),
     );
   }
 
@@ -135,8 +144,6 @@ export class ByondService {
   }
 
   public useActive<T extends (path: string | null) => any>(fn: T) {
-    this.lock.run(() =>
-      fn(this._activeVersion ? `/var/lib/byond/${this._activeVersion}/` : null),
-    );
+    this.lock.run(() => fn(this._activeVersion ? `/var/lib/byond/` : null));
   }
 }
