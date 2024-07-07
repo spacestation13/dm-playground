@@ -1,0 +1,54 @@
+# Basic define (no value)
+#define hi
+==>
+File(PpDefine(define,PpIdentifier))
+
+# Basic define
+#define hi expr
+==>
+File(PpDefine(define,PpIdentifier,Expression))
+
+# Multiple defines
+#define hi
+#define hi expr
+==>
+File(
+  PpDefine(define,PpIdentifier),
+  PpDefine(define,PpIdentifier,Expression),
+)
+
+# Extra spacing
+#       define          hi
+         #                 define        hi          expr
+        # define    macro(   owo   )    expr
+==>
+File(
+  PpDefine(define,PpIdentifier),
+  PpDefine(define,PpIdentifier,Expression),
+  PpDefine(define,PpIdentifier,PpDefineParams(
+      PpIdentifier
+    ),Expression)
+)
+
+# Macros
+#define macro(owo) expr
+==>
+File(
+  PpDefine(define,PpIdentifier,PpDefineParams(
+    PpIdentifier
+  ),Expression)
+)
+
+# Variadic macros
+#define macro(owo...) expr
+#define macro(abc, owo...) expr
+==>
+File(
+  PpDefine(define,PpIdentifier,PpDefineParams(
+    PpIdentifier
+  ),Expression),
+  PpDefine(define,PpIdentifier,PpDefineParams(
+    PpIdentifier,
+    PpIdentifier
+  ),Expression)
+)

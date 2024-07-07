@@ -1,0 +1,39 @@
+# Basic warn
+#warn lollmao
+==>
+File(
+  PpWarn(warn, PpContent)
+)
+
+# Multiple warns
+#warn lollmao
+#warn lollmaofeawifhewa
+#warn lollmao
+==>
+File(
+  PpWarn(warn, PpContent),
+  PpWarn(warn, PpContent),
+  PpWarn(warn, PpContent)
+)
+
+# Newline escape
+#warn heh\
+   nice
+==>
+File(
+  PpWarn(warn, PpContent)
+)
+
+# Extra spacing
+  #   warn      whoa
+==>
+File(
+  PpWarn(warn, PpContent)
+)
+
+# Empty warn
+#warn
+==>
+File(
+  PpWarn(warn, PpContent)
+)
