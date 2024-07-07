@@ -11,7 +11,7 @@
   }
 }
 
-@skip { s | escapedWs }
+@skip { s }
 
 preprocessor[@isGroup=Preprocessor] {
   PpDefine |
@@ -140,11 +140,9 @@ UnaryOp[group=operator] {"!"}
 
 
 @tokens {
-  escapedWs { "\\" ws+ }
+  s { ("\\\n" | " " | "\t" )+ }
   Identifier { ("\\" ![\n] | @asciiLetter | @digit | "_" | "-")+ }
   PpIdentifier { (@asciiLetter | "_")  (@asciiLetter | @digit | "_" | "-")+ }
-  ws { @whitespace }
-  s { " " }
   nl { "\n" | @eof }
   "!"
   "==" "!=" ">" ">=" "<" "<=" "||" "&&" "*" "/" "+" "-"
