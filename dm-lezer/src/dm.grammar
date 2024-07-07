@@ -1,3 +1,10 @@
+@context ctx from "./context"
+@external tokens indentation from "./tokens.js" {
+  indent
+  dedent
+  blankLineStart
+}
+
 @top File {
   (
     preprocessor |
