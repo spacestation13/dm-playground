@@ -1,8 +1,10 @@
-import { parser } from "./parser.js";
 import { fileTests } from "@lezer/generator/test";
 import { readdirSync, readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { buildDmGrammar } from "./build.js";
+
+const parser = await buildDmGrammar();
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), "../tests");
 

@@ -4,7 +4,7 @@
   "devDependencies": {
     "@lezer/generator": "^1.7.1",
     "@types/jest": "^29.5.12",
-    "jest": "^29.7.0"
+    "jest": "^30.0.0-alpha.5"
   },
   "dependencies": {
     "@lezer/lr": "^1.4.1"
@@ -12,7 +12,6 @@
   "scripts": {
     "postinstall": "npm run prepare",
     "prepare": "node_modules/.bin/lezer-generator src/dm.grammar -o src/parser.js",
-    "prepare-test": "node_modules/.bin/lezer-generator src/dm.grammar -o src/parser.js --names",
-    "test": "npm run prepare-test && node --experimental-vm-modules node_modules/.bin/jest"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --watch"
   }
 }
