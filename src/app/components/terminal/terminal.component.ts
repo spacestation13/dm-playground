@@ -8,7 +8,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { Terminal } from '@xterm/xterm';
-import { FitAddon } from 'xterm-addon-fit';
+import { FitAddon } from '@xterm/addon-fit';
 import { TerminalDimensions } from '../../../vm/emulator.service';
 
 @Component({

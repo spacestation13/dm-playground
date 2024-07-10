@@ -38,6 +38,7 @@
     "@taiga-ui/layout": "^3.84.0",
     "@taiga-ui/styles": "^3.84.0",
     "@xterm/xterm": "^5.5.0",
+    "@xterm/addon-fit": "^0.10.0",
     "angular-split": "^17.2.0",
     "cancelable-promise": "^4.3.1",
     "codemirror": "^6.0.1",
@@ -45,7 +46,6 @@
     "rxjs": "~7.8.0",
     "thememirror": "^2.0.1",
     "tslib": "^2.3.0",
-    "xterm-addon-fit": "^0.8.0",
     "zone.js": "~0.14.3"
   },
   "devDependencies": {
