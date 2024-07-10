@@ -1,11 +1,13 @@
 /** @type {import("jest").Config} */
 const config = {
   watchPathIgnorePatterns: [
-    "<rootDir>/src/parser.js",
-    "<rootDir>/src/parser.terms.js",
+    "<rootDir>/src/parser.ts",
+    "<rootDir>/src/parser.terms.ts",
     "<rootDir>/node_modules",
   ],
-  moduleFileExtensions: ["js", "cjs", "test", "grammar"],
+  moduleFileExtensions: ["js", "ts", "cjs", "test", "grammar"],
+  extensionsToTreatAsEsm: [".ts"],
+  resolver: "jest-ts-webcompat-resolver",
 };
 
 module.exports = config;

@@ -21,8 +21,10 @@ export const ctx = new ContextTracker({
         ...context,
         indent: new IndentLevel(context.indent, stack.pos - input.pos),
       };
-    if (context.indent.parent == null) throw Error('Cannot dedent');
-    if (term === dedent) return { ...context, indent: context.indent.parent };
+    if (term === dedent) {
+      if (context.indent.parent == null) throw Error('Cannot dedent');
+      return { ...context, indent: context.indent.parent };
+    }
     return context;
   },
   hash: (context) => context.indent.hash,

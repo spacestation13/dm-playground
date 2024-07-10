@@ -107,7 +107,7 @@ PpPragma {
   @else ppContent
 }
 
-ppDirective<name> { "#" Keyword[@name={name}] { name } }
+ppDirective<name> { "#" @specialize[@name={name}]<PpIdentifier, name> }
 ppKw<name> { @specialize[@name={name}]<PpIdentifier, name> }
 
 StatementBlock {
