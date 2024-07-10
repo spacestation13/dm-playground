@@ -1,12 +1,12 @@
-import { ExternalTokenizer } from "@lezer/lr";
-import { blankLineStart, dedent, indent } from "./parser.terms";
+import { ExternalTokenizer } from '@lezer/lr';
+import { blankLineStart, dedent, indent } from './parser.terms.js';
 
-const newline = "\n".charCodeAt(0),
-  space = " ".charCodeAt(0),
-  tab = "\t".charCodeAt(0),
-  hash = "#".charCodeAt(0),
-  slash = "/".charCodeAt(0),
-  star = "*".charCodeAt(0);
+const newline = '\n'.charCodeAt(0),
+  space = ' '.charCodeAt(0),
+  tab = '\t'.charCodeAt(0),
+  hash = '#'.charCodeAt(0),
+  slash = '/'.charCodeAt(0),
+  star = '*'.charCodeAt(0);
 
 export const indentation = new ExternalTokenizer((input, stack) => {
   let prev = input.peek(-1);

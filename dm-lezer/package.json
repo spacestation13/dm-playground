@@ -4,14 +4,16 @@
   "devDependencies": {
     "@lezer/generator": "^1.7.1",
     "@types/jest": "^29.5.12",
-    "jest": "^30.0.0-alpha.5"
+    "@types/node": "^20.14.10",
+    "jest": "^30.0.0-alpha.5",
+    "tsx": "^4.16.2"
   },
   "dependencies": {
     "@lezer/lr": "^1.4.1"
   },
   "scripts": {
     "postinstall": "npm run prepare",
-    "prepare": "npx lezer-generator src/dm.grammar -o src/parser.js",
+    "prepare": "tsx bin/build",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest --watch"
   }
 }

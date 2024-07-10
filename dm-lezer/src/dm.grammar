@@ -1,4 +1,4 @@
-@context ctx from "./context"
+@context ctx from "./context.js"
 @external tokens indentation from "./tokens.js" {
   indent
   dedent
