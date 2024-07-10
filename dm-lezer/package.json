@@ -8,7 +8,8 @@
     "@types/node": "^20.14.10",
     "jest": "^30.0.0-alpha.5",
     "jest-ts-webcompat-resolver": "^1.0.0",
-    "tsx": "^4.16.2"
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
   },
   "dependencies": {
     "@lezer/lr": "^1.4.1"

@@ -2,6 +2,7 @@ import { buildParserFile } from '@lezer/generator';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { LRParser } from '@lezer/lr';
+import * as child_process from 'node:child_process';
 
 export async function buildDmGrammar(): Promise<LRParser> {
   const grammar = fs.readFileSync(
@@ -13,5 +14,6 @@ export async function buildDmGrammar(): Promise<LRParser> {
   });
   fs.writeFileSync(path.join(import.meta.dirname, 'parser.ts'), parser);
   fs.writeFileSync(path.join(import.meta.dirname, 'parser.terms.ts'), terms);
+  child_process.execSync('npx tsc');
   return (await import(path.join(import.meta.dirname, 'parser.ts'))).parser;
 }
