@@ -11,7 +11,7 @@
   },
   "scripts": {
     "postinstall": "npm run prepare",
-    "prepare": "node_modules/.bin/lezer-generator src/dm.grammar -o src/parser.js",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest --watch"
+    "prepare": "npx lezer-generator src/dm.grammar -o src/parser.js",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest --watch"
   }
 }
