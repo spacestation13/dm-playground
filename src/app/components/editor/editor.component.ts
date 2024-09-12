@@ -1,4 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { EditorView } from 'codemirror';
 import {
   bracketMatching,
@@ -63,7 +64,7 @@ export class EditorComponent {
   @ViewChild('editor')
   private editor!: CodeEditor;
 
-  constructor(private executor: ExecutorService) {
+  constructor(private executor: ExecutorService, private route: ActivatedRoute) {
     const noDotted = EditorView.theme({
       '&.cm-editor.cm-focused': {
         outline: 'none',
@@ -82,6 +83,23 @@ export class EditorComponent {
         flexGrow: 1,
       },
     });
+
+    // Check for URL parameter and decode if present
+    this.route.queryParams.subscribe(params => {
+      const encodedContent = params['code'];
+      if (encodedContent) {
+        const decodedContent = atob(encodedContent);
+        this.content = `/world/New()
+  main()
+  ..()
+  eval("")
+  shutdown()
+
+/proc/main()
+  ${decodedContent}`
+      }
+    });
+
     const darkMode = EditorView.theme({}, { dark: true });
 
     const runCodeEffect = StateEffect.define<void>();
@@ -156,5 +174,6 @@ export class EditorComponent {
       [controlPanel],
       [runCodeField],
     ];
+
   }
 }
