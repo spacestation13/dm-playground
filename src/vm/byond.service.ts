@@ -131,6 +131,10 @@ export class ByondService {
     void this.lock.run(async () => {
       for await (const version of (await this.getByondFolder()).keys()) {
         this._versions.set(version, VersionStatus.Fetched);
+        // If this is the first version in the list, load it
+        if (this._activeVersion == null) {
+          await this.load(version, true);
+        }
       }
     });
     void this.lock.run(() =>
