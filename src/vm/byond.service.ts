@@ -133,7 +133,8 @@ export class ByondService {
         this._versions.set(version, VersionStatus.Fetched);
         // If this is the first version in the list, load it
         if (this._activeVersion == null) {
-          await this.load(version, true);
+          // disabled due to deadlocking from nested locking
+          //await this.load(version, true);
         }
       }
     });
