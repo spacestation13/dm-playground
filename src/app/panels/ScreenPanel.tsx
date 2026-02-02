@@ -1,5 +1,5 @@
 import { Terminal } from '../components/Terminal'
 
 export function ScreenPanel() {
-  return <Terminal label="Screen output placeholder" />
+  return <Terminal label="Screen output" readOnly />
 }
