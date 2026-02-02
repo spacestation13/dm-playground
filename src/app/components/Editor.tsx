@@ -12,6 +12,64 @@ interface EditorProps {
 export function Editor({ value, onChange, onRun }: EditorProps) {
   const handleMount: OnMount = async (_editor, monaco) => {
     monaco.languages.register({ id: 'dm' })
+    monaco.languages.registerCompletionItemProvider('dm', {
+      triggerCharacters: ['.', ':', '/'],
+      provideCompletionItems: (
+        model: Monaco.editor.ITextModel,
+        position: Monaco.Position,
+      ) => {
+        const word = model.getWordUntilPosition(position)
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        }
+
+        const keywords = [
+          'as',
+          'break',
+          'catch',
+          'const',
+          'continue',
+          'del',
+          'do',
+          'else',
+          'for',
+          'global',
+          'goto',
+          'if',
+          'in',
+          'new',
+          'proc',
+          'return',
+          'set',
+          'sleep',
+          'spawn',
+          'static',
+          'switch',
+          'throw',
+          'tmp',
+          'try',
+          'var',
+          'verb',
+          'while',
+          'world',
+          'src',
+          'usr',
+          'args',
+        ]
+
+        const suggestions = keywords.map((keyword) => ({
+          label: keyword,
+          kind: monaco.languages.CompletionItemKind.Keyword,
+          insertText: keyword,
+          range,
+        }))
+
+        return { suggestions }
+      },
+    })
     await ensureDmTextmate(monaco as typeof Monaco)
   }
 
