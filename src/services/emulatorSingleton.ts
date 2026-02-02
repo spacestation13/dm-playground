@@ -13,3 +13,7 @@ emulatorService.addEventListener('receivedOutput', (event) => {
 		commandQueueService.handleInput(detail.data)
 	}
 })
+
+emulatorService.addEventListener('resetOutputConsole', () => {
+	commandQueueService.handleInput('HELLO\0')
+})
