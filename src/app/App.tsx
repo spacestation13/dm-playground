@@ -53,8 +53,7 @@ export function App() {
   }, [saveLayout])
 
   useEffect(() => {
-    const vmSourceUrl = import.meta.env.VITE_VM_SOURCE_URL ?? './lib/'
-    emulatorService.start(vmSourceUrl)
+    emulatorService.start('https://spacestation13.github.io/dm-playground-linux/')
   }, [])
 
   const handleUpdateBranchSizes = useCallback((branchId: number, sizes: number[]) => {

@@ -1,5 +1,5 @@
 import { emulatorService } from './emulatorSingleton'
-import { commandQueueService, type Process } from './commandQueueSingleton'
+import { commandQueueService, type Process, type ProcessExit } from './commandQueueSingleton'
 
 export type ExecutorEventType = 'reset' | 'output' | 'status'
 
@@ -35,32 +35,42 @@ export class ExecutorService {
     emulatorService.start('https://spacestation13.github.io/dm-playground-linux/')
     emulatorService.sendFile('/tmp/playground.dme', new TextEncoder().encode(code))
 
-    commandQueueService.startPolling()
 
-    const dmProcess = commandQueueService.run('dreammaker', ['/tmp/playground.dme'])
+    const dmProcess = await commandQueueService.runProcess('dreammaker', '/tmp/playground.dme')
     this.attachProcess(dmProcess)
 
     dmProcess.addEventListener('exit', () => {
       this.appendOutput('DreamMaker complete. Starting DreamDaemon...\n')
-      const ddProcess = commandQueueService.run('dreamdaemon', ['/tmp/playground.dme'])
-      this.attachProcess(ddProcess)
-      ddProcess.addEventListener('exit', () => {
-        this.appendOutput('DreamDaemon exited.\n')
-        const cleanup = commandQueueService.run('rm', ['/tmp/playground.dme'])
-        this.attachProcess(cleanup)
-        cleanup.addEventListener('exit', () => {
-          this.appendOutput('Cleaned up temp files.\n')
+      commandQueueService
+        .runProcess('dreamdaemon', '/tmp/playground.dme')
+        .then((ddProcess) => {
+          this.attachProcess(ddProcess)
+          ddProcess.addEventListener('exit', () => {
+            this.appendOutput('DreamDaemon exited.\n')
+            commandQueueService
+              .runProcess('rm', '/tmp/playground.dme')
+              .then((cleanup) => {
+                this.attachProcess(cleanup)
+                cleanup.addEventListener('exit', () => {
+                  this.appendOutput('Cleaned up temp files.\n')
+                })
+              })
+              .catch((error) => {
+                this.appendOutput(`Cleanup failed: ${String(error)}\n`)
+              })
+          })
         })
-      })
+        .catch((error) => {
+          this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
+        })
     })
   }
 
   cancel() {
     for (const pid of this.activePids) {
-      commandQueueService.signal(pid, 'SIGTERM')
+      commandQueueService.signal(pid, 15)
     }
     this.activePids.clear()
-    commandQueueService.stopPolling()
     this.appendOutput('Execution cancelled.\n')
     this.setStatus('idle')
   }
@@ -76,11 +86,16 @@ export class ExecutorService {
       this.appendOutput(detail)
     })
     process.addEventListener('exit', (event) => {
-      const detail = (event as CustomEvent<number>).detail
+      const detail = (event as CustomEvent<ProcessExit>).detail
       this.activePids.delete(process.pid)
-      this.appendOutput(`Process ${process.pid} exited (${detail}).\n`)
+      if (detail.cause === 'exit') {
+        this.appendOutput(`Process ${process.pid} exited (${detail.code}).\n`)
+      } else if (detail.cause === 'signal') {
+        this.appendOutput(`Process ${process.pid} killed by signal ${detail.signal}.\n`)
+      } else {
+        this.appendOutput(`Process ${process.pid} exited.\n`)
+      }
       if (this.activePids.size === 0) {
-        commandQueueService.stopPolling()
         this.setStatus('idle')
       }
     })

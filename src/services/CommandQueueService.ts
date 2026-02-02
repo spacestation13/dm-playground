@@ -1,16 +1,76 @@
-import { Base64 } from 'js-base64'
+export type ControllerEventType = 'boot' | 'sent'
 
-export type ControllerEventType = 'boot' | 'stdout' | 'stderr' | 'pidexit' | 'unknown' | 'sent'
+export interface CommandResultOK<C extends Command> {
+  status: 'OK'
+  result: CommandReturnType<C>
+}
+export interface CommandResultErr {
+  status: 'ERR'
+  error: string
+}
+export type CommandResult<C extends Command> = CommandResultOK<C> | CommandResultErr
 
-export interface ControllerEvent {
-  type: ControllerEventType
-  pid?: number
-  data?: string
-  code?: number
+export type CommandReturnType<C extends Command> = C extends SignalCommand
+  ? null
+  : C extends RunCommand
+    ? number
+    : C extends PollCommand
+      ? PollEvent[]
+      : never
+
+export type Command = SignalCommand | RunCommand | PollCommand
+
+type QueuedCommand<T extends Command> = T & {
+  resultCallback: (result: CommandResult<T>) => unknown
 }
 
+export type PollEvent = ExitPollEvent | StdoutPollEvent | StderrPollEvent
+
+export interface ExitPollEvent {
+  event: 'pidexit'
+  pid: number
+  exit: number
+}
+export interface StdoutPollEvent {
+  event: 'stdout'
+  pid: number
+  data: string
+}
+export interface StderrPollEvent {
+  event: 'stderr'
+  pid: number
+  data: string
+}
+
+export interface SignalCommand {
+  type: 'signal'
+  pid: number
+  signal: number
+}
+
+export interface RunCommand {
+  type: 'run'
+  binary: string
+  args: string
+  env: Map<string, string>
+}
+
+export interface PollCommand {
+  type: 'poll'
+}
+
+export type ProcessExit =
+  | { cause: 'signal'; signal: number }
+  | { cause: 'exit'; code: number }
+  | { cause: 'unknown' }
+
 export class Process extends EventTarget {
-  constructor(public readonly pid: number) {
+  public killed = false
+
+  constructor(
+    public readonly pid: number,
+    private readonly commandQueue: CommandQueueService,
+  ) {
     super()
   }
 
@@ -22,26 +82,49 @@ export class Process extends EventTarget {
     this.dispatchEvent(new CustomEvent('stderr', { detail: data }))
   }
 
-  emitExit(code: number) {
-    this.dispatchEvent(new CustomEvent('exit', { detail: code }))
+  emitExit(exit: ProcessExit) {
+    this.dispatchEvent(new CustomEvent('exit', { detail: exit }))
+  }
+
+  signal(signal = 15) {
+    return this.commandQueue.queueCommand({ type: 'signal', pid: this.pid, signal })
+  }
+
+  kill(): Promise<CommandResult<SignalCommand>> {
+    return new Promise((resolve, reject) => {
+      this.signal(15)
+        .then((res) => {
+          if (res.status === 'ERR') return reject(res.error)
+          this.addEventListener('exit', () => resolve({ status: 'OK', result: null }))
+          setTimeout(() => {
+            if (!this.killed) {
+              this.signal(9)
+                .then((innerRes) => {
+                  if (innerRes.status === 'ERR') reject(innerRes.error)
+                })
+                .catch((err) => reject(err))
+            }
+          }, 15000)
+        })
+        .catch((err) => reject(err))
+    })
   }
 }
 
 export class CommandQueueService {
   private sender: ((value: string) => void) | null = null
-  private buffer = ''
-  private nextPid = 1
-  private processes = new Map<number, Process>()
+  private queue: QueuedCommand<Command>[] = []
+  private activeCommand: QueuedCommand<Command> | null = null
+  private resultBuffer = ''
+  private queueSuspended = false
+  private queueEmpty = true
+  private initialized = false
+  private trackedProcesses = new Map<number, Process>()
+  private idlePollDelay = 50
   private events = new EventTarget()
-  private booted = false
-  private pollTimer: number | null = null
 
   setSender(sender: (value: string) => void) {
     this.sender = sender
-  }
-
-  get isBooted() {
-    return this.booted
   }
 
   addEventListener(type: ControllerEventType, listener: EventListenerOrEventListenerObject) {
@@ -52,93 +135,214 @@ export class CommandQueueService {
     this.events.removeEventListener(type, listener)
   }
 
-  run(command: string, args: string[] = []) {
-    const pid = this.nextPid++
-    const process = new Process(pid)
-    this.processes.set(pid, process)
-    this.send(`run ${pid} ${command} ${args.join(' ')}`.trim())
-    return process
-  }
-
-  signal(pid: number, signal: string) {
-    this.send(`signal ${pid} ${signal}`)
-  }
-
-  poll() {
-    this.send('poll')
-  }
-
-  startPolling(intervalMs = 250) {
-    if (this.pollTimer) {
-      return
+  receiveInput(chunk: string) {
+    for (const chr of chunk) {
+      this.receiveChr(chr)
     }
-    this.pollTimer = self.setInterval(() => this.poll(), intervalMs)
   }
 
-  stopPolling() {
-    if (!this.pollTimer) {
-      return
-    }
-    clearInterval(this.pollTimer)
-    this.pollTimer = null
-  }
-
-  handleInput(chunk: string) {
-    this.buffer += chunk
-    const parts = this.buffer.split('\0')
-    this.buffer = parts.pop() ?? ''
-    for (const part of parts) {
-      const message = part.trim()
-      if (message.length === 0) {
-        continue
+  queueCommand<C extends Command>(command: C): Promise<CommandResult<C>> {
+    return new Promise((resolve) => {
+      const queuedCommand: QueuedCommand<C> = {
+        ...command,
+        resultCallback: resolve,
       }
-      this.handleMessage(message)
+      this.queue.push(queuedCommand as unknown as QueuedCommand<Command>)
+      if (this.queueEmpty) {
+        this.queueEmpty = false
+        this.tickQueue()
+      }
+    })
+  }
+
+  async runProcess(
+    path: string | string[],
+    args = '',
+    env = new Map<string, string>(),
+  ): Promise<Process> {
+    if (Array.isArray(path)) {
+      args = `-e\0-u\0-o\0pipefail\0-c\0${path.join(';')}\0${args}`
+      path = '/bin/sh'
+    }
+
+    const result = await this.queueCommand({ type: 'run', binary: path, args, env })
+    if (result.status === 'ERR') throw Error('Failed to create process: ' + result.error)
+
+    const tracked = this.trackedProcesses.get(result.result)
+    if (!tracked) throw Error('Process was created but not tracked')
+    return tracked
+  }
+
+  signal(pid: number, signal: number) {
+    return this.queueCommand({ type: 'signal', pid, signal })
+  }
+
+  private tickQueue() {
+    if (!this.queue.length && !this.trackedProcesses.size) {
+      this.queueEmpty = true
+      return
+    }
+
+    this._tickQueue().catch((error) => {
+      console.error('Command queue error', error)
+      this.queueSuspended = true
+    })
+  }
+
+  private async _tickQueue() {
+    if (this.queueSuspended || !this.initialized) return
+
+    let command = this.queue.shift()
+    if (!command) {
+      command = { type: 'poll', resultCallback: () => {} }
+    }
+
+    let cmdStr = ''
+    switch (command.type) {
+      case 'signal': {
+        cmdStr = `signal ${command.pid} ${command.signal}`
+        break
+      }
+      case 'run': {
+        const binary = btoa(command.binary)
+        const args = btoa(command.args)
+        let env = ''
+        for (let [key, val] of command.env.entries()) {
+          key = key.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/=/g, '\\=')
+          val = val.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/=/g, '\\=')
+          env += `${key}=${val};`
+        }
+        cmdStr = `run ${binary} ${args} ${btoa(env)}`
+        break
+      }
+      case 'poll':
+        cmdStr = 'poll'
+        break
+    }
+
+    this.activeCommand = command
+    this.send(cmdStr)
+  }
+
+  private receiveChr(chr: string) {
+    if (this.initialized && this.queueSuspended) return
+
+    if (chr === '\0' && this.resultBuffer === 'HELLO') {
+      if (this.initialized) throw Error('Controller initialized twice. It probably crashed.')
+      this.initialized = true
+      this.resultBuffer = ''
+      this.events.dispatchEvent(new CustomEvent('boot'))
+      this.tickQueue()
+      return
+    }
+
+    if (chr === '\0') {
+      try {
+        this.processResult()
+      } finally {
+        this.activeCommand = null
+        this.resultBuffer = ''
+      }
+
+      if (this.queue.length) {
+        this.tickQueue()
+      } else {
+        if (this.idlePollDelay === -1) {
+          this.tickQueue()
+        } else {
+          setTimeout(() => this.tickQueue(), this.idlePollDelay)
+        }
+      }
+      return
+    }
+
+    this.resultBuffer += chr
+  }
+
+  private processResult() {
+    if (!this.activeCommand) {
+      throw new Error('Received result without any active commands')
+    }
+
+    const components = this.resultBuffer.split('\n') as string[]
+    const status = components.pop() as string
+    const callback = this.activeCommand.resultCallback
+
+    if (status === 'ERR') {
+      const errRes: CommandResultErr = {
+        status: 'ERR',
+        error: components.map(atob).join('\n'),
+      }
+      callback(errRes)
+      return
+    }
+
+    switch (this.activeCommand.type) {
+      case 'poll': {
+        const res = components.map((pollevent) => {
+          const [type, ...pollComponents] = pollevent.split(' ')
+          switch (type) {
+            case 'pidexit': {
+              return {
+                event: 'pidexit',
+                pid: parseInt(pollComponents[0]),
+                exit: parseInt(pollComponents[1]),
+              } as ExitPollEvent
+            }
+            case 'stderr':
+            case 'stdout': {
+              return {
+                event: type,
+                pid: parseInt(pollComponents[0]),
+                data: atob(pollComponents[1]),
+              } as StdoutPollEvent | StderrPollEvent
+            }
+            default: {
+              throw Error('Unknown event type: ' + type)
+            }
+          }
+        }) as PollEvent[]
+
+        res.forEach((pollEvent) => {
+          const trackedProcess = this.trackedProcesses.get(pollEvent.pid)
+          if (!trackedProcess) return
+          if (pollEvent.event === 'pidexit') {
+            if (pollEvent.exit >= 257) {
+              trackedProcess.emitExit({ cause: 'signal', signal: pollEvent.exit - 256 })
+            } else if (pollEvent.exit === 256) {
+              trackedProcess.emitExit({ cause: 'unknown' })
+            } else {
+              trackedProcess.emitExit({ cause: 'exit', code: pollEvent.exit })
+            }
+            trackedProcess.killed = true
+            this.trackedProcesses.delete(pollEvent.pid)
+          } else {
+            trackedProcess[pollEvent.event === 'stdout' ? 'emitStdout' : 'emitStderr'](
+              pollEvent.data,
+            )
+          }
+        })
+
+        callback({ status: 'OK', result: res } as CommandResult<PollCommand>)
+        break
+      }
+      case 'signal': {
+        callback({ status: 'OK', result: null } as CommandResult<SignalCommand>)
+        break
+      }
+      case 'run': {
+        const pid = parseInt(status)
+        const process = new Process(pid, this)
+        this.trackedProcesses.set(pid, process)
+        callback({ status: 'OK', result: pid } as CommandResult<RunCommand>)
+        break
+      }
     }
   }
 
   private send(message: string) {
-    if (!this.sender) {
-      return
-    }
+    if (!this.sender) return
     this.events.dispatchEvent(new CustomEvent('sent', { detail: message }))
     this.sender(`${message}\0`)
-  }
-
-  private handleMessage(message: string) {
-    if (message === 'HELLO') {
-      this.booted = true
-      this.events.dispatchEvent(new CustomEvent('boot'))
-      return
-    }
-
-    const lines = message.split('\n').filter(Boolean)
-    for (const line of lines) {
-      const decoded = this.decodeLine(line)
-      const [type, pidToken, ...rest] = decoded.split(' ')
-      const pid = pidToken ? Number(pidToken) : undefined
-      const payload = rest.join(' ')
-
-      if (type === 'stdout' && pid !== undefined) {
-        this.processes.get(pid)?.emitStdout(payload)
-        this.events.dispatchEvent(new CustomEvent('stdout', { detail: { pid, data: payload } }))
-      } else if (type === 'stderr' && pid !== undefined) {
-        this.processes.get(pid)?.emitStderr(payload)
-        this.events.dispatchEvent(new CustomEvent('stderr', { detail: { pid, data: payload } }))
-      } else if (type === 'pidexit' && pid !== undefined) {
-        const code = rest.length > 0 ? Number(rest[0]) : 0
-        this.processes.get(pid)?.emitExit(code)
-        this.events.dispatchEvent(new CustomEvent('pidexit', { detail: { pid, code } }))
-      } else {
-        this.events.dispatchEvent(new CustomEvent('unknown', { detail: { data: decoded } }))
-      }
-    }
-  }
-
-  private decodeLine(line: string) {
-    try {
-      return Base64.decode(line)
-    } catch {
-      return line
-    }
   }
 }

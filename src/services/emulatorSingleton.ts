@@ -10,10 +10,7 @@ commandQueueService.setSender((value) => {
 emulatorService.addEventListener('receivedOutput', (event) => {
 	const detail = (event as CustomEvent<{ port: string; data: string }>).detail
 	if (detail.port === 'controller') {
-		commandQueueService.handleInput(detail.data)
+		commandQueueService.receiveInput(detail.data)
 	}
 })
 
-emulatorService.addEventListener('resetOutputConsole', () => {
-	commandQueueService.handleInput('HELLO\0')
-})
