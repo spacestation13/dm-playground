@@ -160,10 +160,9 @@ export class ByondService {
     }
 
     if (setActive) {
+      await commandQueueService.runToSuccess('/bin/mkdir', '-p\0/var/lib/byond')
       if (this.activeVersion) {
         await commandQueueService.runToSuccess('/bin/mv', `/var/lib/byond\0/mnt/host/byond/${this.activeVersion}`)
-      } else {
-        await commandQueueService.runToCompletion('/bin/mv', `/var/lib/byond\0/mnt/host/byond/prev-byond`)
       }
       await commandQueueService.runToSuccess('/bin/mv', `${destination}\0/var/lib/byond`)
       this.activeVersion = version

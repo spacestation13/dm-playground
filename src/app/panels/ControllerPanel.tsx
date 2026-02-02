@@ -4,6 +4,26 @@ import { Terminal, type TerminalApi } from '../components/Terminal'
 import { emulatorService } from '../../services/emulatorSingleton'
 import { commandQueueService } from '../../services/commandQueueSingleton'
 
+export function ControllerTitle() {
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    const handleBusy = (event: Event) => {
+      const detail = (event as CustomEvent<boolean>).detail
+      setBusy(detail)
+    }
+    commandQueueService.addBusyListener(handleBusy)
+    return () => commandQueueService.removeBusyListener(handleBusy)
+  }, [])
+
+  return (
+    <div className="flex items-center gap-2">
+      <span>Controller</span>
+      {busy && <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />}
+    </div>
+  )
+}
+
 export function ControllerPanel() {
   const [terminal, setTerminal] = useState<TerminalApi | null>(null)
 
@@ -16,12 +36,23 @@ export function ControllerPanel() {
       const detail = (event as CustomEvent<{ port: string; data: string }>).detail
       if (detail.port === 'controller') {
         const decoded = decodeController(detail.data)
-        terminal.write(`\r\n--- controller ---\r\n${decoded}`)
+        const filtered = decoded
+          .split('\n')
+          .map((line) => line.replace(/\0/g, '').trim())
+          .filter((line) => line && line !== 'OK')
+          .join('\n')
+        if (!filtered) {
+          return
+        }
+        terminal.write(`\r\n--- controller ---\r\n${filtered}`)
       }
     }
 
     const handleSent = (event: Event) => {
       const detail = (event as CustomEvent<string>).detail
+      if (detail.trim() === 'poll') {
+        return
+      }
       terminal.write(`\r\n>>> ${decodeSent(detail)}\r\n`)
     }
 
@@ -50,7 +81,7 @@ export function ControllerPanel() {
 }
 
 function decodeController(input: string) {
-  const lines = input.split('\n')
+  const lines = input.replace(/\0/g, '').split('\n')
   const decodedLines = lines.map((line) => {
     const parts = line.split(' ')
     if (parts.length >= 3 && (parts[0] === 'stdout' || parts[0] === 'stderr')) {
@@ -71,10 +102,10 @@ function decodeController(input: string) {
         return line
       }
     }
-    return line
+    return line.trim() === 'OK' ? '' : line
   })
 
-  return decodedLines.join('\n')
+  return decodedLines.filter(Boolean).join('\n')
 }
 
 function isBase64(value: string) {

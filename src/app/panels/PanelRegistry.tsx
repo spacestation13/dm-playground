@@ -2,13 +2,13 @@ import type { ReactNode } from 'react'
 import { PanelId } from '../layout/layoutTypes'
 import { ByondPanel } from './ByondPanel'
 import { ConsolePanel } from './ConsolePanel'
-import { ControllerPanel } from './ControllerPanel'
+import { ControllerPanel, ControllerTitle } from './ControllerPanel'
 import { EditorPanel } from './EditorPanel'
 import { OutputPanel } from './OutputPanel'
 import { ScreenPanel } from './ScreenPanel'
 
 interface PanelDescriptor {
-  title: string
+  title: ReactNode
   render: () => ReactNode
 }
 
@@ -22,7 +22,7 @@ export const PanelRegistry: Record<PanelId, PanelDescriptor> = {
     render: () => <ScreenPanel />,
   },
   [PanelId.Controller]: {
-    title: 'Controller',
+    title: <ControllerTitle />,
     render: () => <ControllerPanel />,
   },
   [PanelId.Editor]: {

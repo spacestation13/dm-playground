@@ -118,6 +118,7 @@ export class CommandQueueService {
   private resultBuffer = ''
   private queueSuspended = false
   private queueEmpty = true
+  private isBusy = false
   private initialized = false
   private trackedProcesses = new Map<number, Process>()
   private idlePollDelay = 50
@@ -131,8 +132,20 @@ export class CommandQueueService {
     this.events.addEventListener(type, listener)
   }
 
+  getBusy() {
+    return this.isBusy
+  }
+
   removeEventListener(type: ControllerEventType, listener: EventListenerOrEventListenerObject) {
     this.events.removeEventListener(type, listener)
+  }
+
+  addBusyListener(listener: EventListenerOrEventListenerObject) {
+    this.events.addEventListener('busy', listener)
+  }
+
+  removeBusyListener(listener: EventListenerOrEventListenerObject) {
+    this.events.removeEventListener('busy', listener)
   }
 
   receiveInput(chunk: string) {
@@ -150,6 +163,7 @@ export class CommandQueueService {
       this.queue.push(queuedCommand as unknown as QueuedCommand<Command>)
       if (this.queueEmpty) {
         this.queueEmpty = false
+        this.updateBusy()
         this.tickQueue()
       }
     })
@@ -197,6 +211,7 @@ export class CommandQueueService {
   private tickQueue() {
     if (!this.queue.length && !this.trackedProcesses.size) {
       this.queueEmpty = true
+      this.updateBusy()
       return
     }
 
@@ -358,6 +373,8 @@ export class CommandQueueService {
         break
       }
     }
+
+    this.updateBusy()
   }
 
   private waitForExit(process: Process): Promise<ProcessExit> {
@@ -374,5 +391,16 @@ export class CommandQueueService {
     if (!this.sender) return
     this.events.dispatchEvent(new CustomEvent('sent', { detail: message }))
     this.sender(`${message}\0`)
+  }
+
+  private updateBusy() {
+    const value = Boolean(
+      this.activeCommand || this.queue.length > 0 || this.trackedProcesses.size > 0,
+    )
+    if (this.isBusy === value) {
+      return
+    }
+    this.isBusy = value
+    this.events.dispatchEvent(new CustomEvent('busy', { detail: value }))
   }
 }
