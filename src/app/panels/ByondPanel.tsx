@@ -21,14 +21,58 @@ export function ByondPanel() {
       ])
       setAvailable(remoteVersions)
       setLocal(localVersions)
-      setActiveVersion(byondService.getActiveVersion())
+      const active = byondService.getActiveVersion()
+      setActiveVersion(active)
+      setStatus((prev) => {
+        const next: StatusMap = { ...prev }
+        localVersions.forEach((version) => {
+          next[version] = byondService.getStatus(version)
+        })
+        return next
+      })
+
+      if (!active && localVersions.length > 0) {
+        const latest = localVersions[0]
+        setStatus((prev) => ({ ...prev, [latest]: 'loading' }))
+        void byondService
+          .load(latest, true)
+          .then(() => {
+            setActiveVersion(latest)
+            setStatus((prev) => ({ ...prev, [latest]: 'loaded' }))
+          })
+          .catch((loadError) => {
+            setStatus((prev) => ({ ...prev, [latest]: 'error' }))
+            setError(loadError instanceof Error ? loadError.message : 'Load failed')
+          })
+      }
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : 'Failed to load versions')
     }
   }
 
   useEffect(() => {
-    void refresh()
+    const id = setTimeout(() => {
+      void refresh()
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
+
+  useEffect(() => {
+    const handleActive = (event: Event) => {
+      const detail = (event as CustomEvent<string | null>).detail
+      setActiveVersion(detail)
+    }
+    byondService.addEventListener('active', handleActive)
+    return () => byondService.removeEventListener('active', handleActive)
+  }, [])
+
+  useEffect(() => {
+    const handleStatus = (event: Event) => {
+      const detail = (event as CustomEvent<{ version: string; status: ByondStatus }>).detail
+      setStatus((prev) => ({ ...prev, [detail.version]: detail.status }))
+    }
+    byondService.addStatusListener(handleStatus)
+    return () => byondService.removeStatusListener(handleStatus)
   }, [])
 
   const handleDownload = async (version: string) => {

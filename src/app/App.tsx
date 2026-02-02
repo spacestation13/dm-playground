@@ -6,6 +6,7 @@ import { updateBranchSizes } from './layout/layoutUtils'
 import { CompressionService } from '../services/CompressionService'
 import { emulatorService } from '../services/emulatorSingleton'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { byondService } from '../services/byondSingleton'
 
 const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
@@ -54,6 +55,7 @@ export function App() {
 
   useEffect(() => {
     emulatorService.start('https://spacestation13.github.io/dm-playground-linux/')
+    void byondService.initialize()
   }, [])
 
   const handleUpdateBranchSizes = useCallback((branchId: number, sizes: number[]) => {

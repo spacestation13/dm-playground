@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Base64 } from 'js-base64'
 import { Editor } from '../components/Editor'
 import { executorService } from '../../services/executorSingleton'
+import { byondService } from '../../services/byondSingleton'
 
 const DEFAULT_CODE = `// Write your DM code here\n`
 
@@ -23,6 +24,7 @@ const getSeededCode = () => {
 export function EditorPanel() {
   const [value, setValue] = useState(() => getSeededCode())
   const [status, setStatus] = useState<'running' | 'idle'>('idle')
+  const [activeByond, setActiveByond] = useState<string | null>(() => byondService.getActiveVersion())
 
   useEffect(() => {
     const handleStatus = (event: Event) => {
@@ -34,7 +36,19 @@ export function EditorPanel() {
     return () => executorService.removeEventListener('status', handleStatus)
   }, [])
 
+  useEffect(() => {
+    const handleActive = (event: Event) => {
+      const detail = (event as CustomEvent<string | null>).detail
+      setActiveByond(detail)
+    }
+    byondService.addEventListener('active', handleActive)
+    return () => byondService.removeEventListener('active', handleActive)
+  }, [])
+
   const handleRun = () => {
+    if (!activeByond) {
+      return
+    }
     void executorService.executeImmediate(value)
   }
 
@@ -56,7 +70,7 @@ export function EditorPanel() {
         <button
           type="button"
           onClick={handleRun}
-          disabled={status === 'running'}
+          disabled={status === 'running' || !activeByond}
           className="rounded-md border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-slate-500"
         >
           Run
