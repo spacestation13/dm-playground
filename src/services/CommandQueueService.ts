@@ -1,6 +1,6 @@
 import { Base64 } from 'js-base64'
 
-export type ControllerEventType = 'boot' | 'stdout' | 'stderr' | 'pidexit' | 'unknown'
+export type ControllerEventType = 'boot' | 'stdout' | 'stderr' | 'pidexit' | 'unknown' | 'sent'
 
 export interface ControllerEvent {
   type: ControllerEventType
@@ -100,6 +100,7 @@ export class CommandQueueService {
     if (!this.sender) {
       return
     }
+    this.events.dispatchEvent(new CustomEvent('sent', { detail: message }))
     this.sender(`${message}\0`)
   }
 

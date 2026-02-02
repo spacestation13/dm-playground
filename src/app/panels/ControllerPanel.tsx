@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Terminal, type TerminalApi } from '../components/Terminal'
 import { emulatorService } from '../../services/emulatorSingleton'
+import { commandQueueService } from '../../services/commandQueueSingleton'
 
 export function ControllerPanel() {
   const [terminal, setTerminal] = useState<TerminalApi | null>(null)
@@ -17,8 +18,23 @@ export function ControllerPanel() {
       }
     }
 
+    const handleSent = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail
+      terminal.write(`\r\n>>> ${detail}\r\n`)
+    }
+
+    const handleBoot = () => {
+      terminal.write('\r\n[controller boot]\r\n')
+    }
+
     emulatorService.addEventListener('receivedOutput', handleOutput)
-    return () => emulatorService.removeEventListener('receivedOutput', handleOutput)
+    commandQueueService.addEventListener('sent', handleSent)
+    commandQueueService.addEventListener('boot', handleBoot)
+    return () => {
+      emulatorService.removeEventListener('receivedOutput', handleOutput)
+      commandQueueService.removeEventListener('sent', handleSent)
+      commandQueueService.removeEventListener('boot', handleBoot)
+    }
   }, [terminal])
 
   return (
