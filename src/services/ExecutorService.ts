@@ -1,7 +1,7 @@
 import { emulatorService } from './emulatorSingleton'
 import { commandQueueService, type Process } from './commandQueueSingleton'
 
-export type ExecutorEventType = 'reset' | 'output'
+export type ExecutorEventType = 'reset' | 'output' | 'status'
 
 export class ExecutorService {
   private events = new EventTarget()
@@ -23,8 +23,13 @@ export class ExecutorService {
     this.events.dispatchEvent(new CustomEvent('output', { detail: value }))
   }
 
+  setStatus(value: 'running' | 'idle') {
+    this.events.dispatchEvent(new CustomEvent('status', { detail: value }))
+  }
+
   async executeImmediate(code: string) {
     this.reset()
+    this.setStatus('running')
     this.appendOutput('Starting DreamMaker...\n')
 
     emulatorService.start('https://spacestation13.github.io/dm-playground-linux/')
@@ -57,6 +62,7 @@ export class ExecutorService {
     this.activePids.clear()
     commandQueueService.stopPolling()
     this.appendOutput('Execution cancelled.\n')
+    this.setStatus('idle')
   }
 
   private attachProcess(process: Process) {
@@ -75,6 +81,7 @@ export class ExecutorService {
       this.appendOutput(`Process ${process.pid} exited (${detail}).\n`)
       if (this.activePids.size === 0) {
         commandQueueService.stopPolling()
+        this.setStatus('idle')
       }
     })
   }

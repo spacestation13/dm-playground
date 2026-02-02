@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { executorService } from '../../services/executorSingleton'
 
 export function OutputPanel() {
   const [output, setOutput] = useState<string>('')
+  const outputRef = useRef<HTMLPreElement | null>(null)
 
   useEffect(() => {
     const handleOutput = (event: Event) => {
@@ -20,9 +21,18 @@ export function OutputPanel() {
     }
   }, [])
 
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight
+    }
+  }, [output])
+
   return (
     <div className="h-full">
-      <pre className="h-full whitespace-pre-wrap rounded bg-slate-950/60 p-3 text-xs text-slate-200">
+      <pre
+        ref={outputRef}
+        className="h-full overflow-auto whitespace-pre-wrap rounded bg-slate-950/60 p-3 text-xs text-slate-200"
+      >
         {output || 'Output stream placeholder.'}
       </pre>
     </div>
