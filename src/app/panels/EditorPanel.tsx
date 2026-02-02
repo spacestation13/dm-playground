@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Base64 } from 'js-base64'
 import { Editor } from '../components/Editor'
+import { commandQueueService } from '../../services/commandQueueSingleton'
 
 const DEFAULT_CODE = `// Write your DM code here\n`
 
@@ -23,7 +24,9 @@ export function EditorPanel() {
   const [value, setValue] = useState(seededCode)
 
   const handleRun = () => {
-    console.info('Run Code requested', { length: value.length })
+    const process = commandQueueService.run('dreammaker', ['--noop'])
+    process.emitStdout(`Running code (${value.length} chars)\n`)
+    commandQueueService.poll()
   }
 
   return (
