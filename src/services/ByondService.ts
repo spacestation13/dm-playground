@@ -1,11 +1,17 @@
+import { commandQueueService } from './commandQueueSingleton'
+import { emulatorService } from './emulatorSingleton'
+
 const VERSIONS_URL = 'https://byond-builds.dm-lang.org/version.txt'
 const DOWNLOAD_BASE_URL = 'https://byond-builds.dm-lang.org'
 const ACTIVE_VERSION_KEY = 'byondActiveVersion'
 
-export type ByondStatus = 'idle' | 'fetching' | 'fetched' | 'error'
+export type ByondStatus = 'idle' | 'fetching' | 'fetched' | 'loading' | 'loaded' | 'error'
 
 export class ByondService {
-  static async getAvailableVersions() {
+  private versions = new Map<string, ByondStatus>()
+  private activeVersion: string | null = null
+
+  async getAvailableVersions() {
     const response = await fetch(VERSIONS_URL)
     if (!response.ok) {
       throw new Error(`Failed to fetch BYOND versions: ${response.status}`)
@@ -18,7 +24,7 @@ export class ByondService {
       .filter((line) => /^\d+\.\d+$/.test(line))
   }
 
-  static async getLocalVersions() {
+  async getLocalVersions() {
     const directory = await this.getByondDirectory()
     const versions: string[] = []
 
@@ -29,18 +35,23 @@ export class ByondService {
     for await (const [, entry] of iterable.entries()) {
       if (entry.kind === 'file' && entry.name.endsWith('.zip')) {
         versions.push(entry.name.replace(/\.zip$/, ''))
+        if (!this.versions.has(entry.name.replace(/\.zip$/, ''))) {
+          this.versions.set(entry.name.replace(/\.zip$/, ''), 'fetched')
+        }
       }
     }
 
     return versions.sort().reverse()
   }
 
-  static async downloadVersion(version: string, onProgress?: (value: number) => void) {
+  async downloadVersion(version: string, onProgress?: (value: number) => void) {
+    this.versions.set(version, 'fetching')
     const major = version.split('.')[0]
     const url = `${DOWNLOAD_BASE_URL}/${major}/${version}_byond_linux.zip`
     const response = await fetch(url)
 
     if (!response.ok) {
+      this.versions.set(version, 'error')
       throw new Error(`Failed to download BYOND ${version}: ${response.status}`)
     }
 
@@ -53,6 +64,7 @@ export class ByondService {
       await writable.write(buffer)
       await writable.close()
       onProgress?.(1)
+      this.versions.set(version, 'fetched')
       return
     }
 
@@ -76,22 +88,74 @@ export class ByondService {
 
     await writable.close()
     onProgress?.(1)
+    this.versions.set(version, 'fetched')
   }
 
-  static async deleteVersion(version: string) {
+  async load(version: string, setActive = true) {
+    const status = this.versions.get(version)
+    if (!status || (status !== 'fetched' && status !== 'loaded')) {
+      throw new Error('Version not available')
+    }
+
+    await commandQueueService.runToSuccess('/bin/mkdir', '-p\0/mnt/host/byond')
+
+    const destination = setActive ? '/var/lib/byond_staging' : `/mnt/host/byond/${version}`
+
+    if (status !== 'loaded') {
+      this.versions.set(version, 'loading')
+      const zipFile = await this.getVersion(version)
+      await emulatorService.sendFile(`byond/${version}.zip`, new Uint8Array(await zipFile.arrayBuffer()))
+      await commandQueueService.runToSuccess([
+        `/bin/unzip /mnt/host/byond/${version}.zip 'byond/bin*' -j -d ${destination}`,
+        `/bin/rm /mnt/host/byond/${version}.zip`,
+      ])
+      this.versions.set(version, 'loaded')
+    }
+
+    if (setActive) {
+      if (this.activeVersion) {
+        await commandQueueService.runToSuccess('/bin/mv', `/var/lib/byond\0/mnt/host/byond/${this.activeVersion}`)
+      }
+      await commandQueueService.runToSuccess('/bin/mv', `${destination}\0/var/lib/byond`)
+      this.activeVersion = version
+      localStorage.setItem(ACTIVE_VERSION_KEY, version)
+    }
+  }
+
+  async deleteVersion(version: string) {
     const directory = await this.getByondDirectory()
     await directory.removeEntry(`${version}.zip`, { recursive: false })
+    this.versions.delete(version)
+    if (this.activeVersion === version) {
+      this.activeVersion = null
+      localStorage.removeItem(ACTIVE_VERSION_KEY)
+    }
+    await commandQueueService.runToCompletion('/bin/rm', `-rf\0/var/lib/byond/${version}.zip\0/mnt/host/byond/${version}`)
   }
 
-  static getActiveVersion() {
-    return localStorage.getItem(ACTIVE_VERSION_KEY)
+  getStatus(version: string) {
+    return this.versions.get(version) ?? 'idle'
   }
 
-  static setActiveVersion(version: string) {
-    localStorage.setItem(ACTIVE_VERSION_KEY, version)
+  getActiveVersion() {
+    return this.activeVersion ?? localStorage.getItem(ACTIVE_VERSION_KEY)
   }
 
-  private static async getByondDirectory() {
+  useActive<T>(fn: (path: string | null) => T) {
+    return fn(this.getActiveVersion() ? '/var/lib/byond/' : null)
+  }
+
+  private async getVersion(version: string) {
+    const directory = await this.getByondDirectory()
+    const handle = await directory.getFileHandle(`${version}.zip`, { create: true })
+    const file = await handle.getFile()
+    if (file.size !== 0) {
+      return file
+    }
+    throw new Error('Version not downloaded')
+  }
+
+  private async getByondDirectory() {
     const root = await navigator.storage.getDirectory()
     return root.getDirectoryHandle('byond', { create: true })
   }

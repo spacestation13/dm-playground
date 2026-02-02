@@ -1,5 +1,6 @@
 import { emulatorService } from './emulatorSingleton'
 import { commandQueueService, type Process, type ProcessExit } from './commandQueueSingleton'
+import { byondService } from './byondSingleton'
 
 export type ExecutorEventType = 'reset' | 'output' | 'status'
 
@@ -32,23 +33,34 @@ export class ExecutorService {
     this.setStatus('running')
     this.appendOutput('Starting DreamMaker...\n')
 
+    const byondPath = byondService.getActiveVersion() ? '/var/lib/byond/' : null
+    if (!byondPath) {
+      this.appendOutput('No active BYOND version loaded.\n')
+      this.setStatus('idle')
+      return
+    }
+
+    const filename = `tmp-${Date.now()}`
+    const hostDme = `/mnt/host/${filename}.dme`
+    const hostDmb = `/mnt/host/${filename}.dmb`
+
     emulatorService.start('https://spacestation13.github.io/dm-playground-linux/')
-    emulatorService.sendFile('/tmp/playground.dme', new TextEncoder().encode(code))
+    await emulatorService.sendFile(`${filename}.dme`, new TextEncoder().encode(code))
 
-
-    const dmProcess = await commandQueueService.runProcess('dreammaker', '/tmp/playground.dme')
+    const env = new Map<string, string>([['LD_LIBRARY_PATH', byondPath]])
+    const dmProcess = await commandQueueService.runProcess(`${byondPath}DreamMaker`, hostDme, env)
     this.attachProcess(dmProcess)
 
     dmProcess.addEventListener('exit', () => {
       this.appendOutput('DreamMaker complete. Starting DreamDaemon...\n')
       commandQueueService
-        .runProcess('dreamdaemon', '/tmp/playground.dme')
+        .runProcess(`${byondPath}DreamDaemon`, `${hostDmb}\0-trusted`, env)
         .then((ddProcess) => {
           this.attachProcess(ddProcess)
           ddProcess.addEventListener('exit', () => {
             this.appendOutput('DreamDaemon exited.\n')
             commandQueueService
-              .runProcess('rm', '/tmp/playground.dme')
+              .runProcess('/bin/rm', `${hostDme}\0${hostDmb}`)
               .then((cleanup) => {
                 this.attachProcess(cleanup)
                 cleanup.addEventListener('exit', () => {

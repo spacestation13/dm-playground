@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ByondService, type ByondStatus } from '../../services/ByondService'
+import type { ByondStatus } from '../../services/ByondService'
+import { byondService } from '../../services/byondSingleton'
 
 type StatusMap = Record<string, ByondStatus>
 
@@ -15,12 +16,12 @@ export function ByondPanel() {
   const refresh = async () => {
     try {
       const [remoteVersions, localVersions] = await Promise.all([
-        ByondService.getAvailableVersions(),
-        ByondService.getLocalVersions(),
+        byondService.getAvailableVersions(),
+        byondService.getLocalVersions(),
       ])
       setAvailable(remoteVersions)
       setLocal(localVersions)
-      setActiveVersion(ByondService.getActiveVersion())
+      setActiveVersion(byondService.getActiveVersion())
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : 'Failed to load versions')
     }
@@ -34,12 +35,12 @@ export function ByondPanel() {
     setStatus((prev) => ({ ...prev, [version]: 'fetching' }))
     setError(null)
     try {
-      await ByondService.downloadVersion(version, (value) => {
+      await byondService.downloadVersion(version, (value) => {
         if (value >= 1) {
           setStatus((prev) => ({ ...prev, [version]: 'fetched' }))
         }
       })
-      const localVersions = await ByondService.getLocalVersions()
+      const localVersions = await byondService.getLocalVersions()
       setLocal(localVersions)
     } catch (downloadError) {
       setStatus((prev) => ({ ...prev, [version]: 'error' }))
@@ -49,8 +50,8 @@ export function ByondPanel() {
 
   const handleDelete = async (version: string) => {
     try {
-      await ByondService.deleteVersion(version)
-      const localVersions = await ByondService.getLocalVersions()
+      await byondService.deleteVersion(version)
+      const localVersions = await byondService.getLocalVersions()
       setLocal(localVersions)
       if (activeVersion === version) {
         setActiveVersion(null)
@@ -61,8 +62,17 @@ export function ByondPanel() {
   }
 
   const handleSetActive = (version: string) => {
-    ByondService.setActiveVersion(version)
-    setActiveVersion(version)
+    setStatus((prev) => ({ ...prev, [version]: 'loading' }))
+    void byondService
+      .load(version, true)
+      .then(() => {
+        setActiveVersion(version)
+        setStatus((prev) => ({ ...prev, [version]: 'loaded' }))
+      })
+      .catch((loadError) => {
+        setStatus((prev) => ({ ...prev, [version]: 'error' }))
+        setError(loadError instanceof Error ? loadError.message : 'Load failed')
+      })
   }
 
   return (
@@ -93,7 +103,7 @@ export function ByondPanel() {
             {topVersions.map((version) => {
               const isLocal = local.includes(version)
               const isActive = activeVersion === version
-              const versionStatus = status[version] ?? (isLocal ? 'fetched' : 'idle')
+              const versionStatus = status[version] ?? byondService.getStatus(version)
 
               return (
                 <tr key={version} className="border-t border-slate-800">

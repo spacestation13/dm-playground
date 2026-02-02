@@ -173,6 +173,23 @@ export class CommandQueueService {
     return tracked
   }
 
+  async runToCompletion(path: string | string[], args = '', env = new Map<string, string>()) {
+    const process = await this.runProcess(path, args, env)
+    const exit = await this.waitForExit(process)
+    return exit
+  }
+
+  async runToSuccess(path: string | string[], args = '', env = new Map<string, string>()) {
+    const exit = await this.runToCompletion(path, args, env)
+    if (exit.cause === 'exit' && exit.code !== 0) {
+      throw new Error(`Process exited abnormally: ${exit.code}`)
+    }
+    if (exit.cause === 'signal') {
+      throw new Error(`Process killed by signal: ${exit.signal}`)
+    }
+    return exit
+  }
+
   signal(pid: number, signal: number) {
     return this.queueCommand({ type: 'signal', pid, signal })
   }
@@ -331,13 +348,26 @@ export class CommandQueueService {
         break
       }
       case 'run': {
-        const pid = parseInt(status)
+        const pid = parseInt(components[0] ?? '')
+        if (Number.isNaN(pid)) {
+          throw new Error('Failed to parse pid from controller response')
+        }
         const process = new Process(pid, this)
         this.trackedProcesses.set(pid, process)
         callback({ status: 'OK', result: pid } as CommandResult<RunCommand>)
         break
       }
     }
+  }
+
+  private waitForExit(process: Process): Promise<ProcessExit> {
+    return new Promise((resolve) => {
+      const handler = (event: Event) => {
+        process.removeEventListener('exit', handler)
+        resolve((event as CustomEvent<ProcessExit>).detail)
+      }
+      process.addEventListener('exit', handler)
+    })
   }
 
   private send(message: string) {
