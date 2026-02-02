@@ -42,6 +42,20 @@ export function Terminal({ label, readOnly = false, onReady, onData, onResize }:
     const fitAddon = new FitAddon()
     terminal.loadAddon(fitAddon)
     terminal.open(containerRef.current)
+    // - For interactive terminals: prevent browser copy and let xterm handle the key
+    // - For readonly terminals: allow browser/default behavior
+    terminal.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if (e.ctrlKey && !e.metaKey && (e.key === 'c' || e.key === 'C')) {
+        if (readOnly) {
+          // Let the browser handle Ctrl+C
+          return false
+        }
+        // Interactive terminal: prevent the browser copy
+        e.preventDefault()
+        return true
+      }
+      return true
+    })
     const dataDisposable = terminal.onData((value) => onData?.(value))
     fitAddon.fit()
     onResize?.(terminal.rows, terminal.cols)

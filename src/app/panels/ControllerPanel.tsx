@@ -22,7 +22,6 @@ export function ControllerTitle() {
       {busy && (
         <span className="inline-flex items-center gap-2 text-xs text-emerald-300">
           <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-          &nbsp;- Busy
         </span>
       )}
     </div>

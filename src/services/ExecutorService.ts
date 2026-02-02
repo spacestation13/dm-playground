@@ -31,7 +31,6 @@ export class ExecutorService {
   async executeImmediate(code: string) {
     this.reset()
     this.setStatus('running')
-    this.appendOutput('Starting DreamMaker...\n')
 
     const byondPath = byondService.getActiveVersion() ? '/var/lib/byond/' : null
     if (!byondPath) {
@@ -52,21 +51,14 @@ export class ExecutorService {
     this.attachProcess(dmProcess)
 
     dmProcess.addEventListener('exit', () => {
-      this.appendOutput('DreamMaker complete. Starting DreamDaemon...\n')
+      this.appendOutput('-- DreamDaemon --\n')
       commandQueueService
         .runProcess(`${byondPath}DreamDaemon`, `${hostDmb}\0-trusted`, env)
         .then((ddProcess) => {
           this.attachProcess(ddProcess)
           ddProcess.addEventListener('exit', () => {
-            this.appendOutput('DreamDaemon exited.\n')
             commandQueueService
               .runProcess('/bin/rm', `${hostDme}\0${hostDmb}`)
-              .then((cleanup) => {
-                this.attachProcess(cleanup)
-                cleanup.addEventListener('exit', () => {
-                  this.appendOutput('Cleaned up temp files.\n')
-                })
-              })
               .catch((error) => {
                 this.appendOutput(`Cleanup failed: ${String(error)}\n`)
               })
