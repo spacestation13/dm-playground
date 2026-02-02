@@ -24,17 +24,18 @@ export class EmulatorService {
     this.events.removeEventListener(type, listener)
   }
 
-  start(vmSourceUrl?: string) {
+  start(vmRemoteUrl?: string) {
     if (this.worker) {
       this.post({ type: 'start' })
       return
     }
 
     const url = new URL('../workers/emulator.worker.ts', import.meta.url)
-    if (vmSourceUrl) {
-      url.searchParams.set('vmSourceUrl', vmSourceUrl)
-    }
-    this.worker = new Worker(url, { type: 'module' })
+    url.searchParams.set(
+      'vmRemoteUrl',
+      vmRemoteUrl ?? 'https://spacestation13.github.io/dm-playground-linux/',
+    )
+    this.worker = new Worker(url)
     this.worker.addEventListener('message', (event: MessageEvent<EmulatorInboundMessage>) => {
       const payload = event.data
       this.events.dispatchEvent(new CustomEvent(payload.type, { detail: payload }))

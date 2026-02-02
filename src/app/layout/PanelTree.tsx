@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, useCallback, useRef } from 'react'
 import { Panel as PanelHost } from './Panel'
 import { Group, Panel as ResizablePanel, Separator, type Layout } from 'react-resizable-panels'
 import type { LayoutBranch, LayoutLeaf } from './layoutTypes'
@@ -20,11 +20,30 @@ export function PanelTree({ node }: PanelTreeProps) {
   const direction = node.split === 'vertical' ? 'horizontal' : 'vertical'
   const isVertical = direction === 'vertical'
   const panelIds = node.children.map((_, index) => `${node.id}-${index}`)
+  const lastSizesRef = useRef<number[] | null>(null)
 
-  const handleLayoutChanged = (layout: Layout) => {
-    const sizes = panelIds.map((id, index) => layout[id] ?? node.children[index]?.size ?? 0)
-    updateBranchSizes(node.id, sizes)
-  }
+  const handleLayoutChanged = useCallback(
+    (layout: Layout) => {
+      const sizes = panelIds.map((id, index) => layout[id] ?? node.children[index]?.size ?? 0)
+      if (sizes.every((value) => value === 0)) {
+        return
+      }
+
+      const last = lastSizesRef.current
+      const isSame =
+        last &&
+        last.length === sizes.length &&
+        last.every((value, index) => Math.abs(value - sizes[index]) < 0.1)
+
+      if (isSame) {
+        return
+      }
+
+      lastSizesRef.current = sizes
+      updateBranchSizes(node.id, sizes)
+    },
+    [node.id, panelIds, node.children, updateBranchSizes],
+  )
 
   return (
     <Group

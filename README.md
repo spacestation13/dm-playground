@@ -12,4 +12,5 @@ Client-only React rebuild scaffold for DM Playground. This project is the starti
 ## Notes
 
 - Panel layout, services, and workers are placeholders and will be implemented incrementally.
-- Public VM assets and BYOND tooling will be added in future steps.
+- Copy VM assets (libv86.js, v86.wasm) into public/lib/.
+- bzImage/rootfs are loaded remotely from https://spacestation13.github.io/dm-playground-linux/.

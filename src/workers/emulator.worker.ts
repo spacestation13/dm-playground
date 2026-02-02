@@ -1,5 +1,7 @@
 type EmulatorPort = 'console' | 'screen' | 'controller'
 
+declare function importScripts(...urls: string[]): void
+
 type EmulatorInboundMessage =
   | { type: 'sendPort'; port: EmulatorPort; data: string }
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
@@ -13,7 +15,8 @@ type EmulatorOutboundMessage =
   | { type: 'asyncResponse'; commandId: string }
 
 const url = new URL(self.location.href)
-const vmSourceUrl = url.searchParams.get('vmSourceUrl')
+const vmRemoteUrl = url.searchParams.get('vmRemoteUrl') ?? 'https://spacestation13.github.io/dm-playground-linux/'
+const vmLocalUrl = '/lib/'
 
 const post = (message: EmulatorOutboundMessage) => {
   self.postMessage(message)
@@ -25,8 +28,16 @@ self.addEventListener('message', (event: MessageEvent<EmulatorInboundMessage>) =
   switch (data.type) {
     case 'start':
       post({ type: 'resetOutputConsole' })
-      if (vmSourceUrl) {
-        post({ type: 'receivedOutput', port: 'console', data: `VM source: ${vmSourceUrl}\n` })
+      post({ type: 'receivedOutput', port: 'console', data: `VM assets (remote): ${vmRemoteUrl}bzImage and ${vmRemoteUrl}rootfs.cpio.lz4\n` })
+      try {
+        importScripts(`${vmLocalUrl}libv86.js`)
+        post({ type: 'receivedOutput', port: 'console', data: 'Loaded libv86.js\n' })
+      } catch (error) {
+        post({
+          type: 'receivedOutput',
+          port: 'console',
+          data: `Failed to load libv86.js: ${(error as Error).message}\n`,
+        })
       }
       break
     case 'pause':

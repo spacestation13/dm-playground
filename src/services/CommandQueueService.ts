@@ -34,6 +34,7 @@ export class CommandQueueService {
   private processes = new Map<number, Process>()
   private events = new EventTarget()
   private booted = false
+  private pollTimer: number | null = null
 
   setSender(sender: (value: string) => void) {
     this.sender = sender
@@ -65,6 +66,21 @@ export class CommandQueueService {
 
   poll() {
     this.send('poll')
+  }
+
+  startPolling(intervalMs = 250) {
+    if (this.pollTimer) {
+      return
+    }
+    this.pollTimer = self.setInterval(() => this.poll(), intervalMs)
+  }
+
+  stopPolling() {
+    if (!this.pollTimer) {
+      return
+    }
+    clearInterval(this.pollTimer)
+    this.pollTimer = null
   }
 
   handleInput(chunk: string) {
