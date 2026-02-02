@@ -1,0 +1,26 @@
+import type { ReactNode } from 'react'
+import { PanelId } from './layoutTypes'
+import { PanelRegistry } from '../panels/PanelRegistry'
+
+interface PanelProps {
+  id: PanelId
+}
+
+export function Panel({ id }: PanelProps) {
+  const panel = PanelRegistry[id]
+
+  return (
+    <section className="flex h-full flex-col overflow-hidden rounded-md border border-slate-800 bg-slate-900">
+      <header className="flex items-center justify-between border-b border-slate-800 bg-slate-900/70 px-3 py-2 text-sm font-semibold text-slate-200">
+        {panel.title}
+      </header>
+      <div className="flex-1 overflow-auto p-3 text-sm text-slate-300">
+        <PanelContent>{panel.render()}</PanelContent>
+      </div>
+    </section>
+  )
+}
+
+function PanelContent({ children }: { children: ReactNode }) {
+  return <div className="h-full">{children}</div>
+}
