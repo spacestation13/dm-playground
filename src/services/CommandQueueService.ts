@@ -4,6 +4,7 @@ export interface CommandResultOK<C extends Command> {
   status: 'OK'
   result: CommandReturnType<C>
 }
+
 export interface CommandResultErr {
   status: 'ERR'
   error: string
@@ -404,3 +405,5 @@ export class CommandQueueService {
     this.events.dispatchEvent(new CustomEvent('busy', { detail: value }))
   }
 }
+
+export const commandQueueService = new CommandQueueService()

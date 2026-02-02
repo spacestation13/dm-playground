@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ByondStatus } from '../../services/ByondService'
-import { byondService } from '../../services/byondSingleton'
+import { byondService } from '../../services/ByondService'
 
 type StatusMap = Record<string, ByondStatus>
 

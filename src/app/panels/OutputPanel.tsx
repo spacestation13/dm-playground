@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { executorService } from '../../services/executorSingleton'
+import { executorService } from '../../services/ExecutorService'
 
 export function OutputPanel() {
   const [output, setOutput] = useState<string>('')

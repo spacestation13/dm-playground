@@ -1,6 +1,6 @@
-import { emulatorService } from './emulatorSingleton'
-import { commandQueueService, type Process, type ProcessExit } from './commandQueueSingleton'
-import { byondService } from './byondSingleton'
+import { emulatorService } from './EmulatorService'
+import { commandQueueService, type Process, type ProcessExit } from './CommandQueueService'
+import { byondService } from './ByondService'
 
 export type ExecutorEventType = 'reset' | 'output' | 'status'
 
@@ -113,3 +113,5 @@ export class ExecutorService {
     })
   }
 }
+
+export const executorService = new ExecutorService()

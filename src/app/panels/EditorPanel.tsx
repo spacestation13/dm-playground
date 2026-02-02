@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Base64 } from 'js-base64'
 import { Editor } from '../components/Editor'
-import { executorService } from '../../services/executorSingleton'
-import { byondService } from '../../services/byondSingleton'
+import { executorService } from '../../services/ExecutorService'
+import { byondService } from '../../services/ByondService'
 import { useTheme } from '../theme/useTheme'
 
 const DEFAULT_CODE = `/world/New()\n  world.log << "meow";\n  ..()\n  eval("")\n  shutdown()\n`

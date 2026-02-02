@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Base64 } from 'js-base64'
 import { Terminal, type TerminalApi } from '../components/Terminal'
-import { emulatorService } from '../../services/emulatorSingleton'
-import { commandQueueService } from '../../services/commandQueueSingleton'
+import { emulatorService } from '../../services/EmulatorService'
+import { commandQueueService } from '../../services/CommandQueueService'
 
 export function ControllerTitle() {
   const [busy, setBusy] = useState(() => commandQueueService.getBusy())

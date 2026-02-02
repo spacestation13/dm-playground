@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Terminal, type TerminalApi } from '../components/Terminal'
-import { emulatorService } from '../../services/emulatorSingleton'
+import { emulatorService } from '../../services/EmulatorService'
 
 export function ConsolePanel() {
   const [terminal, setTerminal] = useState<TerminalApi | null>(null)

@@ -1,5 +1,5 @@
-import { commandQueueService } from './commandQueueSingleton'
-import { emulatorService } from './emulatorSingleton'
+import { commandQueueService } from './CommandQueueService'
+import { emulatorService } from './EmulatorService'
 
 const VERSIONS_URL = 'https://byond-builds.dm-lang.org/version.txt'
 const DOWNLOAD_BASE_URL = 'https://byond-builds.dm-lang.org'
@@ -216,3 +216,5 @@ export class ByondService {
     return root.getDirectoryHandle('byond', { create: true })
   }
 }
+
+export const byondService = new ByondService()

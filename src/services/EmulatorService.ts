@@ -1,5 +1,7 @@
 export type EmulatorPort = 'console' | 'screen' | 'controller'
 
+import { commandQueueService } from './CommandQueueService'
+
 export type EmulatorOutboundMessage =
   | { type: 'sendPort'; port: EmulatorPort; data: string }
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
@@ -66,3 +68,16 @@ export class EmulatorService {
     this.worker.postMessage(message)
   }
 }
+
+export const emulatorService = new EmulatorService()
+
+commandQueueService.setSender((value) => {
+  emulatorService.sendPort('controller', value)
+})
+
+emulatorService.addEventListener('receivedOutput', (event) => {
+  const detail = (event as CustomEvent<{ port: string; data: string }>).detail
+  if (detail.port === 'controller') {
+    commandQueueService.receiveInput(detail.data)
+  }
+})
