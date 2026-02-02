@@ -1,0 +1,5 @@
+node_modules
+src/parser.ts
+src/parser.terms.ts
+src/*.js
+bin/*.js

@@ -1,0 +1,26 @@
+# Simple undef
+#undef macro
+==>
+File(PpUndef(undef, PpIdentifier))
+
+# Multiple
+#undef macro
+#undef macro
+#undef macro
+#undef macro
+==>
+File(
+  PpUndef(undef, PpIdentifier),
+  PpUndef(undef, PpIdentifier),
+  PpUndef(undef, PpIdentifier),
+  PpUndef(undef, PpIdentifier)
+)
+
+# Extra spacing
+#undef macro
+    #       undef      macro
+==>
+File(
+  PpUndef(undef, PpIdentifier),
+  PpUndef(undef, PpIdentifier)
+)
