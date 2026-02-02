@@ -4,6 +4,7 @@ import { LayoutProvider } from './layout/LayoutProvider'
 import { defaultLayout, type LayoutRoot } from './layout/layoutTypes'
 import { updateBranchSizes } from './layout/layoutUtils'
 import { CompressionService } from '../services/CompressionService'
+import { emulatorService } from '../services/emulatorSingleton'
 
 const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
@@ -49,6 +50,11 @@ export function App() {
       isMounted = false
     }
   }, [saveLayout])
+
+  useEffect(() => {
+    const vmSourceUrl = import.meta.env.VITE_VM_SOURCE_URL ?? './lib/'
+    emulatorService.start(vmSourceUrl)
+  }, [])
 
   const handleUpdateBranchSizes = useCallback((branchId: number, sizes: number[]) => {
     setLayout((prev) => {

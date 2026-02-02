@@ -3,12 +3,18 @@ import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 
+export interface TerminalApi {
+  write: (value: string) => void
+  clear: () => void
+}
+
 interface TerminalProps {
   label: string
   readOnly?: boolean
+  onReady?: (api: TerminalApi) => void
 }
 
-export function Terminal({ label, readOnly = false }: TerminalProps) {
+export function Terminal({ label, readOnly = false, onReady }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const terminalRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
@@ -37,6 +43,11 @@ export function Terminal({ label, readOnly = false }: TerminalProps) {
     fitAddon.fit()
     terminal.write(`${label}\r\n`)
 
+    onReady?.({
+      write: (value) => terminal.write(value),
+      clear: () => terminal.clear(),
+    })
+
     const observer = new ResizeObserver(() => {
       fitAddon.fit()
     })
@@ -49,7 +60,7 @@ export function Terminal({ label, readOnly = false }: TerminalProps) {
       observer.disconnect()
       terminal.dispose()
     }
-  }, [label, readOnly])
+  }, [label, readOnly, onReady])
 
   return <div ref={containerRef} className="h-full min-h-0 w-full rounded border border-slate-800 bg-slate-950/60" />
 }
