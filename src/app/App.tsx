@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import packageJson from '../../package.json'
 import { PanelTree } from './layout/PanelTree'
 import { LayoutProvider } from './layout/LayoutProvider'
-import { defaultLayout, type LayoutRoot } from './layout/layoutTypes'
+import { PanelId, defaultLayout, type LayoutBranch, type LayoutLeaf, type LayoutRoot } from './layout/layoutTypes'
 import { updateBranchSizes } from './layout/layoutUtils'
 import { CompressionService } from '../services/CompressionService'
 import { emulatorService } from '../services/emulatorSingleton'
@@ -10,9 +11,35 @@ import { byondService } from '../services/byondSingleton'
 
 const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
+const APP_VERSION = packageJson.version
+const VALID_PANELS = new Set(Object.values(PanelId))
+
+const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLeaf | null => {
+  if (node.type === 'leaf') {
+    return VALID_PANELS.has(node.id) ? node : null
+  }
+
+  const children = node.children
+    .map((child) => sanitizeNode(child))
+    .filter((child): child is LayoutBranch | LayoutLeaf => child !== null)
+
+  if (children.length === 0) {
+    return null
+  }
+
+  if (children.length === 1) {
+    return children[0]
+  }
+
+  return {
+    ...node,
+    children,
+  }
+}
 
 export function App() {
   const [layout, setLayout] = useState<LayoutRoot | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
 
   const saveLayout = useCallback(async (next: LayoutRoot) => {
     setLayout(next)
@@ -37,8 +64,19 @@ export function App() {
           return
         }
 
+        const sanitizedRoot = sanitizeNode(parsed.root)
+        const nextLayout =
+          sanitizedRoot && sanitizedRoot.type === 'branch'
+            ? { ...parsed, root: sanitizedRoot }
+            : defaultLayout
+
         if (isMounted) {
-          setLayout(parsed)
+          setLayout(nextLayout)
+        }
+
+        if (sanitizedRoot && sanitizedRoot.type === 'branch') {
+          const compressed = await CompressionService.encode(nextLayout)
+          localStorage.setItem(LAYOUT_STORAGE_KEY, compressed)
         }
       } catch (error) {
         console.warn('Failed to load layout, resetting to default.', error)
@@ -92,6 +130,14 @@ export function App() {
         <div>
           <h1 className="text-lg font-semibold text-slate-100">DM Playground</h1>
         </div>
+        <button
+          type="button"
+          aria-label="Settings"
+          onClick={() => setShowSettings(true)}
+          className="rounded-md border border-slate-700 bg-slate-900/80 px-2 py-1 text-sm font-semibold text-slate-200 hover:border-slate-500"
+        >
+          ⚙️
+        </button>
       </header>
       <div className="flex-1 min-h-0">
         <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
@@ -100,6 +146,44 @@ export function App() {
           </ErrorBoundary>
         </LayoutProvider>
       </div>
+      {showSettings && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4"
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-200 shadow-lg"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Settings"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Settings</h2>
+              <button
+                type="button"
+                onClick={() => setShowSettings(false)}
+                className="text-xs text-slate-400 hover:text-slate-200"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-3 space-y-2 text-sm">
+              <div>Version {APP_VERSION}</div>
+              <div>
+                <a
+                  className="text-sky-300 hover:text-sky-200"
+                  href="https://github.com/spacestation13/dm-playground"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  github.com/spacestation13/dm-playground
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
