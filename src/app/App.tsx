@@ -5,6 +5,7 @@ import { defaultLayout, type LayoutRoot } from './layout/layoutTypes'
 import { updateBranchSizes } from './layout/layoutUtils'
 import { CompressionService } from '../services/CompressionService'
 import { emulatorService } from '../services/emulatorSingleton'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
@@ -93,7 +94,9 @@ export function App() {
       </header>
       <div className="flex-1 min-h-0">
         <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
-          <PanelTree node={layout.root} />
+          <ErrorBoundary>
+            <PanelTree node={layout.root} />
+          </ErrorBoundary>
         </LayoutProvider>
       </div>
     </div>
