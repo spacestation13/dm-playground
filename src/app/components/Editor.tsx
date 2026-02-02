@@ -1,16 +1,22 @@
 import MonacoEditor, { type OnMount } from '@monaco-editor/react'
 import type * as Monaco from 'monaco-editor'
+import { useEffect, useRef } from 'react'
 
 import { ensureDmTextmate } from '../monaco/setupTextmate'
+import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
 
 interface EditorProps {
   value: string
   onChange: (value: string) => void
   onRun?: () => void
+  themeId: EditorThemeId
 }
 
-export function Editor({ value, onChange, onRun }: EditorProps) {
+export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
+  const monacoRef = useRef<typeof Monaco | null>(null)
+
   const handleMount: OnMount = async (_editor, monaco) => {
+    monacoRef.current = monaco as typeof Monaco
     monaco.languages.register({ id: 'dm' })
     monaco.languages.registerCompletionItemProvider('dm', {
       triggerCharacters: ['.', ':', '/'],
@@ -70,8 +76,21 @@ export function Editor({ value, onChange, onRun }: EditorProps) {
         return { suggestions }
       },
     })
+    await ensureMonacoTheme(monaco as typeof Monaco, themeId)
+    monaco.editor.setTheme(themeId)
     await ensureDmTextmate(monaco as typeof Monaco)
   }
+
+  useEffect(() => {
+    if (!monacoRef.current) {
+      return
+    }
+
+    void (async () => {
+      await ensureMonacoTheme(monacoRef.current as typeof Monaco, themeId)
+      monacoRef.current?.editor.setTheme(themeId)
+    })()
+  }, [themeId])
 
   return (
     <div className="relative h-full min-h-0">
@@ -87,13 +106,14 @@ export function Editor({ value, onChange, onRun }: EditorProps) {
         <MonacoEditor
           value={value}
           height="100%"
-          theme="vs-dark"
+          theme={themeId}
           language="dm"
           onMount={handleMount}
           onChange={(nextValue) => onChange(nextValue ?? '')}
           options={{
             minimap: { enabled: false },
             lineNumbers: 'on',
+            contextmenu: false,
             scrollBeyondLastLine: false,
             wordWrap: 'off',
             fontFamily: 'JetBrains Mono, Menlo, Monaco, Consolas, monospace',

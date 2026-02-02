@@ -3,6 +3,7 @@ import { Base64 } from 'js-base64'
 import { Editor } from '../components/Editor'
 import { executorService } from '../../services/executorSingleton'
 import { byondService } from '../../services/byondSingleton'
+import { useTheme } from '../theme/useTheme'
 
 const DEFAULT_CODE = `/world/New()\n  world.log << "meow";\n  ..()\n  eval("")\n  shutdown()\n`
 
@@ -25,6 +26,7 @@ export function EditorPanel() {
   const [value, setValue] = useState(() => getSeededCode())
   const [, setStatus] = useState<'running' | 'idle'>('idle')
   const [activeByond, setActiveByond] = useState<string | null>(() => byondService.getActiveVersion())
+  const { themeId } = useTheme()
 
   useEffect(() => {
     const handleStatus = (event: Event) => {
@@ -55,7 +57,7 @@ export function EditorPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      <Editor value={value} onChange={setValue} onRun={handleRun} />
+      <Editor value={value} onChange={setValue} onRun={handleRun} themeId={themeId} />
     </div>
   )
 }

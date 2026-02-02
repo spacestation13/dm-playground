@@ -8,11 +8,14 @@ import { CompressionService } from '../services/CompressionService'
 import { emulatorService } from '../services/emulatorSingleton'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { byondService } from '../services/byondSingleton'
+import { ThemeProvider } from './theme/ThemeContext'
+import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 
 const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
 const APP_VERSION = packageJson.version
 const VALID_PANELS = new Set(Object.values(PanelId))
+const THEME_STORAGE_KEY = 'editor-theme'
 
 const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLeaf | null => {
   if (node.type === 'leaf') {
@@ -40,6 +43,10 @@ const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLea
 export function App() {
   const [layout, setLayout] = useState<LayoutRoot | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [themeId, setThemeId] = useState<EditorThemeId>(() => {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY)
+    return (stored as EditorThemeId) || 'vs-dark'
+  })
 
   const saveLayout = useCallback(async (next: LayoutRoot) => {
     setLayout(next)
@@ -96,6 +103,10 @@ export function App() {
     void byondService.initialize()
   }, [])
 
+  useEffect(() => {
+    localStorage.setItem(THEME_STORAGE_KEY, themeId)
+  }, [themeId])
+
   const handleUpdateBranchSizes = useCallback((branchId: number, sizes: number[]) => {
     setLayout((prev) => {
       if (!prev) {
@@ -140,11 +151,13 @@ export function App() {
         </button>
       </header>
       <div className="flex-1 min-h-0">
-        <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
-          <ErrorBoundary>
-            <PanelTree node={layout.root} />
-          </ErrorBoundary>
-        </LayoutProvider>
+        <ThemeProvider value={{ themeId, setThemeId }}>
+          <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
+            <ErrorBoundary>
+              <PanelTree node={layout.root} />
+            </ErrorBoundary>
+          </LayoutProvider>
+        </ThemeProvider>
       </div>
       {showSettings && (
         <div
@@ -168,7 +181,21 @@ export function App() {
                 Close
               </button>
             </div>
-            <div className="mt-3 space-y-2 text-sm">
+            <div className="mt-3 space-y-3 text-sm">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs uppercase tracking-wide text-slate-400">Editor theme</span>
+                <select
+                  className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                  value={themeId}
+                  onChange={(event) => setThemeId(event.target.value as EditorThemeId)}
+                >
+                  {editorThemeOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div>Version {APP_VERSION}</div>
               <div>
                 <a
