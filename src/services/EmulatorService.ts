@@ -1,5 +1,67 @@
+export type EmulatorPort = 'console' | 'screen' | 'controller'
+
+export type EmulatorOutboundMessage =
+  | { type: 'sendPort'; port: EmulatorPort; data: string }
+  | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
+  | { type: 'start' }
+  | { type: 'pause' }
+  | { type: 'sendFile'; name: string; data: Uint8Array }
+
+export type EmulatorInboundMessage =
+  | { type: 'receivedOutput'; port: EmulatorPort; data: string }
+  | { type: 'resetOutputConsole' }
+  | { type: 'asyncResponse'; commandId: string }
+
 export class EmulatorService {
-  start() {
-    // TODO: wire up v86 worker
+  private worker: Worker | null = null
+  private events = new EventTarget()
+
+  addEventListener(type: EmulatorInboundMessage['type'], listener: EventListenerOrEventListenerObject) {
+    this.events.addEventListener(type, listener)
+  }
+
+  removeEventListener(type: EmulatorInboundMessage['type'], listener: EventListenerOrEventListenerObject) {
+    this.events.removeEventListener(type, listener)
+  }
+
+  start(vmSourceUrl?: string) {
+    if (this.worker) {
+      this.post({ type: 'start' })
+      return
+    }
+
+    const url = new URL('../workers/emulator.worker.ts', import.meta.url)
+    if (vmSourceUrl) {
+      url.searchParams.set('vmSourceUrl', vmSourceUrl)
+    }
+    this.worker = new Worker(url, { type: 'module' })
+    this.worker.addEventListener('message', (event: MessageEvent<EmulatorInboundMessage>) => {
+      const payload = event.data
+      this.events.dispatchEvent(new CustomEvent(payload.type, { detail: payload }))
+    })
+    this.post({ type: 'start' })
+  }
+
+  pause() {
+    this.post({ type: 'pause' })
+  }
+
+  sendPort(port: EmulatorPort, data: string) {
+    this.post({ type: 'sendPort', port, data })
+  }
+
+  resizePort(port: EmulatorPort, rows: number, cols: number) {
+    this.post({ type: 'resizePort', port, rows, cols })
+  }
+
+  sendFile(name: string, data: Uint8Array) {
+    this.post({ type: 'sendFile', name, data })
+  }
+
+  private post(message: EmulatorOutboundMessage) {
+    if (!this.worker) {
+      return
+    }
+    this.worker.postMessage(message)
   }
 }
