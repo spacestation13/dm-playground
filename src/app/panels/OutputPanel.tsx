@@ -1,24 +1,22 @@
 import { useEffect, useState } from 'react'
-import { commandQueueService } from '../../services/commandQueueSingleton'
+import { executorService } from '../../services/executorSingleton'
 
 export function OutputPanel() {
   const [output, setOutput] = useState<string>('')
 
   useEffect(() => {
-    const handleStdout = (event: Event) => {
-      const detail = (event as CustomEvent<{ pid: number; data: string }>).detail
-      setOutput((prev) => `${prev}${detail.data}`)
-    }
-    const handleStderr = (event: Event) => {
-      const detail = (event as CustomEvent<{ pid: number; data: string }>).detail
-      setOutput((prev) => `${prev}${detail.data}`)
+    const handleOutput = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail
+      setOutput((prev) => `${prev}${detail}`)
     }
 
-    commandQueueService.addEventListener('stdout', handleStdout)
-    commandQueueService.addEventListener('stderr', handleStderr)
+    const handleReset = () => setOutput('')
+
+    executorService.addEventListener('output', handleOutput)
+    executorService.addEventListener('reset', handleReset)
     return () => {
-      commandQueueService.removeEventListener('stdout', handleStdout)
-      commandQueueService.removeEventListener('stderr', handleStderr)
+      executorService.removeEventListener('output', handleOutput)
+      executorService.removeEventListener('reset', handleReset)
     }
   }, [])
 

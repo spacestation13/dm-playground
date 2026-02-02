@@ -12,9 +12,10 @@ interface TerminalProps {
   label: string
   readOnly?: boolean
   onReady?: (api: TerminalApi) => void
+  onData?: (value: string) => void
 }
 
-export function Terminal({ label, readOnly = false, onReady }: TerminalProps) {
+export function Terminal({ label, readOnly = false, onReady, onData }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const terminalRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
@@ -40,6 +41,7 @@ export function Terminal({ label, readOnly = false, onReady }: TerminalProps) {
     const fitAddon = new FitAddon()
     terminal.loadAddon(fitAddon)
     terminal.open(containerRef.current)
+    const dataDisposable = terminal.onData((value) => onData?.(value))
     fitAddon.fit()
     terminal.write(`${label}\r\n`)
 
@@ -58,9 +60,10 @@ export function Terminal({ label, readOnly = false, onReady }: TerminalProps) {
 
     return () => {
       observer.disconnect()
+      dataDisposable.dispose()
       terminal.dispose()
     }
-  }, [label, readOnly, onReady])
+  }, [label, readOnly, onReady, onData])
 
   return <div ref={containerRef} className="h-full min-h-0 w-full rounded border border-slate-800 bg-slate-950/60" />
 }

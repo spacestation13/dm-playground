@@ -28,5 +28,11 @@ export function ConsolePanel() {
     }
   }, [terminal])
 
-  return <Terminal label="Console ready" onReady={setTerminal} />
+  return (
+    <Terminal
+      label="Console ready"
+      onReady={setTerminal}
+      onData={(value) => emulatorService.sendPort('console', value)}
+    />
+  )
 }
