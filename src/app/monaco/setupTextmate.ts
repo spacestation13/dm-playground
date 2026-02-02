@@ -23,18 +23,12 @@ export function ensureDmTextmate(monaco: typeof Monaco): Promise<void> {
           throw new Error(`Unknown scope: ${scopeName}`)
         }
 
-        try {
-          const response = await fetch(DM_GRAMMAR_URL)
-          if (!response.ok) {
-            throw new Error(`Failed to fetch DM grammar: ${response.status}`)
-          }
-          const content = await response.text()
-          return { format: 'json', content }
-        } catch {
-          const fallback = await fetch('/grammars/dm.tmLanguage.json')
-          const content = await fallback.text()
-          return { format: 'json', content }
+        const response = await fetch(DM_GRAMMAR_URL)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch DM grammar: ${response.status}`)
         }
+        const content = await response.text()
+        return { format: 'json', content }
       },
     })
 

@@ -1,6 +1,8 @@
-# DM Playground (React Rebuild)
+# DM Playground
 
-Client-only React rebuild scaffold for DM Playground. This project is the starting point for porting the Angular implementation to idiomatic React with Vite, TypeScript, and Tailwind CSS.
+Clientside DM Playground built with Vite + React + TypeScript + Tailwind.
+
+It runs a Linux VM in-browser via v86 and provides a Monaco editor with DM syntax highlighting.
 
 ## Scripts
 
@@ -9,8 +11,6 @@ Client-only React rebuild scaffold for DM Playground. This project is the starti
 - npm run preview
 - npm run lint
 
-## Notes
+## LICENSE
 
-- Panel layout, services, and workers are placeholders and will be implemented incrementally.
-- Copy VM assets (libv86.js, v86.wasm) into public/lib/.
-- bzImage/rootfs are loaded remotely from https://spacestation13.github.io/dm-playground-linux/.
+[MIT](./LICENSE)

@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "generate:dm": "node scripts/generate-dm-lezer.js",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
