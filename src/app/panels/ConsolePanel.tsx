@@ -33,6 +33,7 @@ export function ConsolePanel() {
       label="Console ready"
       onReady={setTerminal}
       onData={(value) => emulatorService.sendPort('console', value)}
+      onResize={(rows, cols) => emulatorService.resizePort('console', rows, cols)}
     />
   )
 }

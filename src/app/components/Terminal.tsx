@@ -13,9 +13,10 @@ interface TerminalProps {
   readOnly?: boolean
   onReady?: (api: TerminalApi) => void
   onData?: (value: string) => void
+  onResize?: (rows: number, cols: number) => void
 }
 
-export function Terminal({ label, readOnly = false, onReady, onData }: TerminalProps) {
+export function Terminal({ label, readOnly = false, onReady, onData, onResize }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const terminalRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
@@ -43,6 +44,7 @@ export function Terminal({ label, readOnly = false, onReady, onData }: TerminalP
     terminal.open(containerRef.current)
     const dataDisposable = terminal.onData((value) => onData?.(value))
     fitAddon.fit()
+    onResize?.(terminal.rows, terminal.cols)
     terminal.write(`${label}\r\n`)
 
     onReady?.({
@@ -52,6 +54,7 @@ export function Terminal({ label, readOnly = false, onReady, onData }: TerminalP
 
     const observer = new ResizeObserver(() => {
       fitAddon.fit()
+      onResize?.(terminal.rows, terminal.cols)
     })
     observer.observe(containerRef.current)
 
@@ -63,7 +66,7 @@ export function Terminal({ label, readOnly = false, onReady, onData }: TerminalP
       dataDisposable.dispose()
       terminal.dispose()
     }
-  }, [label, readOnly, onReady, onData])
+  }, [label, readOnly, onReady, onData, onResize])
 
   return <div ref={containerRef} className="h-full min-h-0 w-full rounded border border-slate-800 bg-slate-950/60" />
 }

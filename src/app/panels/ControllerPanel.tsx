@@ -21,5 +21,12 @@ export function ControllerPanel() {
     return () => emulatorService.removeEventListener('receivedOutput', handleOutput)
   }, [terminal])
 
-  return <Terminal label="Controller log" readOnly onReady={setTerminal} />
+  return (
+    <Terminal
+      label="Controller log"
+      readOnly
+      onReady={setTerminal}
+      onResize={(rows, cols) => emulatorService.resizePort('controller', rows, cols)}
+    />
+  )
 }

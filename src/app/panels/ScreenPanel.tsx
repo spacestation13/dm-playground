@@ -21,5 +21,12 @@ export function ScreenPanel() {
     return () => emulatorService.removeEventListener('receivedOutput', handleOutput)
   }, [terminal])
 
-  return <Terminal label="Screen output" readOnly onReady={setTerminal} />
+  return (
+    <Terminal
+      label="Screen output"
+      readOnly
+      onReady={setTerminal}
+      onResize={(rows, cols) => emulatorService.resizePort('screen', rows, cols)}
+    />
+  )
 }
