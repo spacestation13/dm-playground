@@ -1,6 +1,5 @@
 export const PanelId = {
   Console: 'Console',
-  Screen: 'Screen',
   Controller: 'Controller',
   Editor: 'Editor',
   Output: 'Output',
@@ -65,8 +64,7 @@ export const defaultLayout: LayoutRoot = {
         size: 30,
         children: [
           { type: 'leaf', id: PanelId.Console, size: 50 },
-          { type: 'leaf', id: PanelId.Screen, size: 25 },
-          { type: 'leaf', id: PanelId.Controller, size: 25 },
+          { type: 'leaf', id: PanelId.Controller, size: 50 },
         ],
       },
     ],

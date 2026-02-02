@@ -6,6 +6,8 @@ import { wireTmGrammars } from 'monaco-editor-textmate'
 import onigasmWasm from 'onigasm/lib/onigasm.wasm?url'
 
 let setupPromise: Promise<void> | null = null
+const DM_GRAMMAR_URL =
+  'https://raw.githubusercontent.com/SpaceManiac/vscode-dm-langclient/refs/heads/master/syntaxes/dm.tmLanguage.json'
 
 export function ensureDmTextmate(monaco: typeof Monaco): Promise<void> {
   if (setupPromise) {
@@ -21,9 +23,18 @@ export function ensureDmTextmate(monaco: typeof Monaco): Promise<void> {
           throw new Error(`Unknown scope: ${scopeName}`)
         }
 
-        const response = await fetch('/grammars/dm.tmLanguage.json')
-        const content = await response.text()
-        return { format: 'json', content }
+        try {
+          const response = await fetch(DM_GRAMMAR_URL)
+          if (!response.ok) {
+            throw new Error(`Failed to fetch DM grammar: ${response.status}`)
+          }
+          const content = await response.text()
+          return { format: 'json', content }
+        } catch {
+          const fallback = await fetch('/grammars/dm.tmLanguage.json')
+          const content = await fallback.text()
+          return { format: 'json', content }
+        }
       },
     })
 

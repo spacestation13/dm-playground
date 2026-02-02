@@ -5,7 +5,6 @@ import { ConsolePanel } from './ConsolePanel'
 import { ControllerPanel, ControllerTitle } from './ControllerPanel'
 import { EditorPanel } from './EditorPanel'
 import { OutputPanel } from './OutputPanel'
-import { ScreenPanel } from './ScreenPanel'
 
 interface PanelDescriptor {
   title: ReactNode
@@ -16,10 +15,6 @@ export const PanelRegistry: Record<PanelId, PanelDescriptor> = {
   [PanelId.Console]: {
     title: 'Console',
     render: () => <ConsolePanel />,
-  },
-  [PanelId.Screen]: {
-    title: 'Screen',
-    render: () => <ScreenPanel />,
   },
   [PanelId.Controller]: {
     title: <ControllerTitle />,
