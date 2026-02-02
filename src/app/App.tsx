@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { PanelTree } from './layout/PanelTree'
+import { LayoutProvider } from './layout/LayoutProvider'
 import { defaultLayout, type LayoutRoot } from './layout/layoutTypes'
+import { updateBranchSizes } from './layout/layoutUtils'
 import { CompressionService } from '../services/CompressionService'
 
 const LAYOUT_STORAGE_KEY = 'layout'
@@ -48,6 +50,26 @@ export function App() {
     }
   }, [saveLayout])
 
+  const handleUpdateBranchSizes = useCallback((branchId: number, sizes: number[]) => {
+    setLayout((prev) => {
+      if (!prev) {
+        return prev
+      }
+
+      const next = {
+        ...prev,
+        root: updateBranchSizes(prev.root, branchId, sizes),
+      }
+
+      void (async () => {
+        const compressed = await CompressionService.encode(next)
+        localStorage.setItem(LAYOUT_STORAGE_KEY, compressed)
+      })()
+
+      return next
+    })
+  }, [])
+
   if (!layout) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-slate-400">
@@ -64,7 +86,9 @@ export function App() {
         </div>
       </header>
       <div className="flex-1 min-h-0">
-        <PanelTree node={layout.root} />
+        <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
+          <PanelTree node={layout.root} />
+        </LayoutProvider>
       </div>
     </div>
   )
