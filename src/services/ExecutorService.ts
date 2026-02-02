@@ -41,6 +41,11 @@ export class ExecutorService {
       this.attachProcess(ddProcess)
       ddProcess.addEventListener('exit', () => {
         this.appendOutput('DreamDaemon exited.\n')
+        const cleanup = commandQueueService.run('rm', ['/tmp/playground.dme'])
+        this.attachProcess(cleanup)
+        cleanup.addEventListener('exit', () => {
+          this.appendOutput('Cleaned up temp files.\n')
+        })
       })
     })
   }
