@@ -4,7 +4,7 @@ import { Editor } from '../components/Editor'
 import { executorService } from '../../services/executorSingleton'
 import { byondService } from '../../services/byondSingleton'
 
-const DEFAULT_CODE = `// Write your DM code here\n`
+const DEFAULT_CODE = `/world/New()\n  world.log << "meow";\n  ..()\n  eval("")\n  shutdown()\n`
 
 const wrapTemplate = (code: string) => `// DM Playground\n\n${code}\n`
 
@@ -23,7 +23,7 @@ const getSeededCode = () => {
 
 export function EditorPanel() {
   const [value, setValue] = useState(() => getSeededCode())
-  const [status, setStatus] = useState<'running' | 'idle'>('idle')
+  const [, setStatus] = useState<'running' | 'idle'>('idle')
   const [activeByond, setActiveByond] = useState<string | null>(() => byondService.getActiveVersion())
 
   useEffect(() => {
@@ -52,30 +52,9 @@ export function EditorPanel() {
     void executorService.executeImmediate(value)
   }
 
-  const handleStop = () => {
-    executorService.cancel()
-  }
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={handleStop}
-          disabled={status === 'idle'}
-          className="rounded-md border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-slate-500"
-        >
-          Stop
-        </button>
-        <button
-          type="button"
-          onClick={handleRun}
-          disabled={status === 'running' || !activeByond}
-          className="rounded-md border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-slate-500"
-        >
-          Run
-        </button>
-      </div>
       <Editor value={value} onChange={setValue} onRun={handleRun} />
     </div>
   )

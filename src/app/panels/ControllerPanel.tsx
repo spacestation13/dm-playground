@@ -5,7 +5,7 @@ import { emulatorService } from '../../services/emulatorSingleton'
 import { commandQueueService } from '../../services/commandQueueSingleton'
 
 export function ControllerTitle() {
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState(() => commandQueueService.getBusy())
 
   useEffect(() => {
     const handleBusy = (event: Event) => {
@@ -19,7 +19,12 @@ export function ControllerTitle() {
   return (
     <div className="flex items-center gap-2">
       <span>Controller</span>
-      {busy && <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />}
+      {busy && (
+        <span className="inline-flex items-center gap-2 text-xs text-emerald-300">
+          <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+          &nbsp;- Busy
+        </span>
+      )}
     </div>
   )
 }
