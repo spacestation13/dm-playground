@@ -16,6 +16,7 @@ const MIN_LAYOUT_VERSION = 1
 const APP_VERSION = packageJson.version
 const VALID_PANELS = new Set(Object.values(PanelId))
 const THEME_STORAGE_KEY = 'editor-theme'
+export const STREAM_OUTPUT_KEY = 'stream-compiler-output'
 
 const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLeaf | null => {
   if (node.type === 'leaf') {
@@ -46,6 +47,9 @@ export function App() {
   const [themeId, setThemeId] = useState<EditorThemeId>(() => {
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
     return (stored as EditorThemeId) || 'vs-dark'
+  })
+  const [streamCompilerOutput, setStreamCompilerOutput] = useState<boolean>(() => {
+    return localStorage.getItem(STREAM_OUTPUT_KEY) === '1'
   })
 
   const saveLayout = useCallback(async (next: LayoutRoot) => {
@@ -195,6 +199,17 @@ export function App() {
                     </option>
                   ))}
                 </select>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={streamCompilerOutput}
+                  onChange={(e) => {
+                    setStreamCompilerOutput(e.target.checked)
+                    localStorage.setItem(STREAM_OUTPUT_KEY, e.target.checked ? '1' : '0')
+                  }}
+                />
+                <span className="text-xs">Stream DreamMaker output live</span>
               </label>
               <div>Version {APP_VERSION}</div>
               <div>
