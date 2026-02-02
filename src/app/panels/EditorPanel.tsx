@@ -27,8 +27,21 @@ export function EditorPanel() {
     void executorService.executeImmediate(value)
   }
 
+  const handleStop = () => {
+    executorService.cancel()
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleStop}
+          className="rounded-md border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-slate-500"
+        >
+          Stop
+        </button>
+      </div>
       <Editor value={value} onChange={setValue} onRun={handleRun} />
     </div>
   )

@@ -5,6 +5,7 @@ export type ExecutorEventType = 'reset' | 'output'
 
 export class ExecutorService {
   private events = new EventTarget()
+  private activePids = new Set<number>()
 
   addEventListener(type: ExecutorEventType, listener: EventListenerOrEventListenerObject) {
     this.events.addEventListener(type, listener)
@@ -44,7 +45,17 @@ export class ExecutorService {
     })
   }
 
+  cancel() {
+    for (const pid of this.activePids) {
+      commandQueueService.signal(pid, 'SIGTERM')
+    }
+    this.activePids.clear()
+    commandQueueService.stopPolling()
+    this.appendOutput('Execution cancelled.\n')
+  }
+
   private attachProcess(process: Process) {
+    this.activePids.add(process.pid)
     process.addEventListener('stdout', (event) => {
       const detail = (event as CustomEvent<string>).detail
       this.appendOutput(detail)
@@ -52,6 +63,14 @@ export class ExecutorService {
     process.addEventListener('stderr', (event) => {
       const detail = (event as CustomEvent<string>).detail
       this.appendOutput(detail)
+    })
+    process.addEventListener('exit', (event) => {
+      const detail = (event as CustomEvent<number>).detail
+      this.activePids.delete(process.pid)
+      this.appendOutput(`Process ${process.pid} exited (${detail}).\n`)
+      if (this.activePids.size === 0) {
+        commandQueueService.stopPolling()
+      }
     })
   }
 }
