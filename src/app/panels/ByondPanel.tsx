@@ -1,25 +1,59 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { ByondStatus } from '../../services/ByondService'
+import { ByondStatus } from '../../services/ByondService'
 import { byondService } from '../../services/ByondService'
 
 type StatusMap = Record<string, ByondStatus>
 
+export function ByondTitle() {
+  const refresh = async () => {
+    window.dispatchEvent(new CustomEvent('byond:refresh'))
+  }
+
+  return (
+    <div className="flex flex-1 items-center gap-2">
+      <span>BYOND</span>
+      <button
+        type="button"
+        onClick={() => void refresh()}
+        className="ml-auto rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
+        title="Refresh versions"
+      >
+        Refresh
+      </button>
+    </div>
+  )
+}
+
 export function ByondPanel() {
-  const [available, setAvailable] = useState<string[]>([])
+  const [latestVersion, setLatestVersion] = useState<string | null>(null)
   const [local, setLocal] = useState<string[]>([])
   const [activeVersion, setActiveVersion] = useState<string | null>(null)
   const [status, setStatus] = useState<StatusMap>({})
   const [error, setError] = useState<string | null>(null)
+  const [customMajor, setCustomMajor] = useState('')
+  const [customMinor, setCustomMinor] = useState('')
 
-  const topVersions = useMemo(() => available.slice(0, 20), [available])
+  const displayVersions = useMemo(() => {
+    const list = [...local]
+    if (latestVersion && !list.includes(latestVersion)) {
+      list.push(latestVersion)
+    }
+    return list
+  }, [local, latestVersion])
 
   const refresh = async () => {
     try {
-      const [remoteVersions, localVersions] = await Promise.all([
-        byondService.getAvailableVersions(),
+      const [latestVersion, localVersions] = await Promise.all([
+        byondService.getLatestVersion(),
         byondService.getLocalVersions(),
       ])
-      setAvailable(remoteVersions)
+      setLatestVersion(latestVersion)
+      // custom inputs default to latest remote version
+      if (latestVersion) {
+        const parts = latestVersion.split('.')
+        setCustomMajor((prev) => (prev ? prev : parts[0] ?? ''))
+        setCustomMinor((prev) => (prev ? prev : parts[1] ?? ''))
+      }
       setLocal(localVersions)
       const active = byondService.getActiveVersion()
       setActiveVersion(active)
@@ -33,15 +67,15 @@ export function ByondPanel() {
 
       if (!active && localVersions.length > 0) {
         const latest = localVersions[0]
-        setStatus((prev) => ({ ...prev, [latest]: 'loading' }))
+          setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Loading }))
         void byondService
           .load(latest, true)
-          .then(() => {
-            setActiveVersion(latest)
-            setStatus((prev) => ({ ...prev, [latest]: 'loaded' }))
-          })
+            .then(() => {
+              setActiveVersion(latest)
+              setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Installed }))
+            })
           .catch((loadError) => {
-            setStatus((prev) => ({ ...prev, [latest]: 'error' }))
+              setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Error }))
             setError(loadError instanceof Error ? loadError.message : 'Load failed')
           })
       }
@@ -54,7 +88,14 @@ export function ByondPanel() {
     const id = setTimeout(() => {
       void refresh()
     }, 0)
-    return () => clearTimeout(id)
+    const handleRefresh = () => {
+      void refresh()
+    }
+    window.addEventListener('byond:refresh', handleRefresh)
+    return () => {
+      clearTimeout(id)
+      window.removeEventListener('byond:refresh', handleRefresh)
+    }
   }, [])
 
   useEffect(() => {
@@ -76,18 +117,19 @@ export function ByondPanel() {
   }, [])
 
   const handleDownload = async (version: string) => {
-    setStatus((prev) => ({ ...prev, [version]: 'fetching' }))
+    setStatus((prev) => ({ ...prev, [version]: ByondStatus.Fetching }))
     setError(null)
     try {
       await byondService.downloadVersion(version, (value) => {
         if (value >= 1) {
-          setStatus((prev) => ({ ...prev, [version]: 'fetched' }))
+          setStatus((prev) => ({ ...prev, [version]: ByondStatus.Fetched }))
         }
       })
-      const localVersions = await byondService.getLocalVersions()
-      setLocal(localVersions)
+      // Ensure local state reflects the newly downloaded version immediately
+      setLocal((prev) => (prev.includes(version) ? prev : [version, ...prev]))
+      setStatus((prev) => ({ ...prev, [version]: ByondStatus.Fetched }))
     } catch (downloadError) {
-      setStatus((prev) => ({ ...prev, [version]: 'error' }))
+      setStatus((prev) => ({ ...prev, [version]: ByondStatus.Error }))
       setError(downloadError instanceof Error ? downloadError.message : 'Download failed')
     }
   }
@@ -106,29 +148,52 @@ export function ByondPanel() {
   }
 
   const handleSetActive = (version: string) => {
-    setStatus((prev) => ({ ...prev, [version]: 'loading' }))
+    setStatus((prev) => ({ ...prev, [version]: ByondStatus.Loading }))
     void byondService
       .load(version, true)
       .then(() => {
         setActiveVersion(version)
-        setStatus((prev) => ({ ...prev, [version]: 'loaded' }))
+        setStatus((prev) => ({ ...prev, [version]: ByondStatus.Installed }))
       })
       .catch((loadError) => {
-        setStatus((prev) => ({ ...prev, [version]: 'error' }))
+        setStatus((prev) => ({ ...prev, [version]: ByondStatus.Error }))
         setError(loadError instanceof Error ? loadError.message : 'Load failed')
       })
   }
 
   return (
     <div className="flex h-full flex-col gap-3 text-sm text-slate-300">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-slate-400">BYOND versions</span>
+      <div className="flex items-center gap-2">
+        <label className="text-xs text-slate-400">BYOND Version:</label>
+        <input
+          type="number"
+          min={0}
+          value={customMajor}
+          onChange={(e) => setCustomMajor(e.target.value)}
+          className="w-20 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-slate-200"
+          placeholder="major"
+        />
+        <input
+          type="number"
+          min={0}
+          value={customMinor}
+          onChange={(e) => setCustomMinor(e.target.value)}
+          className="w-24 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-slate-200"
+          placeholder="minor"
+        />
         <button
           type="button"
-          onClick={() => void refresh()}
-          className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
+          onClick={() => {
+            const version = `${customMajor}.${customMinor}`
+            if (!customMajor || !customMinor) return
+            if (local.includes(version)) return
+            void handleDownload(version)
+          }}
+          disabled={!customMajor || !customMinor || local.includes(`${customMajor}.${customMinor}`)}
+          title={local.includes(`${customMajor}.${customMinor}`) ? 'Version already installed' : undefined}
+          className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-50"
         >
-          Refresh
+          Fetch
         </button>
       </div>
 
@@ -144,10 +209,11 @@ export function ByondPanel() {
             </tr>
           </thead>
           <tbody>
-            {topVersions.map((version) => {
+            {displayVersions.map((version) => {
               const isLocal = local.includes(version)
               const isActive = activeVersion === version
-              const versionStatus = status[version] ?? byondService.getStatus(version)
+              const isLatest = version === latestVersion
+              const versionStatus = status[version] ?? (isLocal ? ByondStatus.Installed : ByondStatus.Idle)
 
               return (
                 <tr key={version} className="border-t border-slate-800">
@@ -180,7 +246,9 @@ export function ByondPanel() {
                         <button
                           type="button"
                           onClick={() => void handleDelete(version)}
-                          className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-500"
+                          disabled={isLatest || isActive}
+                          title={isLatest || isActive ? 'Cannot delete the latest or active version' : undefined}
+                          className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-500 disabled:opacity-50"
                         >
                           Delete
                         </button>

@@ -1,11 +1,18 @@
 import { commandQueueService } from './CommandQueueService'
 import { emulatorService } from './EmulatorService'
 
-const VERSIONS_URL = 'https://byond-builds.dm-lang.org/version.txt'
+const LATEST_VERSION_URL = 'https://byond-builds.dm-lang.org/version.txt'
 const DOWNLOAD_BASE_URL = 'https://byond-builds.dm-lang.org'
 const ACTIVE_VERSION_KEY = 'byondActiveVersion'
 
-export type ByondStatus = 'idle' | 'fetching' | 'fetched' | 'loading' | 'loaded' | 'error'
+export enum ByondStatus {
+  Idle = 'idle',
+  Fetching = 'fetching',
+  Fetched = 'fetched',
+  Loading = 'loading',
+  Installed = 'installed',
+  Error = 'error',
+}
 
 export class ByondService {
   private versions = new Map<string, ByondStatus>()
@@ -58,17 +65,18 @@ export class ByondService {
     }
   }
 
-  async getAvailableVersions() {
-    const response = await fetch(VERSIONS_URL)
+  async getLatestVersion() {
+    const response = await fetch(LATEST_VERSION_URL)
     if (!response.ok) {
-      throw new Error(`Failed to fetch BYOND versions: ${response.status}`)
+      throw new Error(`Failed to fetch version.txt: ${response.status}`)
     }
 
     const text = await response.text()
-    return text
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => /^\d+\.\d+$/.test(line))
+    const version = text.trim().split(/\r?\n/)[0]?.trim()
+    if (!version || !/^\d+\.\d+$/.test(version)) {
+      throw new Error('Invalid version format in version.txt')
+    }
+    return version
   }
 
   async getLocalVersions() {
@@ -83,7 +91,7 @@ export class ByondService {
       if (entry.kind === 'file' && entry.name.endsWith('.zip')) {
         versions.push(entry.name.replace(/\.zip$/, ''))
         if (!this.versions.has(entry.name.replace(/\.zip$/, ''))) {
-          this.setStatus(entry.name.replace(/\.zip$/, ''), 'fetched')
+          this.setStatus(entry.name.replace(/\.zip$/, ''), ByondStatus.Fetched)
         }
       }
     }
@@ -92,13 +100,13 @@ export class ByondService {
   }
 
   async downloadVersion(version: string, onProgress?: (value: number) => void) {
-    this.setStatus(version, 'fetching')
+    this.setStatus(version, ByondStatus.Fetching)
     const major = version.split('.')[0]
     const url = `${DOWNLOAD_BASE_URL}/${major}/${version}_byond_linux.zip`
     const response = await fetch(url)
 
     if (!response.ok) {
-      this.setStatus(version, 'error')
+      this.setStatus(version, ByondStatus.Error)
       throw new Error(`Failed to download BYOND ${version}: ${response.status}`)
     }
 
@@ -111,7 +119,7 @@ export class ByondService {
       await writable.write(buffer)
       await writable.close()
       onProgress?.(1)
-      this.setStatus(version, 'fetched')
+      this.setStatus(version, ByondStatus.Fetched)
       return
     }
 
@@ -135,12 +143,12 @@ export class ByondService {
 
     await writable.close()
     onProgress?.(1)
-    this.setStatus(version, 'fetched')
+    this.setStatus(version, ByondStatus.Fetched)
   }
 
   async load(version: string, setActive = true) {
     const status = this.versions.get(version)
-    if (!status || (status !== 'fetched' && status !== 'loaded')) {
+    if (!status || (status !== ByondStatus.Fetched && status !== ByondStatus.Installed)) {
       throw new Error('Version not available')
     }
 
@@ -148,15 +156,15 @@ export class ByondService {
 
     const destination = setActive ? '/var/lib/byond_staging' : `/mnt/host/byond/${version}`
 
-    if (status !== 'loaded') {
-      this.setStatus(version, 'loading')
+    if (status !== ByondStatus.Installed) {
+      this.setStatus(version, ByondStatus.Loading)
       const zipFile = await this.getVersion(version)
       await emulatorService.sendFile(`byond/${version}.zip`, new Uint8Array(await zipFile.arrayBuffer()))
       await commandQueueService.runToSuccess([
         `/bin/unzip /mnt/host/byond/${version}.zip 'byond/bin*' -j -d ${destination}`,
         `/bin/rm /mnt/host/byond/${version}.zip`,
       ])
-      this.setStatus(version, 'loaded')
+      this.setStatus(version, ByondStatus.Installed)
     }
 
     if (setActive) {
@@ -175,7 +183,7 @@ export class ByondService {
     const directory = await this.getByondDirectory()
     await directory.removeEntry(`${version}.zip`, { recursive: false })
     this.versions.delete(version)
-    this.events.dispatchEvent(new CustomEvent('status', { detail: { version, status: 'idle' } }))
+    this.events.dispatchEvent(new CustomEvent('status', { detail: { version, status: ByondStatus.Idle } }))
     if (this.activeVersion === version) {
       this.activeVersion = null
       localStorage.removeItem(ACTIVE_VERSION_KEY)
@@ -185,7 +193,7 @@ export class ByondService {
   }
 
   getStatus(version: string) {
-    return this.versions.get(version) ?? 'idle'
+    return this.versions.get(version) ?? ByondStatus.Idle
   }
 
   getActiveVersion() {
