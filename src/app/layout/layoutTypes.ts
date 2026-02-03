@@ -52,7 +52,7 @@ export const defaultLayout: LayoutRoot = {
             size: 30,
             children: [
               { type: 'leaf', id: PanelId.Output, size: 70 },
-              { type: 'leaf', id: PanelId.Byond, size: 30 },
+              { type: 'leaf', id: PanelId.Console, size: 30 },
             ],
           },
         ],
@@ -63,7 +63,7 @@ export const defaultLayout: LayoutRoot = {
         split: 'horizontal',
         size: 30,
         children: [
-          { type: 'leaf', id: PanelId.Console, size: 50 },
+          { type: 'leaf', id: PanelId.Byond, size: 50 },
           { type: 'leaf', id: PanelId.Controller, size: 50 },
         ],
       },
