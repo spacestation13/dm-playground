@@ -32,7 +32,7 @@ export class EmulatorService {
       return
     }
 
-    const url = new URL('../workers/emulator.worker.ts', import.meta.url)
+    const url = new URL('../workers/emulator.worker.ts?worker', import.meta.url)
     url.searchParams.set(
       'vmRemoteUrl',
       vmRemoteUrl ?? 'https://spacestation13.github.io/dm-playground-linux/',
