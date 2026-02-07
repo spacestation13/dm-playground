@@ -1,7 +1,7 @@
 import { emulatorService } from './EmulatorService'
 import { commandQueueService, type Process, type ProcessExit } from './CommandQueueService'
 import { byondService } from './ByondService'
-import { STREAM_OUTPUT_KEY } from '../app/App'
+import useLocalSettings from '../app/settings/localSettings'
 
 export type ExecutorEventType = 'reset' | 'output' | 'status'
 
@@ -48,7 +48,7 @@ export class ExecutorService {
     emulatorService.sendFile(`${filename}.dme`, new TextEncoder().encode(code))
 
     const env = new Map<string, string>([['LD_LIBRARY_PATH', byondPath]])
-    const streamCompilerOutput = localStorage.getItem(STREAM_OUTPUT_KEY) === '1'
+    const streamCompilerOutput = useLocalSettings.getState().streamCompilerOutput
 
     const dmProcess = await commandQueueService.runProcess(`${byondPath}DreamMaker`, hostDme, env)
 

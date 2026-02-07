@@ -11,14 +11,13 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { byondService } from '../services/ByondService'
 import { ThemeProvider } from './theme/ThemeContext'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
-import { removePanel } from './layout/layoutTreeUtils'
+import { useThemeSetting, useStreamCompilerSetting, useShowConsoleSetting } from './settings/localSettings'
+import { addPanel, removePanel } from './layout/layoutTreeUtils'
 
 const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
 const APP_VERSION = packageJson.version
 const VALID_PANELS = new Set(Object.values(PanelId))
-const THEME_STORAGE_KEY = 'editor-theme'
-export const STREAM_OUTPUT_KEY = 'stream-compiler-output'
 
 const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLeaf | null => {
   if (node.type === 'leaf') {
@@ -46,16 +45,9 @@ const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLea
 export function App() {
   const [layout, setLayout] = useState<LayoutRoot | null>(null)
   const [showSettings, setShowSettings] = useState(false)
-  const [themeId, setThemeId] = useState<EditorThemeId>(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    return (stored as EditorThemeId) || 'vs-dark'
-  })
-  const [streamCompilerOutput, setStreamCompilerOutput] = useState<boolean>(() => {
-    return localStorage.getItem(STREAM_OUTPUT_KEY) === '1'
-  })
-  const [showConsolePanel, setShowConsolePanel] = useState<boolean>(() => {
-    return localStorage.getItem('show-console-panel') === '1'
-  })
+  const [themeId, setThemeId] = useThemeSetting()
+  const [streamCompilerOutput, setStreamCompilerOutput] = useStreamCompilerSetting()
+  const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
 
   const saveLayout = useCallback(async (next: LayoutRoot) => {
     setLayout(next)
@@ -112,10 +104,6 @@ export function App() {
     emulatorService.start()
     void byondService.initialize()
   }, [])
-
-  useEffect(() => {
-    localStorage.setItem(THEME_STORAGE_KEY, themeId)
-  }, [themeId])
 
   const handleUpdateBranchSizes = useCallback((branchId: number, sizes: number[]) => {
     setLayout((prev) => {
@@ -213,7 +201,6 @@ export function App() {
                   checked={streamCompilerOutput}
                   onChange={(e) => {
                     setStreamCompilerOutput(e.target.checked)
-                    localStorage.setItem(STREAM_OUTPUT_KEY, e.target.checked ? '1' : '0')
                   }}
                 />
                 <span className="text-xs">Stream DreamMaker output live</span>
@@ -225,7 +212,13 @@ export function App() {
                   onChange={(e) => {
                     const checked = e.target.checked
                     setShowConsolePanel(checked)
-                    localStorage.setItem('show-console-panel', checked ? '1' : '0')
+                    setLayout((prev) => {
+                      if (!prev) return prev
+                      const newRoot = checked
+                        ? addPanel(prev.root as LayoutBranch, PanelId.Console, 2, 30)
+                        : removePanel(prev.root as LayoutBranch, PanelId.Console)
+                      return { ...prev, root: newRoot }
+                    })
                   }}
                 />
                 <span className="text-xs">Show Console panel</span>
