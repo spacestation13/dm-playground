@@ -9,7 +9,9 @@ export interface CommandResultErr {
   status: 'ERR'
   error: string
 }
-export type CommandResult<C extends Command> = CommandResultOK<C> | CommandResultErr
+export type CommandResult<C extends Command> =
+  | CommandResultOK<C>
+  | CommandResultErr
 
 export type CommandReturnType<C extends Command> = C extends SignalCommand
   ? null
@@ -70,7 +72,7 @@ export class Process extends EventTarget {
 
   constructor(
     public readonly pid: number,
-    private readonly commandQueue: CommandQueueService,
+    private readonly commandQueue: CommandQueueService
   ) {
     super()
   }
@@ -88,7 +90,11 @@ export class Process extends EventTarget {
   }
 
   signal(signal = 15) {
-    return this.commandQueue.queueCommand({ type: 'signal', pid: this.pid, signal })
+    return this.commandQueue.queueCommand({
+      type: 'signal',
+      pid: this.pid,
+      signal,
+    })
   }
 
   kill(): Promise<CommandResult<SignalCommand>> {
@@ -96,7 +102,9 @@ export class Process extends EventTarget {
       this.signal(15)
         .then((res) => {
           if (res.status === 'ERR') return reject(res.error)
-          this.addEventListener('exit', () => resolve({ status: 'OK', result: null }))
+          this.addEventListener('exit', () =>
+            resolve({ status: 'OK', result: null })
+          )
           setTimeout(() => {
             if (!this.killed) {
               this.signal(9)
@@ -129,7 +137,10 @@ export class CommandQueueService {
     this.sender = sender
   }
 
-  addEventListener(type: ControllerEventType, listener: EventListenerOrEventListenerObject) {
+  addEventListener(
+    type: ControllerEventType,
+    listener: EventListenerOrEventListenerObject
+  ) {
     this.events.addEventListener(type, listener)
   }
 
@@ -137,7 +148,10 @@ export class CommandQueueService {
     return this.isBusy
   }
 
-  removeEventListener(type: ControllerEventType, listener: EventListenerOrEventListenerObject) {
+  removeEventListener(
+    type: ControllerEventType,
+    listener: EventListenerOrEventListenerObject
+  ) {
     this.events.removeEventListener(type, listener)
   }
 
@@ -173,28 +187,42 @@ export class CommandQueueService {
   async runProcess(
     path: string | string[],
     args = '',
-    env = new Map<string, string>(),
+    env = new Map<string, string>()
   ): Promise<Process> {
     if (Array.isArray(path)) {
       args = `-e\0-u\0-o\0pipefail\0-c\0${path.join(';')}\0${args}`
       path = '/bin/sh'
     }
 
-    const result = await this.queueCommand({ type: 'run', binary: path, args, env })
-    if (result.status === 'ERR') throw Error('Failed to create process: ' + result.error)
+    const result = await this.queueCommand({
+      type: 'run',
+      binary: path,
+      args,
+      env,
+    })
+    if (result.status === 'ERR')
+      throw Error('Failed to create process: ' + result.error)
 
     const tracked = this.trackedProcesses.get(result.result)
     if (!tracked) throw Error('Process was created but not tracked')
     return tracked
   }
 
-  async runToCompletion(path: string | string[], args = '', env = new Map<string, string>()) {
+  async runToCompletion(
+    path: string | string[],
+    args = '',
+    env = new Map<string, string>()
+  ) {
     const process = await this.runProcess(path, args, env)
     const exit = await this.waitForExit(process)
     return exit
   }
 
-  async runToSuccess(path: string | string[], args = '', env = new Map<string, string>()) {
+  async runToSuccess(
+    path: string | string[],
+    args = '',
+    env = new Map<string, string>()
+  ) {
     const exit = await this.runToCompletion(path, args, env)
     if (exit.cause === 'exit' && exit.code !== 0) {
       throw new Error(`Process exited abnormally: ${exit.code}`)
@@ -241,8 +269,14 @@ export class CommandQueueService {
         const args = btoa(command.args)
         let env = ''
         for (let [key, val] of command.env.entries()) {
-          key = key.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/=/g, '\\=')
-          val = val.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/=/g, '\\=')
+          key = key
+            .replace(/\\/g, '\\\\')
+            .replace(/;/g, '\\;')
+            .replace(/=/g, '\\=')
+          val = val
+            .replace(/\\/g, '\\\\')
+            .replace(/;/g, '\\;')
+            .replace(/=/g, '\\=')
           env += `${key}=${val};`
         }
         cmdStr = `run ${binary} ${args} ${btoa(env)}`
@@ -261,7 +295,8 @@ export class CommandQueueService {
     if (this.initialized && this.queueSuspended) return
 
     if (chr === '\0' && this.resultBuffer === 'HELLO') {
-      if (this.initialized) throw Error('Controller initialized twice. It probably crashed.')
+      if (this.initialized)
+        throw Error('Controller initialized twice. It probably crashed.')
       this.initialized = true
       this.resultBuffer = ''
       this.events.dispatchEvent(new CustomEvent('boot'))
@@ -341,7 +376,10 @@ export class CommandQueueService {
           if (!trackedProcess) return
           if (pollEvent.event === 'pidexit') {
             if (pollEvent.exit >= 257) {
-              trackedProcess.emitExit({ cause: 'signal', signal: pollEvent.exit - 256 })
+              trackedProcess.emitExit({
+                cause: 'signal',
+                signal: pollEvent.exit - 256,
+              })
             } else if (pollEvent.exit === 256) {
               trackedProcess.emitExit({ cause: 'unknown' })
             } else {
@@ -350,9 +388,9 @@ export class CommandQueueService {
             trackedProcess.killed = true
             this.trackedProcesses.delete(pollEvent.pid)
           } else {
-            trackedProcess[pollEvent.event === 'stdout' ? 'emitStdout' : 'emitStderr'](
-              pollEvent.data,
-            )
+            trackedProcess[
+              pollEvent.event === 'stdout' ? 'emitStdout' : 'emitStderr'
+            ](pollEvent.data)
           }
         })
 
@@ -396,7 +434,9 @@ export class CommandQueueService {
 
   private updateBusy() {
     const value = Boolean(
-      this.activeCommand || this.queue.length > 0 || this.trackedProcesses.size > 0,
+      this.activeCommand ||
+      this.queue.length > 0 ||
+      this.trackedProcesses.size > 0
     )
     if (this.isBusy === value) {
       return

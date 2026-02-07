@@ -43,7 +43,9 @@ const hardcodedThemes: Set<BuiltinThemeId> = new Set([
   'hc-light',
 ])
 
-const localThemeLoaders: Partial<Record<LocalThemeId, () => Promise<{ default: unknown }>>> = {
+const localThemeLoaders: Partial<
+  Record<LocalThemeId, () => Promise<{ default: unknown }>>
+> = {
   'one-dark': () => import('./themeData/OneDark.json'),
 }
 
@@ -51,8 +53,10 @@ const remoteThemeUrls: Record<RemoteThemeId, string> = {
   monokai: 'https://unpkg.com/monaco-themes/themes/Monokai.json',
   dracula: 'https://unpkg.com/monaco-themes/themes/Dracula.json',
   nord: 'https://unpkg.com/monaco-themes/themes/Nord.json',
-  'solarized-dark': 'https://unpkg.com/monaco-themes/themes/Solarized-dark.json',
-  'solarized-light': 'https://unpkg.com/monaco-themes/themes/Solarized-light.json',
+  'solarized-dark':
+    'https://unpkg.com/monaco-themes/themes/Solarized-dark.json',
+  'solarized-light':
+    'https://unpkg.com/monaco-themes/themes/Solarized-light.json',
   'github-dark': 'https://unpkg.com/monaco-themes/themes/GitHub Dark.json',
   'github-light': 'https://unpkg.com/monaco-themes/themes/GitHub Light.json',
 }
@@ -61,7 +65,7 @@ const loadedThemes = new Set<EditorThemeId>()
 
 export async function ensureMonacoTheme(
   monaco: typeof Monaco,
-  themeId: EditorThemeId,
+  themeId: EditorThemeId
 ): Promise<void> {
   if (hardcodedThemes.has(themeId as BuiltinThemeId)) {
     return
@@ -74,7 +78,10 @@ export async function ensureMonacoTheme(
   const localLoader = localThemeLoaders[themeId as LocalThemeId]
   if (localLoader) {
     const { default: theme } = await localLoader()
-    monaco.editor.defineTheme(themeId, theme as Monaco.editor.IStandaloneThemeData)
+    monaco.editor.defineTheme(
+      themeId,
+      theme as Monaco.editor.IStandaloneThemeData
+    )
     loadedThemes.add(themeId)
     return
   }

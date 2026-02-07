@@ -25,7 +25,9 @@ const getSeededCode = () => {
 export function EditorPanel() {
   const [value, setValue] = useState(() => getSeededCode())
   const [, setStatus] = useState<'running' | 'idle'>('idle')
-  const [activeByond, setActiveByond] = useState<string | null>(() => byondService.getActiveVersion())
+  const [activeByond, setActiveByond] = useState<string | null>(() =>
+    byondService.getActiveVersion()
+  )
   const { themeId } = useTheme()
 
   useEffect(() => {
@@ -54,10 +56,14 @@ export function EditorPanel() {
     void executorService.executeImmediate(value)
   }
 
-
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      <Editor value={value} onChange={setValue} onRun={handleRun} themeId={themeId} />
+      <Editor
+        value={value}
+        onChange={setValue}
+        onRun={handleRun}
+        themeId={themeId}
+      />
     </div>
   )
 }

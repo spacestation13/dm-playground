@@ -37,7 +37,8 @@ export function ControllerPanel() {
     }
 
     const handleOutput = (event: Event) => {
-      const detail = (event as CustomEvent<{ port: string; data: string }>).detail
+      const detail = (event as CustomEvent<{ port: string; data: string }>)
+        .detail
       if (detail.port === 'controller') {
         const decoded = decodeController(detail.data)
         const filtered = decoded
@@ -79,7 +80,9 @@ export function ControllerPanel() {
       label="Controller log"
       readOnly
       onReady={setTerminal}
-      onResize={(rows, cols) => emulatorService.resizePort('controller', rows, cols)}
+      onResize={(rows, cols) =>
+        emulatorService.resizePort('controller', rows, cols)
+      }
     />
   )
 }

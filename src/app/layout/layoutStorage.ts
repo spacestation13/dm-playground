@@ -1,5 +1,11 @@
 import { CompressionService } from '../../services/CompressionService'
-import { PanelId, defaultLayout, type LayoutBranch, type LayoutLeaf, type LayoutRoot } from './layoutTypes'
+import {
+  PanelId,
+  defaultLayout,
+  type LayoutBranch,
+  type LayoutLeaf,
+  type LayoutRoot,
+} from './layoutTypes'
 import { removePanel } from './layoutTreeUtils'
 import { updateBranchSizes } from './layoutUtils'
 
@@ -7,7 +13,9 @@ const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
 const VALID_PANELS = new Set(Object.values(PanelId))
 
-const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLeaf | null => {
+const sanitizeNode = (
+  node: LayoutBranch | LayoutLeaf
+): LayoutBranch | LayoutLeaf | null => {
   if (node.type === 'leaf') {
     return VALID_PANELS.has(node.id) ? node : null
   }
@@ -50,7 +58,9 @@ export async function loadLayout(): Promise<LayoutRoot> {
     }
 
     // Remove Console panel from any stored layout
-    const sanitizedRoot = sanitizeNode(removePanel(parsed.root, PanelId.Console))
+    const sanitizedRoot = sanitizeNode(
+      removePanel(parsed.root, PanelId.Console)
+    )
     const nextLayout =
       sanitizedRoot && sanitizedRoot.type === 'branch'
         ? { ...parsed, root: sanitizedRoot }
@@ -71,7 +81,7 @@ export async function loadLayout(): Promise<LayoutRoot> {
 export async function updateAndSaveLayout(
   layout: LayoutRoot,
   branchId: number,
-  sizes: number[],
+  sizes: number[]
 ): Promise<LayoutRoot> {
   const next = {
     ...layout,

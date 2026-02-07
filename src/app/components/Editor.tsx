@@ -22,7 +22,7 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
       triggerCharacters: ['.', ':', '/'],
       provideCompletionItems: (
         model: Monaco.editor.ITextModel,
-        position: Monaco.Position,
+        position: Monaco.Position
       ) => {
         const word = model.getWordUntilPosition(position)
         const range = {

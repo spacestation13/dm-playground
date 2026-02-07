@@ -18,11 +18,17 @@ export class EmulatorService {
   private worker: Worker | null = null
   private events = new EventTarget()
 
-  addEventListener(type: EmulatorInboundMessage['type'], listener: EventListenerOrEventListenerObject) {
+  addEventListener(
+    type: EmulatorInboundMessage['type'],
+    listener: EventListenerOrEventListenerObject
+  ) {
     this.events.addEventListener(type, listener)
   }
 
-  removeEventListener(type: EmulatorInboundMessage['type'], listener: EventListenerOrEventListenerObject) {
+  removeEventListener(
+    type: EmulatorInboundMessage['type'],
+    listener: EventListenerOrEventListenerObject
+  ) {
     this.events.removeEventListener(type, listener)
   }
 
@@ -32,11 +38,18 @@ export class EmulatorService {
       return
     }
 
-    this.worker = new Worker(new URL('../workers/emulator.worker.ts?worker', import.meta.url))
-    this.worker.addEventListener('message', (event: MessageEvent<EmulatorInboundMessage>) => {
-      const payload = event.data
-      this.events.dispatchEvent(new CustomEvent(payload.type, { detail: payload }))
-    })
+    this.worker = new Worker(
+      new URL('../workers/emulator.worker.ts?worker', import.meta.url)
+    )
+    this.worker.addEventListener(
+      'message',
+      (event: MessageEvent<EmulatorInboundMessage>) => {
+        const payload = event.data
+        this.events.dispatchEvent(
+          new CustomEvent(payload.type, { detail: payload })
+        )
+      }
+    )
     this.post({ type: 'start' })
   }
 

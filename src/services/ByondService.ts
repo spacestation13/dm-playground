@@ -20,11 +20,17 @@ export class ByondService {
   private events = new EventTarget()
   private initialized = false
 
-  addEventListener(type: 'active', listener: EventListenerOrEventListenerObject) {
+  addEventListener(
+    type: 'active',
+    listener: EventListenerOrEventListenerObject
+  ) {
     this.events.addEventListener(type, listener)
   }
 
-  removeEventListener(type: 'active', listener: EventListenerOrEventListenerObject) {
+  removeEventListener(
+    type: 'active',
+    listener: EventListenerOrEventListenerObject
+  ) {
     this.events.removeEventListener(type, listener)
   }
 
@@ -111,7 +117,9 @@ export class ByondService {
     }
 
     const directory = await this.getByondDirectory()
-    const fileHandle = await directory.getFileHandle(`${version}.zip`, { create: true })
+    const fileHandle = await directory.getFileHandle(`${version}.zip`, {
+      create: true,
+    })
     const writable = await fileHandle.createWritable()
 
     if (!response.body) {
@@ -148,18 +156,26 @@ export class ByondService {
 
   async load(version: string, setActive = true) {
     const status = this.versions.get(version)
-    if (!status || (status !== ByondStatus.Fetched && status !== ByondStatus.Installed)) {
+    if (
+      !status ||
+      (status !== ByondStatus.Fetched && status !== ByondStatus.Installed)
+    ) {
       throw new Error('Version not available')
     }
 
     await commandQueueService.runToSuccess('/bin/mkdir', '-p\0/mnt/host/byond')
 
-    const destination = setActive ? '/var/lib/byond_staging' : `/mnt/host/byond/${version}`
+    const destination = setActive
+      ? '/var/lib/byond_staging'
+      : `/mnt/host/byond/${version}`
 
     if (status !== ByondStatus.Installed) {
       this.setStatus(version, ByondStatus.Loading)
       const zipFile = await this.getVersion(version)
-      await emulatorService.sendFile(`byond/${version}.zip`, new Uint8Array(await zipFile.arrayBuffer()))
+      await emulatorService.sendFile(
+        `byond/${version}.zip`,
+        new Uint8Array(await zipFile.arrayBuffer())
+      )
       await commandQueueService.runToSuccess([
         `/bin/unzip /mnt/host/byond/${version}.zip 'byond/bin*' -j -d ${destination}`,
         `/bin/rm /mnt/host/byond/${version}.zip`,
@@ -167,15 +183,24 @@ export class ByondService {
       this.setStatus(version, ByondStatus.Installed)
     } else if (setActive) {
       // Version is already installed at /mnt/host/byond/${version}, move it to staging
-      await commandQueueService.runToSuccess('/bin/mv', `/mnt/host/byond/${version}\0${destination}`)
+      await commandQueueService.runToSuccess(
+        '/bin/mv',
+        `/mnt/host/byond/${version}\0${destination}`
+      )
     }
 
     if (setActive) {
       await commandQueueService.runToSuccess('/bin/mkdir', '-p\0/var/lib/byond')
       if (this.activeVersion) {
-        await commandQueueService.runToSuccess('/bin/mv', `/var/lib/byond\0/mnt/host/byond/${this.activeVersion}`)
+        await commandQueueService.runToSuccess(
+          '/bin/mv',
+          `/var/lib/byond\0/mnt/host/byond/${this.activeVersion}`
+        )
       }
-      await commandQueueService.runToSuccess('/bin/mv', `${destination}\0/var/lib/byond`)
+      await commandQueueService.runToSuccess(
+        '/bin/mv',
+        `${destination}\0/var/lib/byond`
+      )
       this.activeVersion = version
       localStorage.setItem(ACTIVE_VERSION_KEY, version)
       this.events.dispatchEvent(new CustomEvent('active', { detail: version }))
@@ -186,13 +211,20 @@ export class ByondService {
     const directory = await this.getByondDirectory()
     await directory.removeEntry(`${version}.zip`, { recursive: false })
     this.versions.delete(version)
-    this.events.dispatchEvent(new CustomEvent('status', { detail: { version, status: ByondStatus.Idle } }))
+    this.events.dispatchEvent(
+      new CustomEvent('status', {
+        detail: { version, status: ByondStatus.Idle },
+      })
+    )
     if (this.activeVersion === version) {
       this.activeVersion = null
       localStorage.removeItem(ACTIVE_VERSION_KEY)
       this.events.dispatchEvent(new CustomEvent('active', { detail: null }))
     }
-    await commandQueueService.runToCompletion('/bin/rm', `-rf\0/var/lib/byond/${version}.zip\0/mnt/host/byond/${version}`)
+    await commandQueueService.runToCompletion(
+      '/bin/rm',
+      `-rf\0/var/lib/byond/${version}.zip\0/mnt/host/byond/${version}`
+    )
   }
 
   getStatus(version: string) {
@@ -209,7 +241,9 @@ export class ByondService {
 
   private async getVersion(version: string) {
     const directory = await this.getByondDirectory()
-    const handle = await directory.getFileHandle(`${version}.zip`, { create: true })
+    const handle = await directory.getFileHandle(`${version}.zip`, {
+      create: true,
+    })
     const file = await handle.getFile()
     if (file.size !== 0) {
       return file
@@ -219,7 +253,9 @@ export class ByondService {
 
   private setStatus(version: string, status: ByondStatus) {
     this.versions.set(version, status)
-    this.events.dispatchEvent(new CustomEvent('status', { detail: { version, status } }))
+    this.events.dispatchEvent(
+      new CustomEvent('status', { detail: { version, status } })
+    )
   }
 
   private async getByondDirectory() {

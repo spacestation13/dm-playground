@@ -51,8 +51,8 @@ export function ByondPanel() {
       // custom inputs default to latest remote version
       if (latestVersion) {
         const parts = latestVersion.split('.')
-        setCustomMajor((prev) => (prev ? prev : parts[0] ?? ''))
-        setCustomMinor((prev) => (prev ? prev : parts[1] ?? ''))
+        setCustomMajor((prev) => (prev ? prev : (parts[0] ?? '')))
+        setCustomMinor((prev) => (prev ? prev : (parts[1] ?? '')))
       }
       setLocal(localVersions)
       const active = byondService.getActiveVersion()
@@ -67,20 +67,26 @@ export function ByondPanel() {
 
       if (!active && localVersions.length > 0) {
         const latest = localVersions[0]
-          setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Loading }))
+        setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Loading }))
         void byondService
           .load(latest, true)
-            .then(() => {
-              setActiveVersion(latest)
-              setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Installed }))
-            })
+          .then(() => {
+            setActiveVersion(latest)
+            setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Installed }))
+          })
           .catch((loadError) => {
-              setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Error }))
-            setError(loadError instanceof Error ? loadError.message : 'Load failed')
+            setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Error }))
+            setError(
+              loadError instanceof Error ? loadError.message : 'Load failed'
+            )
           })
       }
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load versions')
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : 'Failed to load versions'
+      )
     }
   }
 
@@ -109,7 +115,9 @@ export function ByondPanel() {
 
   useEffect(() => {
     const handleStatus = (event: Event) => {
-      const detail = (event as CustomEvent<{ version: string; status: ByondStatus }>).detail
+      const detail = (
+        event as CustomEvent<{ version: string; status: ByondStatus }>
+      ).detail
       setStatus((prev) => ({ ...prev, [detail.version]: detail.status }))
     }
     byondService.addStatusListener(handleStatus)
@@ -130,7 +138,11 @@ export function ByondPanel() {
       setStatus((prev) => ({ ...prev, [version]: ByondStatus.Fetched }))
     } catch (downloadError) {
       setStatus((prev) => ({ ...prev, [version]: ByondStatus.Error }))
-      setError(downloadError instanceof Error ? downloadError.message : 'Download failed')
+      setError(
+        downloadError instanceof Error
+          ? downloadError.message
+          : 'Download failed'
+      )
     }
   }
 
@@ -143,7 +155,9 @@ export function ByondPanel() {
         setActiveVersion(null)
       }
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'Delete failed')
+      setError(
+        deleteError instanceof Error ? deleteError.message : 'Delete failed'
+      )
     }
   }
 
@@ -189,8 +203,16 @@ export function ByondPanel() {
             if (local.includes(version)) return
             void handleDownload(version)
           }}
-          disabled={!customMajor || !customMinor || local.includes(`${customMajor}.${customMinor}`)}
-          title={local.includes(`${customMajor}.${customMinor}`) ? 'Version already installed' : undefined}
+          disabled={
+            !customMajor ||
+            !customMinor ||
+            local.includes(`${customMajor}.${customMinor}`)
+          }
+          title={
+            local.includes(`${customMajor}.${customMinor}`)
+              ? 'Version already installed'
+              : undefined
+          }
           className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-50"
         >
           Fetch
@@ -213,13 +235,19 @@ export function ByondPanel() {
               const isLocal = local.includes(version)
               const isActive = activeVersion === version
               const isLatest = version === latestVersion
-              const versionStatus = status[version] ?? (isLocal ? ByondStatus.Installed : ByondStatus.Idle)
+              const versionStatus =
+                status[version] ??
+                (isLocal ? ByondStatus.Installed : ByondStatus.Idle)
 
               return (
                 <tr key={version} className="border-t border-slate-800">
                   <td className="px-3 py-2 font-mono text-slate-200">
                     {version}
-                    {isActive && <span className="ml-2 rounded bg-emerald-900/40 px-2 py-0.5 text-[10px]">active</span>}
+                    {isActive && (
+                      <span className="ml-2 rounded bg-emerald-900/40 px-2 py-0.5 text-[10px]">
+                        active
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-slate-400">{versionStatus}</td>
                   <td className="px-3 py-2">
@@ -247,7 +275,11 @@ export function ByondPanel() {
                           type="button"
                           onClick={() => void handleDelete(version)}
                           disabled={isLatest || isActive}
-                          title={isLatest || isActive ? 'Cannot delete the latest or active version' : undefined}
+                          title={
+                            isLatest || isActive
+                              ? 'Cannot delete the latest or active version'
+                              : undefined
+                          }
                           className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-500 disabled:opacity-50"
                         >
                           Delete

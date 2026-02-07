@@ -9,7 +9,10 @@ interface ErrorBoundaryState {
   message?: string
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   state: ErrorBoundaryState = { hasError: false }
 
   static getDerivedStateFromError(error: Error) {
@@ -21,8 +24,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <div className="flex h-full items-center justify-center rounded border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
           <div>
-            <div className="text-base font-semibold text-slate-100">Something went wrong.</div>
-            <div className="mt-2 text-xs text-slate-400">{this.state.message ?? 'Unknown error'}</div>
+            <div className="text-base font-semibold text-slate-100">
+              Something went wrong.
+            </div>
+            <div className="mt-2 text-xs text-slate-400">
+              {this.state.message ?? 'Unknown error'}
+            </div>
           </div>
         </div>
       )

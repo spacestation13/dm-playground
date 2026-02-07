@@ -37,13 +37,21 @@ export const useThemeSetting = () => {
 }
 
 export const useStreamCompilerSetting = () => {
-  const streamCompilerOutput = useLocalSettings((s: LocalSettingsState) => s.streamCompilerOutput)
-  const setStreamCompilerOutput = useLocalSettings((s: LocalSettingsState) => s.setStreamCompilerOutput)
+  const streamCompilerOutput = useLocalSettings(
+    (s: LocalSettingsState) => s.streamCompilerOutput
+  )
+  const setStreamCompilerOutput = useLocalSettings(
+    (s: LocalSettingsState) => s.setStreamCompilerOutput
+  )
   return [streamCompilerOutput, setStreamCompilerOutput] as const
 }
 
 export const useShowConsoleSetting = () => {
-  const showConsolePanel = useLocalSettings((s: LocalSettingsState) => s.showConsolePanel)
-  const setShowConsolePanel = useLocalSettings((s: LocalSettingsState) => s.setShowConsolePanel)
+  const showConsolePanel = useLocalSettings(
+    (s: LocalSettingsState) => s.showConsolePanel
+  )
+  const setShowConsolePanel = useLocalSettings(
+    (s: LocalSettingsState) => s.setShowConsolePanel
+  )
   return [showConsolePanel, setShowConsolePanel] as const
 }

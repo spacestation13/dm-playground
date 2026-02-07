@@ -21,21 +21,24 @@ export function useLayoutManager() {
     }
   }, [])
 
-  const handleUpdateBranchSizes = useCallback((branchId: number, sizes: number[]) => {
-    setLayout((prev) => {
-      if (!prev) {
-        return prev
-      }
+  const handleUpdateBranchSizes = useCallback(
+    (branchId: number, sizes: number[]) => {
+      setLayout((prev) => {
+        if (!prev) {
+          return prev
+        }
 
-      const next = {
-        ...prev,
-        root: updateBranchSizes(prev.root, branchId, sizes),
-      }
+        const next = {
+          ...prev,
+          root: updateBranchSizes(prev.root, branchId, sizes),
+        }
 
-      void saveLayout(next)
-      return next
-    })
-  }, [])
+        void saveLayout(next)
+        return next
+      })
+    },
+    []
+  )
 
   const toggleConsolePanel = useCallback((show: boolean) => {
     setLayout((prev) => {

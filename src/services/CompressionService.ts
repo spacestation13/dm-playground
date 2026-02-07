@@ -41,7 +41,9 @@ export class CompressionService {
     const arrayBuffer = Uint8Array.from(input).buffer
     const blob = new Blob([arrayBuffer])
     const decompressedStream = blob.stream().pipeThrough(stream)
-    const decompressedBuffer = await new Response(decompressedStream).arrayBuffer()
+    const decompressedBuffer = await new Response(
+      decompressedStream
+    ).arrayBuffer()
     return new Uint8Array(decompressedBuffer)
   }
 }

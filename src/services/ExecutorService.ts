@@ -1,5 +1,9 @@
 import { emulatorService } from './EmulatorService'
-import { commandQueueService, type Process, type ProcessExit } from './CommandQueueService'
+import {
+  commandQueueService,
+  type Process,
+  type ProcessExit,
+} from './CommandQueueService'
 import { byondService } from './ByondService'
 import useLocalSettings from '../app/settings/localSettings'
 
@@ -9,11 +13,17 @@ export class ExecutorService {
   private events = new EventTarget()
   private activePids = new Set<number>()
 
-  addEventListener(type: ExecutorEventType, listener: EventListenerOrEventListenerObject) {
+  addEventListener(
+    type: ExecutorEventType,
+    listener: EventListenerOrEventListenerObject
+  ) {
     this.events.addEventListener(type, listener)
   }
 
-  removeEventListener(type: ExecutorEventType, listener: EventListenerOrEventListenerObject) {
+  removeEventListener(
+    type: ExecutorEventType,
+    listener: EventListenerOrEventListenerObject
+  ) {
     this.events.removeEventListener(type, listener)
   }
 
@@ -48,9 +58,14 @@ export class ExecutorService {
     emulatorService.sendFile(`${filename}.dme`, new TextEncoder().encode(code))
 
     const env = new Map<string, string>([['LD_LIBRARY_PATH', byondPath]])
-    const streamCompilerOutput = useLocalSettings.getState().streamCompilerOutput
+    const streamCompilerOutput =
+      useLocalSettings.getState().streamCompilerOutput
 
-    const dmProcess = await commandQueueService.runProcess(`${byondPath}DreamMaker`, hostDme, env)
+    const dmProcess = await commandQueueService.runProcess(
+      `${byondPath}DreamMaker`,
+      hostDme,
+      env
+    )
 
     if (streamCompilerOutput) {
       this.attachProcess(dmProcess)
@@ -61,7 +76,11 @@ export class ExecutorService {
         if (code === 0) {
           this.appendOutput('-- DreamDaemon --\n')
           try {
-            const ddProcess = await commandQueueService.runProcess(`${byondPath}DreamDaemon`, `${hostDmb}\0-trusted`, env)
+            const ddProcess = await commandQueueService.runProcess(
+              `${byondPath}DreamDaemon`,
+              `${hostDmb}\0-trusted`,
+              env
+            )
             this.attachProcess(ddProcess)
             ddProcess.addEventListener('exit', () => {
               commandQueueService
@@ -76,7 +95,10 @@ export class ExecutorService {
         } else {
           // compile failed: output has already been streamed live, just cleanup
           try {
-            await commandQueueService.runProcess('/bin/rm', `${hostDme}\0${hostDmb}`)
+            await commandQueueService.runProcess(
+              '/bin/rm',
+              `${hostDme}\0${hostDmb}`
+            )
           } catch (error) {
             this.appendOutput(`Cleanup failed: ${String(error)}\n`)
           }
@@ -103,7 +125,11 @@ export class ExecutorService {
         if (code === 0) {
           // successful compile: don't show compiler text, proceed to start DreamDaemon
           try {
-            const ddProcess = await commandQueueService.runProcess(`${byondPath}DreamDaemon`, `${hostDmb}\0-trusted`, env)
+            const ddProcess = await commandQueueService.runProcess(
+              `${byondPath}DreamDaemon`,
+              `${hostDmb}\0-trusted`,
+              env
+            )
             this.attachProcess(ddProcess)
             ddProcess.addEventListener('exit', () => {
               commandQueueService
@@ -121,7 +147,10 @@ export class ExecutorService {
             this.appendOutput(dmOutputBuf.join(''))
           }
           try {
-            await commandQueueService.runProcess('/bin/rm', `${hostDme}\0${hostDmb}`)
+            await commandQueueService.runProcess(
+              '/bin/rm',
+              `${hostDme}\0${hostDmb}`
+            )
           } catch (error) {
             this.appendOutput(`Cleanup failed: ${String(error)}\n`)
           }
@@ -139,7 +168,10 @@ export class ExecutorService {
     this.setStatus('idle')
   }
 
-  private attachProcess(process: Process, opts: { pipeOutput?: boolean } = { pipeOutput: true }) {
+  private attachProcess(
+    process: Process,
+    opts: { pipeOutput?: boolean } = { pipeOutput: true }
+  ) {
     this.activePids.add(process.pid)
     if (opts.pipeOutput !== false) {
       process.addEventListener('stdout', (event) => {

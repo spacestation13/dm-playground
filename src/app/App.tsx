@@ -8,14 +8,20 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { byondService } from '../services/ByondService'
 import { ThemeProvider } from './theme/ThemeContext'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
-import { useThemeSetting, useStreamCompilerSetting, useShowConsoleSetting } from './settings/localSettings'
+import {
+  useThemeSetting,
+  useStreamCompilerSetting,
+  useShowConsoleSetting,
+} from './settings/localSettings'
 import { useLayoutManager } from './layout/useLayoutManager'
 
 export function App() {
-  const { layout, handleUpdateBranchSizes, toggleConsolePanel } = useLayoutManager()
+  const { layout, handleUpdateBranchSizes, toggleConsolePanel } =
+    useLayoutManager()
   const [showSettings, setShowSettings] = useState(false)
   const [themeId, setThemeId] = useThemeSetting()
-  const [streamCompilerOutput, setStreamCompilerOutput] = useStreamCompilerSetting()
+  const [streamCompilerOutput, setStreamCompilerOutput] =
+    useStreamCompilerSetting()
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
 
   useEffect(() => {
@@ -35,7 +41,9 @@ export function App() {
     <div className="flex h-full flex-col gap-4 p-4">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-slate-100">DM Playground</h1>
+          <h1 className="text-lg font-semibold text-slate-100">
+            DM Playground
+          </h1>
         </div>
         <button
           type="button"
@@ -50,9 +58,9 @@ export function App() {
         <ErrorBoundary>
           <ThemeProvider value={{ themeId, setThemeId }}>
             <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
-                <PanelTree node={layout.root} />
+              <PanelTree node={layout.root} />
             </LayoutProvider>
-              {showConsolePanel && <ConsolePanel />}
+            {showConsolePanel && <ConsolePanel />}
           </ThemeProvider>
         </ErrorBoundary>
       </div>
@@ -78,13 +86,17 @@ export function App() {
                 Close
               </button>
             </div>
-              <div className="mt-3 space-y-3 text-sm">
+            <div className="mt-3 space-y-3 text-sm">
               <label className="flex flex-col gap-1">
-                <span className="text-xs uppercase tracking-wide text-slate-400">Editor theme</span>
+                <span className="text-xs uppercase tracking-wide text-slate-400">
+                  Editor theme
+                </span>
                 <select
                   className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
                   value={themeId}
-                  onChange={(event) => setThemeId(event.target.value as EditorThemeId)}
+                  onChange={(event) =>
+                    setThemeId(event.target.value as EditorThemeId)
+                  }
                 >
                   {editorThemeOptions.map((option) => (
                     <option key={option.id} value={option.id}>

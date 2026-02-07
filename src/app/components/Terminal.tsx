@@ -16,7 +16,13 @@ interface TerminalProps {
   onResize?: (rows: number, cols: number) => void
 }
 
-export function Terminal({ label, readOnly = false, onReady, onData, onResize }: TerminalProps) {
+export function Terminal({
+  label,
+  readOnly = false,
+  onReady,
+  onData,
+  onResize,
+}: TerminalProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const terminalRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
@@ -30,7 +36,8 @@ export function Terminal({ label, readOnly = false, onReady, onData, onResize }:
       convertEol: true,
       disableStdin: readOnly,
       fontSize: 12,
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      fontFamily:
+        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
       theme: {
         background: '#020617',
         foreground: '#e2e8f0',
@@ -82,5 +89,10 @@ export function Terminal({ label, readOnly = false, onReady, onData, onResize }:
     }
   }, [label, readOnly, onReady, onData, onResize])
 
-  return <div ref={containerRef} className="h-full min-h-0 w-full rounded border border-slate-800 bg-slate-950/60" />
+  return (
+    <div
+      ref={containerRef}
+      className="h-full min-h-0 w-full rounded border border-slate-800 bg-slate-950/60"
+    />
+  )
 }

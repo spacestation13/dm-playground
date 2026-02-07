@@ -3,7 +3,7 @@ import type { LayoutBranch } from './layoutTypes'
 export function updateBranchSizes(
   node: LayoutBranch,
   branchId: number,
-  sizes: number[],
+  sizes: number[]
 ): LayoutBranch {
   if (node.id === branchId) {
     return {

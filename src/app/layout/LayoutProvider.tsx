@@ -8,5 +8,9 @@ export function LayoutProvider({
   children: ReactNode
   updateBranchSizes: LayoutContextValue['updateBranchSizes']
 }) {
-  return <LayoutContext.Provider value={{ updateBranchSizes }}>{children}</LayoutContext.Provider>
+  return (
+    <LayoutContext.Provider value={{ updateBranchSizes }}>
+      {children}
+    </LayoutContext.Provider>
+  )
 }

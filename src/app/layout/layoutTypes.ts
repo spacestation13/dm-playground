@@ -50,9 +50,7 @@ export const defaultLayout: LayoutRoot = {
             id: 2,
             split: 'vertical',
             size: 30,
-            children: [
-              { type: 'leaf', id: PanelId.Output, size: 100 },
-            ],
+            children: [{ type: 'leaf', id: PanelId.Output, size: 100 }],
           },
         ],
       },
