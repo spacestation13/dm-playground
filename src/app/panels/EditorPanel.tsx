@@ -7,23 +7,21 @@ import { useTheme } from '../theme/useTheme'
 
 const DEFAULT_CODE = `/world/New()\n  world.log << "meow";\n  ..()\n  eval("")\n  shutdown()\n`
 
-const wrapTemplate = (code: string) => `// DM Playground\n\n${code}\n`
-
 const getSeededCode = () => {
   const params = new URLSearchParams(window.location.search)
   const encoded = params.get('code')
   if (encoded) {
     try {
-      return wrapTemplate(Base64.decode(encoded))
+      return Base64.decode(encoded)
     } catch {
-      return wrapTemplate(DEFAULT_CODE)
+      return DEFAULT_CODE
     }
   }
-  return wrapTemplate(DEFAULT_CODE)
+  return DEFAULT_CODE
 }
 
 export function EditorPanel() {
-  const [value, setValue] = useState(() => getSeededCode())
+  const [currentCode, setCurrentCode] = useState(() => getSeededCode())
   const [, setStatus] = useState<'running' | 'idle'>('idle')
   const [activeByond, setActiveByond] = useState<string | null>(() =>
     byondService.getActiveVersion()
@@ -49,18 +47,40 @@ export function EditorPanel() {
     return () => byondService.removeEventListener('active', handleActive)
   }, [])
 
+  useEffect(() => {
+    const handleRequestShare = async () => {
+      const encoded = Base64.encode(currentCode)
+      const url = `${window.location.origin}${window.location.pathname}?code=${encodeURIComponent(
+        encoded
+      )}`
+      try {
+        await navigator.clipboard.writeText(url)
+        window.alert('Share link copied to clipboard')
+      } catch {
+        window.prompt('Copy this link', url)
+      }
+    }
+
+    window.addEventListener('requestShare', handleRequestShare as EventListener)
+    return () =>
+      window.removeEventListener(
+        'requestShare',
+        handleRequestShare as EventListener
+      )
+  }, [currentCode])
+
   const handleRun = () => {
     if (!activeByond) {
       return
     }
-    void executorService.executeImmediate(value)
+    void executorService.executeImmediate(currentCode)
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <Editor
-        value={value}
-        onChange={setValue}
+        value={currentCode}
+        onChange={setCurrentCode}
         onRun={handleRun}
         themeId={themeId}
       />

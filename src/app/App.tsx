@@ -45,14 +45,26 @@ export function App() {
             DM Playground
           </h1>
         </div>
-        <button
-          type="button"
-          aria-label="Settings"
-          onClick={() => setShowSettings(true)}
-          className="rounded-md border border-slate-700 bg-slate-900/80 px-2 py-1 text-sm font-semibold text-slate-200 hover:border-slate-500"
-        >
-          ⚙️
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Share"
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('requestShare'))
+            }
+            className="rounded-md border border-slate-700 bg-slate-900/80 px-2 py-1 text-sm font-semibold text-slate-200 hover:border-slate-500"
+          >
+            🔗 Share Code
+          </button>
+          <button
+            type="button"
+            aria-label="Settings"
+            onClick={() => setShowSettings(true)}
+            className="rounded-md border border-slate-700 bg-slate-900/80 px-2 py-1 text-sm font-semibold text-slate-200 hover:border-slate-500"
+          >
+            ⚙️
+          </button>
+        </div>
       </header>
       <div className="flex-1 min-h-0">
         <ErrorBoundary>
