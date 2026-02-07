@@ -30,7 +30,20 @@ export const useLocalSettings = create<LocalSettingsState>()(
 export default useLocalSettings
 
 // Hooks
-export const useThemeSetting = () => useLocalSettings((s: LocalSettingsState) => [s.themeId, s.setThemeId] as const)
-export const useStreamCompilerSetting = () =>
-  useLocalSettings((s: LocalSettingsState) => [s.streamCompilerOutput, s.setStreamCompilerOutput] as const)
-export const useShowConsoleSetting = () => useLocalSettings((s: LocalSettingsState) => [s.showConsolePanel, s.setShowConsolePanel] as const)
+export const useThemeSetting = () => {
+  const themeId = useLocalSettings((s: LocalSettingsState) => s.themeId)
+  const setThemeId = useLocalSettings((s: LocalSettingsState) => s.setThemeId)
+  return [themeId, setThemeId] as const
+}
+
+export const useStreamCompilerSetting = () => {
+  const streamCompilerOutput = useLocalSettings((s: LocalSettingsState) => s.streamCompilerOutput)
+  const setStreamCompilerOutput = useLocalSettings((s: LocalSettingsState) => s.setStreamCompilerOutput)
+  return [streamCompilerOutput, setStreamCompilerOutput] as const
+}
+
+export const useShowConsoleSetting = () => {
+  const showConsolePanel = useLocalSettings((s: LocalSettingsState) => s.showConsolePanel)
+  const setShowConsolePanel = useLocalSettings((s: LocalSettingsState) => s.setShowConsolePanel)
+  return [showConsolePanel, setShowConsolePanel] as const
+}

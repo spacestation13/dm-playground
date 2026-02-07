@@ -1,127 +1,26 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import packageJson from '../../package.json'
 import { PanelTree } from './layout/PanelTree'
 import { ConsolePanel } from './panels/ConsolePanel'
 import { LayoutProvider } from './layout/LayoutProvider'
-import { PanelId, defaultLayout, type LayoutBranch, type LayoutLeaf, type LayoutRoot } from './layout/layoutTypes'
-import { updateBranchSizes } from './layout/layoutUtils'
-import { CompressionService } from '../services/CompressionService'
 import { emulatorService } from '../services/EmulatorService'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { byondService } from '../services/ByondService'
 import { ThemeProvider } from './theme/ThemeContext'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 import { useThemeSetting, useStreamCompilerSetting, useShowConsoleSetting } from './settings/localSettings'
-import { addPanel, removePanel } from './layout/layoutTreeUtils'
-
-const LAYOUT_STORAGE_KEY = 'layout'
-const MIN_LAYOUT_VERSION = 1
-const VALID_PANELS = new Set(Object.values(PanelId))
-
-const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLeaf | null => {
-  if (node.type === 'leaf') {
-    return VALID_PANELS.has(node.id) ? node : null
-  }
-
-  const children = node.children
-    .map((child) => sanitizeNode(child))
-    .filter((child): child is LayoutBranch | LayoutLeaf => child !== null)
-
-  if (children.length === 0) {
-    return null
-  }
-
-  if (children.length === 1) {
-    return children[0]
-  }
-
-  return {
-    ...node,
-    children,
-  }
-}
+import { useLayoutManager } from './layout/useLayoutManager'
 
 export function App() {
-  const [layout, setLayout] = useState<LayoutRoot | null>(null)
+  const { layout, handleUpdateBranchSizes, toggleConsolePanel } = useLayoutManager()
   const [showSettings, setShowSettings] = useState(false)
   const [themeId, setThemeId] = useThemeSetting()
   const [streamCompilerOutput, setStreamCompilerOutput] = useStreamCompilerSetting()
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
 
-  const saveLayout = useCallback(async (next: LayoutRoot) => {
-    setLayout(next)
-    const compressed = await CompressionService.encode(next)
-    localStorage.setItem(LAYOUT_STORAGE_KEY, compressed)
-  }, [])
-
-  useEffect(() => {
-    let isMounted = true
-
-    const loadLayout = async () => {
-      const stored = localStorage.getItem(LAYOUT_STORAGE_KEY)
-      if (!stored) {
-        await saveLayout(defaultLayout)
-        return
-      }
-
-      try {
-        const parsed = await CompressionService.decode<LayoutRoot>(stored)
-        if (!parsed || parsed.version < MIN_LAYOUT_VERSION) {
-          await saveLayout(defaultLayout)
-          return
-        }
-
-        // Remove Console panel from any stored layout
-        const sanitizedRoot = sanitizeNode(removePanel(parsed.root, PanelId.Console))
-        const nextLayout =
-          sanitizedRoot && sanitizedRoot.type === 'branch'
-            ? { ...parsed, root: sanitizedRoot }
-            : defaultLayout
-
-        if (isMounted) {
-          setLayout(nextLayout)
-        }
-
-        if (sanitizedRoot && sanitizedRoot.type === 'branch') {
-          const compressed = await CompressionService.encode(nextLayout)
-          localStorage.setItem(LAYOUT_STORAGE_KEY, compressed)
-        }
-      } catch (error) {
-        console.warn('Failed to load layout, resetting to default.', error)
-        await saveLayout(defaultLayout)
-      }
-    }
-
-    void loadLayout()
-
-    return () => {
-      isMounted = false
-    }
-  }, [saveLayout])
-
   useEffect(() => {
     emulatorService.start()
     void byondService.initialize()
-  }, [])
-
-  const handleUpdateBranchSizes = useCallback((branchId: number, sizes: number[]) => {
-    setLayout((prev) => {
-      if (!prev) {
-        return prev
-      }
-
-      const next = {
-        ...prev,
-        root: updateBranchSizes(prev.root, branchId, sizes),
-      }
-
-      void (async () => {
-        const compressed = await CompressionService.encode(next)
-        localStorage.setItem(LAYOUT_STORAGE_KEY, compressed)
-      })()
-
-      return next
-    })
   }, [])
 
   if (!layout) {
@@ -211,13 +110,7 @@ export function App() {
                   onChange={(e) => {
                     const checked = e.target.checked
                     setShowConsolePanel(checked)
-                    setLayout((prev) => {
-                      if (!prev) return prev
-                      const newRoot = checked
-                        ? addPanel(prev.root as LayoutBranch, PanelId.Console, 2, 30)
-                        : removePanel(prev.root as LayoutBranch, PanelId.Console)
-                      return { ...prev, root: newRoot }
-                    })
+                    toggleConsolePanel(checked)
                   }}
                 />
                 <span className="text-xs">Show Console panel</span>
