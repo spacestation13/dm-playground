@@ -16,7 +16,6 @@ import { addPanel, removePanel } from './layout/layoutTreeUtils'
 
 const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
-const APP_VERSION = packageJson.version
 const VALID_PANELS = new Set(Object.values(PanelId))
 
 const sanitizeNode = (node: LayoutBranch | LayoutLeaf): LayoutBranch | LayoutLeaf | null => {
@@ -223,7 +222,7 @@ export function App() {
                 />
                 <span className="text-xs">Show Console panel</span>
               </label>
-              <div>Version {APP_VERSION}</div>
+              <div>Version {packageJson.version}</div>
               <div>
                 <a
                   className="text-sky-300 hover:text-sky-200"
