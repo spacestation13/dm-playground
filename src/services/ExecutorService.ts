@@ -44,7 +44,7 @@ export class ExecutorService {
     const hostDme = `/mnt/host/${filename}.dme`
     const hostDmb = `/mnt/host/${filename}.dmb`
 
-    emulatorService.start('https://spacestation13.github.io/dm-playground-linux/')
+    emulatorService.start()
     emulatorService.sendFile(`${filename}.dme`, new TextEncoder().encode(code))
 
     const env = new Map<string, string>([['LD_LIBRARY_PATH', byondPath]])

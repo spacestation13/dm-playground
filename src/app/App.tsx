@@ -103,7 +103,7 @@ export function App() {
   }, [saveLayout])
 
   useEffect(() => {
-    emulatorService.start('https://spacestation13.github.io/dm-playground-linux/')
+    emulatorService.start()
     void byondService.initialize()
   }, [])
 

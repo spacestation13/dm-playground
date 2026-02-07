@@ -22,15 +22,7 @@ type EmulatorOutboundMessage =
   | { type: "resetOutputConsole" }
   | { type: "asyncResponse"; commandId: string };
 
-const url = new URL(self.location.href);
-const normalizeRemoteUrl = (value: string | null) => {
-  if (!value || !value.startsWith("http")) {
-    return "https://spacestation13.github.io/dm-playground-linux/";
-  }
-  return value.endsWith("/") ? value : `${value}/`;
-};
-
-const vmRemoteUrl = normalizeRemoteUrl(url.searchParams.get("vmRemoteUrl"));
+const vmRemoteUrl = "https://spacestation13.github.io/dm-playground-linux/";
 const vmLocalUrl = "/lib/";
 
 const decoder = new TextDecoder();
