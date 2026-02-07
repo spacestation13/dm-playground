@@ -165,6 +165,9 @@ export class ByondService {
         `/bin/rm /mnt/host/byond/${version}.zip`,
       ])
       this.setStatus(version, ByondStatus.Installed)
+    } else if (setActive) {
+      // Version is already installed at /mnt/host/byond/${version}, move it to staging
+      await commandQueueService.runToSuccess('/bin/mv', `/mnt/host/byond/${version}\0${destination}`)
     }
 
     if (setActive) {
