@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import packageJson from '../../package.json'
 import { PanelTree } from './layout/PanelTree'
+import { ConsolePanel } from './panels/ConsolePanel'
 import { LayoutProvider } from './layout/LayoutProvider'
 import { PanelId, defaultLayout, type LayoutBranch, type LayoutLeaf, type LayoutRoot } from './layout/layoutTypes'
 import { updateBranchSizes } from './layout/layoutUtils'
@@ -10,6 +11,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { byondService } from '../services/ByondService'
 import { ThemeProvider } from './theme/ThemeContext'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
+import { removePanel } from './layout/layoutTreeUtils'
 
 const LAYOUT_STORAGE_KEY = 'layout'
 const MIN_LAYOUT_VERSION = 1
@@ -51,6 +53,9 @@ export function App() {
   const [streamCompilerOutput, setStreamCompilerOutput] = useState<boolean>(() => {
     return localStorage.getItem(STREAM_OUTPUT_KEY) === '1'
   })
+  const [showConsolePanel, setShowConsolePanel] = useState<boolean>(() => {
+    return localStorage.getItem('show-console-panel') === '1'
+  })
 
   const saveLayout = useCallback(async (next: LayoutRoot) => {
     setLayout(next)
@@ -75,7 +80,8 @@ export function App() {
           return
         }
 
-        const sanitizedRoot = sanitizeNode(parsed.root)
+        // Remove Console panel from any stored layout
+        const sanitizedRoot = sanitizeNode(removePanel(parsed.root, PanelId.Console))
         const nextLayout =
           sanitizedRoot && sanitizedRoot.type === 'branch'
             ? { ...parsed, root: sanitizedRoot }
@@ -155,13 +161,14 @@ export function App() {
         </button>
       </header>
       <div className="flex-1 min-h-0">
-        <ThemeProvider value={{ themeId, setThemeId }}>
-          <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
-            <ErrorBoundary>
-              <PanelTree node={layout.root} />
-            </ErrorBoundary>
-          </LayoutProvider>
-        </ThemeProvider>
+        <ErrorBoundary>
+          <ThemeProvider value={{ themeId, setThemeId }}>
+            <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
+                <PanelTree node={layout.root} />
+            </LayoutProvider>
+              {showConsolePanel && <ConsolePanel />}
+          </ThemeProvider>
+        </ErrorBoundary>
       </div>
       {showSettings && (
         <div
@@ -185,7 +192,7 @@ export function App() {
                 Close
               </button>
             </div>
-            <div className="mt-3 space-y-3 text-sm">
+              <div className="mt-3 space-y-3 text-sm">
               <label className="flex flex-col gap-1">
                 <span className="text-xs uppercase tracking-wide text-slate-400">Editor theme</span>
                 <select
@@ -210,6 +217,18 @@ export function App() {
                   }}
                 />
                 <span className="text-xs">Stream DreamMaker output live</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showConsolePanel}
+                  onChange={(e) => {
+                    const checked = e.target.checked
+                    setShowConsolePanel(checked)
+                    localStorage.setItem('show-console-panel', checked ? '1' : '0')
+                  }}
+                />
+                <span className="text-xs">Show Console panel</span>
               </label>
               <div>Version {APP_VERSION}</div>
               <div>
