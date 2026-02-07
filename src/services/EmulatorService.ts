@@ -32,12 +32,12 @@ export class EmulatorService {
       return
     }
 
-    const url = new URL('../workers/emulator.worker.ts?worker', import.meta.url)
+    const url = new URL('../workers/emulator.worker.ts', import.meta.url)
     url.searchParams.set(
       'vmRemoteUrl',
       vmRemoteUrl ?? 'https://spacestation13.github.io/dm-playground-linux/',
     )
-    this.worker = new Worker(url)
+    this.worker = new Worker(url, { type: 'classic' })
     this.worker.addEventListener('message', (event: MessageEvent<EmulatorInboundMessage>) => {
       const payload = event.data
       this.events.dispatchEvent(new CustomEvent(payload.type, { detail: payload }))
