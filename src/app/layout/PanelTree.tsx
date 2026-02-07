@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useMemo, useRef } from 'react'
-import { Panel as PanelHost } from './Panel'
+import { Panel } from './Panel'
 import {
   Group,
   Panel as ResizablePanel,
@@ -15,7 +15,7 @@ interface PanelTreeProps {
 
 export function PanelTree({ node }: PanelTreeProps) {
   if (node.type === 'leaf') {
-    return <PanelHost id={node.id} />
+    return <Panel id={node.id} showTitlebar={node.showTitlebar} />
   }
 
   return <PanelTreeBranch node={node} />

@@ -14,6 +14,7 @@ export interface LayoutLeaf {
   type: 'leaf'
   id: PanelId
   size: number
+  showTitlebar?: boolean
 }
 
 export interface LayoutBranch {
@@ -44,7 +45,7 @@ export const defaultLayout: LayoutRoot = {
         split: 'horizontal',
         size: 70,
         children: [
-          { type: 'leaf', id: PanelId.Editor, size: 70 },
+          { type: 'leaf', id: PanelId.Editor, size: 70, showTitlebar: false },
           {
             type: 'branch',
             id: 2,
