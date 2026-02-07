@@ -4,16 +4,16 @@ const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
 export class CompressionService {
-  static async encode(value: unknown) {
+  static async encode(value: unknown, urlsafe = false) {
     const json = JSON.stringify(value)
     const bytes = encoder.encode(json)
 
     if (typeof CompressionStream === 'undefined') {
-      return Base64.fromUint8Array(bytes)
+      return Base64.fromUint8Array(bytes, urlsafe)
     }
 
     const compressed = await this.compress(bytes)
-    return Base64.fromUint8Array(new Uint8Array(compressed))
+    return Base64.fromUint8Array(new Uint8Array(compressed), urlsafe)
   }
 
   static async decode<T>(value: string) {
