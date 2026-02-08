@@ -24,6 +24,25 @@ export function App() {
     useStreamCompilerSetting()
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
 
+  const handleDeleteSiteData = async () => {
+    const confirmed = window.confirm(
+      'Delete all site data? This will clear settings, layout, and BYOND downloads.'
+    )
+    if (!confirmed) return
+
+    try {
+      const root = await navigator.storage.getDirectory()
+      await root.removeEntry('byond', { recursive: true })
+    } catch (error) {
+      console.warn('Failed to clear BYOND storage', error)
+    }
+
+    localStorage.removeItem('local-settings')
+    localStorage.removeItem('layout')
+    localStorage.removeItem('byondActiveVersion')
+    window.location.reload()
+  }
+
   useEffect(() => {
     emulatorService.start()
     void byondService.initialize()
@@ -139,6 +158,15 @@ export function App() {
                 />
                 <span className="text-xs">Show Console panel</span>
               </label>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => void handleDeleteSiteData()}
+                  className="w-full rounded border border-red-700/70 bg-red-950/40 px-2 py-1 text-xs text-red-200 hover:border-red-500"
+                >
+                  Delete all site data
+                </button>
+              </div>
               <div>Version {packageJson.version}</div>
               <div>
                 <a
