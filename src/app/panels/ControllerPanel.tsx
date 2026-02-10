@@ -3,6 +3,7 @@ import { Base64 } from 'js-base64'
 import { Terminal, type TerminalApi } from '../components/Terminal'
 import { emulatorService } from '../../services/EmulatorService'
 import { commandQueueService } from '../../services/CommandQueueService'
+import { green, red } from '../../utils/terminalColors'
 
 export function ControllerTitle() {
   const [busy, setBusy] = useState(() => commandQueueService.getBusy())
@@ -45,11 +46,11 @@ export function ControllerPanel() {
           .split('\n')
           .map((line) => line.replace(/\0/g, '').trim())
           .filter((line) => line && line !== 'OK')
-          .join('\n')
+          .join(`\n${red('<<< ')}`)
         if (!filtered) {
           return
         }
-        terminal.write(`\r\n--- controller ---\r\n${filtered}`)
+        terminal.write(`\n${red('<<< ')}${filtered}`)
       }
     }
 
@@ -58,26 +59,19 @@ export function ControllerPanel() {
       if (detail.trim() === 'poll') {
         return
       }
-      terminal.write(`\r\n>>> ${decodeSent(detail)}\r\n`)
-    }
-
-    const handleBoot = () => {
-      terminal.write('\r\n[controller boot]\r\n')
+      terminal.write(`\n${green('>>> ')}${decodeSent(detail)}\n`)
     }
 
     emulatorService.addEventListener('receivedOutput', handleOutput)
     commandQueueService.addEventListener('sent', handleSent)
-    commandQueueService.addEventListener('boot', handleBoot)
     return () => {
       emulatorService.removeEventListener('receivedOutput', handleOutput)
       commandQueueService.removeEventListener('sent', handleSent)
-      commandQueueService.removeEventListener('boot', handleBoot)
     }
   }, [terminal])
 
   return (
     <Terminal
-      label="Controller log"
       readOnly
       onReady={setTerminal}
       onResize={(rows, cols) =>

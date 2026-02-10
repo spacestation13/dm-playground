@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ByondStatus } from '../../services/ByondService'
+import { ByondEvent, ByondStatus } from '../../services/ByondService'
 import { byondService } from '../../services/ByondService'
 
 type StatusMap = Record<string, ByondStatus>
@@ -32,6 +32,7 @@ export function ByondPanel() {
   const [error, setError] = useState<string | null>(null)
   const [customMajor, setCustomMajor] = useState('')
   const [customMinor, setCustomMinor] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const displayVersions = useMemo(() => {
     const list = [...local]
@@ -109,8 +110,9 @@ export function ByondPanel() {
       const detail = (event as CustomEvent<string | null>).detail
       setActiveVersion(detail)
     }
-    byondService.addEventListener('active', handleActive)
-    return () => byondService.removeEventListener('active', handleActive)
+    byondService.addEventListener(ByondEvent.Active, handleActive)
+    return () =>
+      byondService.removeEventListener(ByondEvent.Active, handleActive)
   }, [])
 
   useEffect(() => {
@@ -122,6 +124,16 @@ export function ByondPanel() {
     }
     byondService.addStatusListener(handleStatus)
     return () => byondService.removeStatusListener(handleStatus)
+  }, [])
+
+  useEffect(() => {
+    const handleLoading = (event: Event) => {
+      const detail = (event as CustomEvent<boolean>).detail
+      setIsLoading(detail)
+    }
+    byondService.addEventListener(ByondEvent.Loading, handleLoading)
+    return () =>
+      byondService.removeEventListener(ByondEvent.Loading, handleLoading)
   }, [])
 
   const handleDownload = async (version: string) => {
@@ -162,6 +174,7 @@ export function ByondPanel() {
   }
 
   const handleSetActive = (version: string) => {
+    setIsLoading(true)
     setStatus((prev) => ({ ...prev, [version]: ByondStatus.Loading }))
     void byondService
       .load(version, true)
@@ -172,6 +185,9 @@ export function ByondPanel() {
       .catch((loadError) => {
         setStatus((prev) => ({ ...prev, [version]: ByondStatus.Error }))
         setError(loadError instanceof Error ? loadError.message : 'Load failed')
+      })
+      .finally(() => {
+        setIsLoading(false)
       })
   }
 
@@ -265,7 +281,15 @@ export function ByondPanel() {
                         <button
                           type="button"
                           onClick={() => handleSetActive(version)}
-                          className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-500"
+                          disabled={isLoading || isActive}
+                          className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          title={
+                            isActive
+                              ? 'Already active'
+                              : isLoading
+                                ? 'Another version is loading'
+                                : 'Set as active version'
+                          }
                         >
                           Set active
                         </button>

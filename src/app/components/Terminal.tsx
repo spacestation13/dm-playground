@@ -9,7 +9,7 @@ export interface TerminalApi {
 }
 
 interface TerminalProps {
-  label: string
+  label?: string
   readOnly?: boolean
   onReady?: (api: TerminalApi) => void
   onData?: (value: string) => void
@@ -66,7 +66,9 @@ export function Terminal({
     const dataDisposable = terminal.onData((value) => onData?.(value))
     fitAddon.fit()
     onResize?.(terminal.rows, terminal.cols)
-    terminal.write(`${label}\r\n`)
+    if (label) {
+      terminal.write(`${label}\r\n`)
+    }
 
     onReady?.({
       write: (value) => terminal.write(value),

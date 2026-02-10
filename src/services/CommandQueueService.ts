@@ -1,4 +1,4 @@
-export type ControllerEventType = 'boot' | 'sent'
+export type ControllerEventType = 'sent'
 
 export interface CommandResultOK<C extends Command> {
   status: 'OK'
@@ -299,7 +299,6 @@ export class CommandQueueService {
         throw Error('Controller initialized twice. It probably crashed.')
       this.initialized = true
       this.resultBuffer = ''
-      this.events.dispatchEvent(new CustomEvent('boot'))
       this.tickQueue()
       return
     }

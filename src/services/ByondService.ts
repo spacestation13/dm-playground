@@ -7,11 +7,16 @@ const ACTIVE_VERSION_KEY = 'byondActiveVersion'
 
 export enum ByondStatus {
   Idle = 'idle',
-  Fetching = 'fetching',
-  Fetched = 'fetched',
+  Fetching = 'downloading',
+  Fetched = 'cached',
   Loading = 'loading',
-  Installed = 'installed',
+  Installed = 'ready',
   Error = 'error',
+}
+
+export enum ByondEvent {
+  Active = 'active',
+  Loading = 'loading',
 }
 
 export class ByondService {
@@ -19,16 +24,17 @@ export class ByondService {
   private activeVersion: string | null = null
   private events = new EventTarget()
   private initialized = false
+  private loading = false
 
   addEventListener(
-    type: 'active',
+    type: ByondEvent,
     listener: EventListenerOrEventListenerObject
   ) {
     this.events.addEventListener(type, listener)
   }
 
   removeEventListener(
-    type: 'active',
+    type: ByondEvent,
     listener: EventListenerOrEventListenerObject
   ) {
     this.events.removeEventListener(type, listener)
@@ -51,6 +57,8 @@ export class ByondService {
     const localVersions = await this.getLocalVersions()
     const storedActive = localStorage.getItem(ACTIVE_VERSION_KEY)
 
+    await commandQueueService.runToSuccess('/bin/mkdir', '-p\0/mnt/host/byond')
+
     if (storedActive && localVersions.includes(storedActive)) {
       this.activeVersion = storedActive
       try {
@@ -68,7 +76,13 @@ export class ByondService {
       } catch {
         this.activeVersion = null
       }
+      return
     }
+
+    // no local versions available, fetch the latest version
+    const latestVersion = await this.getLatestVersion()
+    await this.downloadVersion(latestVersion)
+    await this.load(latestVersion, true)
   }
 
   async getLatestVersion() {
@@ -155,6 +169,10 @@ export class ByondService {
   }
 
   async load(version: string, setActive = true) {
+    if (this.loading) {
+      throw new Error('Another version is currently being loaded')
+    }
+
     const status = this.versions.get(version)
     if (
       !status ||
@@ -163,47 +181,58 @@ export class ByondService {
       throw new Error('Version not available')
     }
 
-    await commandQueueService.runToSuccess('/bin/mkdir', '-p\0/mnt/host/byond')
+    this.loading = true
+    this.events.dispatchEvent(
+      new CustomEvent(ByondEvent.Loading, { detail: true })
+    )
+    try {
+      const destination = setActive
+        ? '/var/lib/byond_staging'
+        : `/mnt/host/byond/${version}`
 
-    const destination = setActive
-      ? '/var/lib/byond_staging'
-      : `/mnt/host/byond/${version}`
-
-    if (status !== ByondStatus.Installed) {
-      this.setStatus(version, ByondStatus.Loading)
-      const zipFile = await this.getVersion(version)
-      await emulatorService.sendFile(
-        `byond/${version}.zip`,
-        new Uint8Array(await zipFile.arrayBuffer())
-      )
-      await commandQueueService.runToSuccess([
-        `/bin/unzip /mnt/host/byond/${version}.zip 'byond/bin*' -j -d ${destination}`,
-        `/bin/rm /mnt/host/byond/${version}.zip`,
-      ])
-      this.setStatus(version, ByondStatus.Installed)
-    } else if (setActive) {
-      // Version is already installed at /mnt/host/byond/${version}, move it to staging
-      await commandQueueService.runToSuccess(
-        '/bin/mv',
-        `/mnt/host/byond/${version}\0${destination}`
-      )
-    }
-
-    if (setActive) {
-      await commandQueueService.runToSuccess('/bin/mkdir', '-p\0/var/lib/byond')
-      if (this.activeVersion) {
+      if (status !== ByondStatus.Installed) {
+        this.setStatus(version, ByondStatus.Loading)
+        const zipFile = await this.getVersion(version)
+        emulatorService.sendFile(
+          `byond/${version}.zip`,
+          new Uint8Array(await zipFile.arrayBuffer())
+        )
+        await commandQueueService.runToSuccess([
+          `/bin/rm -rf ${destination}`,
+          `/bin/mkdir -p ${destination}`,
+          `/bin/unzip /mnt/host/byond/${version}.zip 'byond/bin*' -j -d ${destination}`,
+          `/bin/rm /mnt/host/byond/${version}.zip`,
+        ])
+        this.setStatus(version, ByondStatus.Installed)
+      } else if (setActive) {
+        // Version is already installed at /mnt/host/byond/${version}, move it to staging
         await commandQueueService.runToSuccess(
           '/bin/mv',
-          `/var/lib/byond\0/mnt/host/byond/${this.activeVersion}`
+          `/mnt/host/byond/${version}\0${destination}`
         )
       }
-      await commandQueueService.runToSuccess(
-        '/bin/mv',
-        `${destination}\0/var/lib/byond`
+
+      if (setActive) {
+        const commands: string[] = []
+        commands.push('/bin/mkdir -p /var/lib/byond')
+        if (this.activeVersion) {
+          commands.push(
+            `/bin/mv /var/lib/byond /mnt/host/byond/${this.activeVersion}`
+          )
+        }
+        commands.push(`/bin/mv ${destination} /var/lib/byond`)
+        await commandQueueService.runToSuccess(commands)
+        this.activeVersion = version
+        localStorage.setItem(ACTIVE_VERSION_KEY, version)
+        this.events.dispatchEvent(
+          new CustomEvent(ByondEvent.Active, { detail: version })
+        )
+      }
+    } finally {
+      this.loading = false
+      this.events.dispatchEvent(
+        new CustomEvent(ByondEvent.Loading, { detail: false })
       )
-      this.activeVersion = version
-      localStorage.setItem(ACTIVE_VERSION_KEY, version)
-      this.events.dispatchEvent(new CustomEvent('active', { detail: version }))
     }
   }
 
@@ -219,7 +248,9 @@ export class ByondService {
     if (this.activeVersion === version) {
       this.activeVersion = null
       localStorage.removeItem(ACTIVE_VERSION_KEY)
-      this.events.dispatchEvent(new CustomEvent('active', { detail: null }))
+      this.events.dispatchEvent(
+        new CustomEvent(ByondEvent.Active, { detail: null })
+      )
     }
     await commandQueueService.runToCompletion(
       '/bin/rm',

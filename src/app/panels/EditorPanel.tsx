@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Base64 } from 'js-base64'
 import { Editor } from '../components/Editor'
 import { executorService } from '../../services/ExecutorService'
-import { byondService } from '../../services/ByondService'
+import { ByondEvent, byondService } from '../../services/ByondService'
 import { useTheme } from '../theme/useTheme'
 
 const DEFAULT_CODE = `/world/New()\n  world.log << "meow";\n  ..()\n  eval("")\n  shutdown()\n`
@@ -43,8 +43,9 @@ export function EditorPanel() {
       const detail = (event as CustomEvent<string | null>).detail
       setActiveByond(detail)
     }
-    byondService.addEventListener('active', handleActive)
-    return () => byondService.removeEventListener('active', handleActive)
+    byondService.addEventListener(ByondEvent.Active, handleActive)
+    return () =>
+      byondService.removeEventListener(ByondEvent.Active, handleActive)
   }, [])
 
   useEffect(() => {
