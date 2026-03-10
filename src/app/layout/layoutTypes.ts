@@ -53,12 +53,12 @@ export const defaultLayout: LayoutRoot = {
           {
             type: 'leaf',
             id: PanelId.Byond,
-            size: 40,
+            size: 35,
           },
           {
             type: 'leaf',
             id: PanelId.Output,
-            size: 60,
+            size: 65,
           },
         ],
       },
