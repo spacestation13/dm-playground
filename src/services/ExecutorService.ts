@@ -8,6 +8,7 @@ import { byondService } from './ByondService'
 import useLocalSettings from '../app/settings/localSettings'
 
 export type ExecutorEventType = 'reset' | 'output' | 'status'
+const DREAM_DAEMON_STARTUP_BANNER_LINES = 3
 
 export class ExecutorService {
   private events = new EventTarget()
@@ -78,7 +79,7 @@ export class ExecutorService {
           try {
             const ddProcess = await commandQueueService.runProcess(
               `${byondPath}DreamDaemon`,
-              `${hostDmb}\0-trusted`,
+              `${hostDmb}\0-trusted\0-invisible`,
               env
             )
             this.attachProcess(ddProcess)
@@ -127,10 +128,10 @@ export class ExecutorService {
           try {
             const ddProcess = await commandQueueService.runProcess(
               `${byondPath}DreamDaemon`,
-              `${hostDmb}\0-trusted`,
+              `${hostDmb}\0-trusted\0-invisible`,
               env
             )
-            this.attachProcess(ddProcess)
+            this.attachProcess(ddProcess, { suppressDaemonBanner: true })
             ddProcess.addEventListener('exit', () => {
               commandQueueService
                 .runProcess('/bin/rm', `${hostDme}\0${hostDmb}`)
@@ -170,17 +171,51 @@ export class ExecutorService {
 
   private attachProcess(
     process: Process,
-    opts: { pipeOutput?: boolean } = { pipeOutput: true }
+    opts: { pipeOutput?: boolean; suppressDaemonBanner?: boolean } = {
+      pipeOutput: true,
+    }
   ) {
     this.activePids.add(process.pid)
+    let remainingBannerLines = opts.suppressDaemonBanner
+      ? DREAM_DAEMON_STARTUP_BANNER_LINES
+      : 0
+
+    // DreamDaemon emits a startup banner.
+    // This drops it, then passes all later output through.
+    const dropInitialDaemonBannerLines = (value: string) => {
+      if (remainingBannerLines <= 0) {
+        return value
+      }
+
+      const lines = value.split('\n')
+      const output: string[] = []
+
+      for (const line of lines) {
+        if (remainingBannerLines > 0 && line.trim().length > 0) {
+          remainingBannerLines -= 1
+          continue
+        }
+
+        output.push(line)
+      }
+
+      return output.join('\n')
+    }
+
     if (opts.pipeOutput !== false) {
       process.addEventListener('stdout', (event) => {
         const detail = (event as CustomEvent<string>).detail
-        this.appendOutput(detail)
+        const output = dropInitialDaemonBannerLines(detail)
+        if (output) {
+          this.appendOutput(output)
+        }
       })
       process.addEventListener('stderr', (event) => {
         const detail = (event as CustomEvent<string>).detail
-        this.appendOutput(detail)
+        const output = dropInitialDaemonBannerLines(detail)
+        if (output) {
+          this.appendOutput(output)
+        }
       })
     }
     process.addEventListener('exit', () => {
