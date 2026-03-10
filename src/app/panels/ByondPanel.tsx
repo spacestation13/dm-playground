@@ -5,6 +5,19 @@ import { byondService } from '../../services/ByondService'
 type StatusMap = Record<string, ByondStatus>
 
 export function ByondTitle() {
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const handleLoading = (event: Event) => {
+      const detail = (event as CustomEvent<boolean>).detail
+      setIsLoading(detail)
+    }
+
+    byondService.addEventListener(ByondEvent.Loading, handleLoading)
+    return () =>
+      byondService.removeEventListener(ByondEvent.Loading, handleLoading)
+  }, [])
+
   const refresh = async () => {
     window.dispatchEvent(new CustomEvent('byond:refresh'))
   }
@@ -12,6 +25,13 @@ export function ByondTitle() {
   return (
     <div className="flex flex-1 items-center gap-2">
       <span>BYOND</span>
+      {isLoading && (
+        <span
+          className="h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-transparent"
+          aria-label="Loading BYOND version"
+          title="Loading BYOND version"
+        />
+      )}
       <button
         type="button"
         onClick={() => void refresh()}
