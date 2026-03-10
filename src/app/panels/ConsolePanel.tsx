@@ -13,8 +13,9 @@ export function ConsolePanel() {
   )
   const [controllerTerminal, setControllerTerminal] =
     useState<TerminalApi | null>(null)
+  const [persistTerminal, setPersistTerminal] = useState(true)
   const { splitContainerRef, splitPercent, handleSplitDragStart } =
-    useSplitResize(50)
+    useSplitResize(35)
 
   useEffect(() => {
     if (!consoleTerminal) {
@@ -29,7 +30,11 @@ export function ConsolePanel() {
       }
     }
 
-    const handleReset = () => consoleTerminal.clear()
+    const handleReset = () => {
+      if (!persistTerminal) {
+        consoleTerminal.clear()
+      }
+    }
 
     emulatorService.addEventListener('receivedOutput', handleOutput)
     emulatorService.addEventListener('resetOutputConsole', handleReset)
@@ -38,7 +43,7 @@ export function ConsolePanel() {
       emulatorService.removeEventListener('receivedOutput', handleOutput)
       emulatorService.removeEventListener('resetOutputConsole', handleReset)
     }
-  }, [consoleTerminal])
+  }, [consoleTerminal, persistTerminal])
 
   useEffect(() => {
     if (!controllerTerminal) {
@@ -54,11 +59,11 @@ export function ConsolePanel() {
           .split('\n')
           .map((line) => line.replace(/\0/g, '').trim())
           .filter((line) => line && line !== 'OK')
-          .join(`\n${red('<<< ')}`)
+          .join(`\n${red('< ')}`)
         if (!filtered) {
           return
         }
-        controllerTerminal.write(`\n${red('<<< ')}${filtered}`)
+        controllerTerminal.write(`\n${red('< ')}${filtered}`)
       }
     }
 
@@ -67,7 +72,7 @@ export function ConsolePanel() {
       if (detail.trim() === 'poll') {
         return
       }
-      controllerTerminal.write(`\n${green('>>> ')}${decodeSent(detail)}\n`)
+      controllerTerminal.write(`\n${green('> ')}${decodeSent(detail)}\n`)
     }
 
     emulatorService.addEventListener('receivedOutput', handleOutput)
@@ -148,11 +153,25 @@ export function ConsolePanel() {
     >
       {!isMobile && (
         <div
-          className="cursor-move text-xs font-semibold text-slate-200 mb-2 select-none"
+          className="mb-1.5 flex cursor-move items-center justify-between gap-2 rounded px-1"
           style={{ userSelect: 'none' }}
           onMouseDown={dragStart}
         >
-          Console
+          <div className="text-sm font-semibold text-slate-200 select-none">
+            Console
+          </div>
+          <label
+            className="flex items-center gap-1.5 rounded-sm border border-slate-700 px-1 py-0.5 text-xs text-slate-300"
+            onMouseDown={(event) => event.stopPropagation()}
+            title="Keep terminal output between runs"
+          >
+            <input
+              type="checkbox"
+              checked={persistTerminal}
+              onChange={(event) => setPersistTerminal(event.target.checked)}
+            />
+            <span>Persist terminal</span>
+          </label>
         </div>
       )}
       <div className="flex-1 min-h-0 overflow-hidden rounded border border-slate-800">

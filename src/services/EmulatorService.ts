@@ -34,7 +34,6 @@ export class EmulatorService {
 
   start() {
     if (this.worker) {
-      this.post({ type: 'start' })
       return
     }
 

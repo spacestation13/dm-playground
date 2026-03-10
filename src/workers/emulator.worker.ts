@@ -157,7 +157,7 @@ self.addEventListener(
         post({
           type: 'receivedOutput',
           port: 'console',
-          data: `VM assets (remote): ${vmRemoteUrl}bzImage and ${vmRemoteUrl}rootfs.cpio.lz4\n`,
+          data: `System Terminal\nAssets: ${vmRemoteUrl}bzImage & ${vmRemoteUrl}rootfs.cpio.lz4\n`,
         })
         void ensureEmulator().then(
           () => {
@@ -215,7 +215,7 @@ self.addEventListener(
             post({
               type: 'receivedOutput',
               port: 'console',
-              data: `Received file ${data.name}\n`,
+              data: `<< ${data.name}\n`,
             })
           })
         )
