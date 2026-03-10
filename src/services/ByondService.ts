@@ -3,7 +3,12 @@ import { emulatorService } from './EmulatorService'
 
 const LATEST_VERSION_URL = 'https://byond-builds.dm-lang.org/version.txt'
 const DOWNLOAD_BASE_URL = 'https://byond-builds.dm-lang.org'
+
 const ACTIVE_VERSION_KEY = 'byondActiveVersion'
+const VERSION_PATTERN = /^\d+\.\d+$/
+
+const HOST_BYOND_PATH = '/mnt/host/byond'
+const ACTIVE_BYOND_PATH = '/var/lib/byond'
 
 export enum ByondStatus {
   Idle = 'idle',
@@ -57,7 +62,10 @@ export class ByondService {
     const localVersions = await this.getLocalVersions()
     const storedActive = localStorage.getItem(ACTIVE_VERSION_KEY)
 
-    await commandQueueService.runToSuccess('/bin/mkdir', '-p\0/mnt/host/byond')
+    await commandQueueService.runToSuccess(
+      '/bin/mkdir',
+      `-p\0${HOST_BYOND_PATH}`
+    )
 
     if (storedActive && localVersions.includes(storedActive)) {
       this.activeVersion = storedActive
@@ -101,22 +109,34 @@ export class ByondService {
 
   async getLocalVersions() {
     const directory = await this.getByondDirectory()
-    const versions: string[] = []
+    const statuses = new Map<string, ByondStatus>()
 
     const iterable = directory as FileSystemDirectoryHandle & {
       entries: () => AsyncIterable<[string, FileSystemHandle]>
     }
 
     for await (const [, entry] of iterable.entries()) {
+      if (entry.kind === 'directory' && VERSION_PATTERN.test(entry.name)) {
+        statuses.set(entry.name, ByondStatus.Installed)
+        continue
+      }
+
       if (entry.kind === 'file' && entry.name.endsWith('.zip')) {
-        versions.push(entry.name.replace(/\.zip$/, ''))
-        if (!this.versions.has(entry.name.replace(/\.zip$/, ''))) {
-          this.setStatus(entry.name.replace(/\.zip$/, ''), ByondStatus.Fetched)
+        const version = entry.name.replace(/\.zip$/, '')
+        if (!VERSION_PATTERN.test(version)) {
+          continue
+        }
+        if (!statuses.has(version)) {
+          statuses.set(version, ByondStatus.Fetched)
         }
       }
     }
 
-    return versions.sort().reverse()
+    for (const [version, status] of statuses.entries()) {
+      this.setStatus(version, status)
+    }
+
+    return [...statuses.keys()].sort().reverse()
   }
 
   async downloadVersion(version: string, onProgress?: (value: number) => void) {
@@ -186,9 +206,7 @@ export class ByondService {
       new CustomEvent(ByondEvent.Loading, { detail: true })
     )
     try {
-      const destination = setActive
-        ? '/var/lib/byond_staging'
-        : `/mnt/host/byond/${version}`
+      const installPath = `${HOST_BYOND_PATH}/${version}`
 
       if (status !== ByondStatus.Installed) {
         this.setStatus(version, ByondStatus.Loading)
@@ -198,30 +216,20 @@ export class ByondService {
           new Uint8Array(await zipFile.arrayBuffer())
         )
         await commandQueueService.runToSuccess([
-          `/bin/rm -rf ${destination}`,
-          `/bin/mkdir -p ${destination}`,
-          `/bin/unzip /mnt/host/byond/${version}.zip 'byond/bin*' -j -d ${destination}`,
-          `/bin/rm /mnt/host/byond/${version}.zip`,
+          `/bin/rm -rf ${installPath}`,
+          `/bin/mkdir -p ${installPath}`,
+          `/bin/unzip ${HOST_BYOND_PATH}/${version}.zip 'byond/bin*' -j -d ${installPath}`,
+          `/bin/rm -f ${HOST_BYOND_PATH}/${version}.zip`,
         ])
         this.setStatus(version, ByondStatus.Installed)
-      } else if (setActive) {
-        // Version is already installed at /mnt/host/byond/${version}, move it to staging
-        await commandQueueService.runToSuccess(
-          '/bin/mv',
-          `/mnt/host/byond/${version}\0${destination}`
-        )
       }
 
       if (setActive) {
-        const commands: string[] = []
-        commands.push('/bin/mkdir -p /var/lib/byond')
-        if (this.activeVersion) {
-          commands.push(
-            `/bin/mv /var/lib/byond /mnt/host/byond/${this.activeVersion}`
-          )
-        }
-        commands.push(`/bin/mv ${destination} /var/lib/byond`)
-        await commandQueueService.runToSuccess(commands)
+        await commandQueueService.runToSuccess([
+          '/bin/mkdir -p /var/lib',
+          `/bin/rm -rf ${ACTIVE_BYOND_PATH}`,
+          `/bin/ln -s ${installPath} ${ACTIVE_BYOND_PATH}`,
+        ])
         this.activeVersion = version
         localStorage.setItem(ACTIVE_VERSION_KEY, version)
         this.events.dispatchEvent(
@@ -238,23 +246,37 @@ export class ByondService {
 
   async deleteVersion(version: string) {
     const directory = await this.getByondDirectory()
-    await directory.removeEntry(`${version}.zip`, { recursive: false })
+    const wasActive = this.activeVersion === version
+
+    await Promise.all([
+      this.removeDirectoryEntry(directory, `${version}.zip`, false),
+      this.removeDirectoryEntry(directory, version, true),
+    ])
     this.versions.delete(version)
     this.events.dispatchEvent(
       new CustomEvent('status', {
         detail: { version, status: ByondStatus.Idle },
       })
     )
-    if (this.activeVersion === version) {
+    if (wasActive) {
       this.activeVersion = null
       localStorage.removeItem(ACTIVE_VERSION_KEY)
       this.events.dispatchEvent(
         new CustomEvent(ByondEvent.Active, { detail: null })
       )
     }
+
+    const pathsToRemove = [
+      `${HOST_BYOND_PATH}/${version}`,
+      `${HOST_BYOND_PATH}/${version}.zip`,
+    ]
+    if (wasActive) {
+      pathsToRemove.unshift(ACTIVE_BYOND_PATH)
+    }
+
     await commandQueueService.runToCompletion(
       '/bin/rm',
-      `-rf\0/var/lib/byond/${version}.zip\0/mnt/host/byond/${version}`
+      ['-rf', ...pathsToRemove].join('\0')
     )
   }
 
@@ -287,6 +309,21 @@ export class ByondService {
     this.events.dispatchEvent(
       new CustomEvent('status', { detail: { version, status } })
     )
+  }
+
+  private async removeDirectoryEntry(
+    directory: FileSystemDirectoryHandle,
+    name: string,
+    recursive: boolean
+  ) {
+    try {
+      await directory.removeEntry(name, { recursive })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'NotFoundError') {
+        return
+      }
+      throw error
+    }
   }
 
   private async getByondDirectory() {
