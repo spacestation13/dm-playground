@@ -1,9 +1,14 @@
 import MonacoEditor, { type OnMount } from '@monaco-editor/react'
 import type * as Monaco from 'monaco-editor'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { ensureDmTextmate } from '../monaco/setupTextmate'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
+import {
+  useFontFamilySetting,
+  useFontSizeSetting,
+  useTabSizeSetting,
+} from '../settings/localSettings'
 
 interface EditorProps {
   value: string
@@ -18,7 +23,9 @@ let dmCompletionProviderRegistered = false
 export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
   const monacoRef = useRef<typeof Monaco | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
-  const [tabSize, setTabSize] = useState(2)
+  const [tabSize, setTabSize] = useTabSizeSetting()
+  const [fontSize, setFontSize] = useFontSizeSetting()
+  const [fontFamily] = useFontFamilySetting()
 
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
@@ -114,7 +121,8 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
       tabSize,
       insertSpaces: false,
       detectIndentation: false,
-      fontSize: 14,
+      fontSize,
+      fontFamily,
     })
 
     editor.getModel()?.updateOptions({
@@ -123,7 +131,7 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
       indentSize: tabSize,
       trimAutoWhitespace: true,
     })
-  }, [tabSize])
+  }, [tabSize, fontSize, fontFamily])
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded border border-slate-800 bg-slate-950/50">
@@ -131,7 +139,23 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
         <span className="text-xs font-semibold text-slate-300 mr-auto">
           DM Editor
         </span>
-        <span className="mr-2 text-xs text-slate-300">Font size 14</span>
+        <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-slate-300">
+          <span>Font size</span>
+          <input
+            type="number"
+            min={8}
+            max={40}
+            value={fontSize}
+            onChange={(event) => {
+              const parsed = Number.parseInt(event.target.value, 10)
+              if (Number.isNaN(parsed)) {
+                return
+              }
+              setFontSize(parsed)
+            }}
+            className="w-14 rounded border border-slate-700 bg-slate-950/60 px-1 py-0.5 text-xs text-slate-200"
+          />
+        </label>
         <span className="mr-2 h-4 w-px bg-slate-700" aria-hidden="true" />
         <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-slate-300">
           <span>Tab size</span>
@@ -145,7 +169,7 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
               if (Number.isNaN(parsed)) {
                 return
               }
-              setTabSize(Math.max(1, Math.min(8, parsed)))
+              setTabSize(parsed)
             }}
             className="w-14 rounded border border-slate-700 bg-slate-950/60 px-1 py-0.5 text-xs text-slate-200"
           />
@@ -171,6 +195,9 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
           options={{
             minimap: { enabled: false },
             lineNumbers: 'on',
+            lineNumbersMinChars: 4,
+            lineDecorationsWidth: 10,
+            glyphMargin: false,
             contextmenu: false,
             scrollBeyondLastLine: false,
             wordWrap: 'off',
@@ -178,8 +205,8 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
             detectIndentation: false,
             insertSpaces: false,
             tabSize,
-            fontFamily: 'Monaco, Consolas, monospace',
-            fontSize: 14,
+            fontFamily,
+            fontSize,
           }}
         />
       </div>

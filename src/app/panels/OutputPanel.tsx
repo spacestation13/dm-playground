@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { executorService } from '../../services/ExecutorService'
+import { useFontFamilySetting } from '../settings/localSettings'
 
 export function OutputPanel() {
   const [output, setOutput] = useState<string>('')
   const [status, setStatus] = useState<'running' | 'idle'>('idle')
   const outputRef = useRef<HTMLPreElement | null>(null)
+  const [fontFamily] = useFontFamilySetting()
 
   useEffect(() => {
     const handleOutput = (event: Event) => {
@@ -39,6 +41,7 @@ export function OutputPanel() {
       <pre
         ref={outputRef}
         className="h-full overflow-auto whitespace-pre-wrap rounded bg-slate-950/60 p-3 text-xs text-slate-200"
+        style={{ fontFamily }}
       >
         {output ||
           (status === 'running' ? (

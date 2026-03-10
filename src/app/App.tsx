@@ -10,6 +10,7 @@ import { ThemeProvider } from './theme/ThemeContext'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 import {
   useThemeSetting,
+  useFontFamilySetting,
   useStreamCompilerSetting,
   useShowConsoleSetting,
 } from './settings/localSettings'
@@ -20,6 +21,7 @@ export function App() {
     useLayoutManager()
   const [showSettings, setShowSettings] = useState(false)
   const [themeId, setThemeId] = useThemeSetting()
+  const [fontFamily, setFontFamily] = useFontFamilySetting()
   const [streamCompilerOutput, setStreamCompilerOutput] =
     useStreamCompilerSetting()
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
@@ -135,6 +137,17 @@ export function App() {
                     </option>
                   ))}
                 </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs uppercase tracking-wide text-slate-400">
+                  Font Family
+                </span>
+                <input
+                  type="text"
+                  value={fontFamily}
+                  onChange={(event) => setFontFamily(event.target.value)}
+                  className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                />
               </label>
               <label className="flex items-center gap-2">
                 <input
