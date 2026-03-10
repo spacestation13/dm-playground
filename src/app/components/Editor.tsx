@@ -93,16 +93,21 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
   }, [themeId])
 
   return (
-    <div className="relative h-full min-h-0">
-      <button
-        type="button"
-        onClick={onRun}
-        disabled={!onRun}
-        className="absolute right-2 top-2 z-10 rounded-md border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
-      >
-        Run Code
-      </button>
-      <div className="absolute inset-0 overflow-hidden rounded border border-slate-800 bg-slate-950/50">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded border border-slate-800 bg-slate-950/50">
+      <div className="flex items-center justify-end border-b border-slate-800 pl-2 pr-1 py-1">
+        <span className="text-xs font-semibold text-slate-300 mr-auto">
+          DM Editor
+        </span>
+        <button
+          type="button"
+          onClick={onRun}
+          disabled={!onRun}
+          className="rounded-md border border-emerald-700/70 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Run Code
+        </button>
+      </div>
+      <div className="flex-1 min-h-0">
         <MonacoEditor
           value={value}
           height="100%"

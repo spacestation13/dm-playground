@@ -57,7 +57,7 @@ export function App() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 p-4">
+    <div className="flex h-full flex-col gap-4 p-2">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-slate-100">
