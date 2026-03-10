@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react'
 import { Base64 } from 'js-base64'
 import { Editor } from '../components/Editor'
 import { executorService } from '../../services/ExecutorService'
-import { ByondEvent, byondService } from '../../services/ByondService'
+import {
+  ByondEvent,
+  ByondStatus,
+  byondService,
+} from '../../services/ByondService'
 import { useTheme } from '../theme/useTheme'
 
 const DEFAULT_CODE = `/world/New()\n  world.log << "meow";\n  ..()\n  eval("")\n  shutdown()\n`
@@ -23,9 +27,14 @@ const getSeededCode = () => {
 export function EditorPanel() {
   const [currentCode, setCurrentCode] = useState(() => getSeededCode())
   const [, setStatus] = useState<'running' | 'idle'>('idle')
-  const [activeByond, setActiveByond] = useState<string | null>(() =>
-    byondService.getActiveVersion()
-  )
+  const [isByondReady, setIsByondReady] = useState(() => {
+    const activeVersion = byondService.getActiveVersion()
+    if (!activeVersion) {
+      return false
+    }
+    return byondService.getStatus(activeVersion) === ByondStatus.Installed
+  })
+  const [isByondLoading, setIsByondLoading] = useState(false)
   const { themeId } = useTheme()
 
   useEffect(() => {
@@ -39,14 +48,34 @@ export function EditorPanel() {
   }, [])
 
   useEffect(() => {
-    const handleActive = (event: Event) => {
-      const detail = (event as CustomEvent<string | null>).detail
-      setActiveByond(detail)
+    const refreshByondReady = () => {
+      const activeVersion = byondService.getActiveVersion()
+      if (!activeVersion) {
+        setIsByondReady(false)
+        return
+      }
+      setIsByondReady(
+        byondService.getStatus(activeVersion) === ByondStatus.Installed
+      )
     }
-    byondService.addEventListener(ByondEvent.Active, handleActive)
-    return () =>
-      byondService.removeEventListener(ByondEvent.Active, handleActive)
+
+    const handleLoading = (event: Event) => {
+      const detail = (event as CustomEvent<boolean>).detail
+      setIsByondLoading(detail)
+    }
+
+    refreshByondReady()
+    byondService.addEventListener(ByondEvent.Active, refreshByondReady)
+    byondService.addStatusListener(refreshByondReady)
+    byondService.addEventListener(ByondEvent.Loading, handleLoading)
+    return () => {
+      byondService.removeEventListener(ByondEvent.Loading, handleLoading)
+      byondService.removeStatusListener(refreshByondReady)
+      byondService.removeEventListener(ByondEvent.Active, refreshByondReady)
+    }
   }, [])
+
+  const canRun = isByondReady && !isByondLoading
 
   useEffect(() => {
     const handleRequestShare = async () => {
@@ -71,7 +100,7 @@ export function EditorPanel() {
   }, [currentCode])
 
   const handleRun = () => {
-    if (!activeByond) {
+    if (!canRun) {
       return
     }
     void executorService.executeImmediate(currentCode)
@@ -82,7 +111,7 @@ export function EditorPanel() {
       <Editor
         value={currentCode}
         onChange={setCurrentCode}
-        onRun={handleRun}
+        onRun={canRun ? handleRun : undefined}
         themeId={themeId}
       />
     </div>
