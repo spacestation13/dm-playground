@@ -320,11 +320,14 @@ export function ByondPanel() {
                           onClick={() => void handleDelete(version)}
                           disabled={isLatest || isActive}
                           title={
-                            isLatest || isActive
-                              ? 'Cannot delete the latest or active version'
-                              : undefined
+                            isActive
+                              ? 'Cannot remove active version'
+                              : isLatest
+                                ? 'Cannot remove latest version'
+                                : 'Remove version'
                           }
-                          className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-500 disabled:opacity-50"
+                          aria-label={`Remove version ${version}`}
+                          className="rounded border border-red-700/70 bg-red-950/40 px-2 py-1 text-[11px] hover:border-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Delete
                         </button>
