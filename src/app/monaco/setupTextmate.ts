@@ -5,17 +5,27 @@ import { wireTmGrammars } from 'monaco-editor-textmate'
 
 import onigasmWasm from 'onigasm/lib/onigasm.wasm?url'
 
-let setupPromise: Promise<void> | null = null
+let wasmLoadPromise: Promise<void> | null = null
+const wiredMonacoInstances = new WeakSet<typeof Monaco>()
+const wiringPromises = new WeakMap<typeof Monaco, Promise<void>>()
 const DM_GRAMMAR_URL =
   'https://raw.githubusercontent.com/SpaceManiac/vscode-dm-langclient/refs/heads/master/syntaxes/dm.tmLanguage.json'
 
 export function ensureDmTextmate(monaco: typeof Monaco): Promise<void> {
-  if (setupPromise) {
-    return setupPromise
+  if (wiredMonacoInstances.has(monaco)) {
+    return Promise.resolve()
   }
 
-  setupPromise = (async () => {
-    await loadWASM(onigasmWasm)
+  const pending = wiringPromises.get(monaco)
+  if (pending) {
+    return pending
+  }
+
+  const promise = (async () => {
+    if (!wasmLoadPromise) {
+      wasmLoadPromise = loadWASM(onigasmWasm)
+    }
+    await wasmLoadPromise
 
     const registry = new Registry({
       getGrammarDefinition: async (scopeName) => {
@@ -36,7 +46,11 @@ export function ensureDmTextmate(monaco: typeof Monaco): Promise<void> {
     grammars.set('dm', 'source.dm')
 
     await wireTmGrammars(monaco, registry, grammars)
+    wiredMonacoInstances.add(monaco)
   })()
 
-  return setupPromise
+  wiringPromises.set(monaco, promise)
+  return promise.finally(() => {
+    wiringPromises.delete(monaco)
+  })
 }
