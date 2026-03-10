@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { PanelId } from '../layout/layoutTypes'
 import { ByondPanel, ByondTitle } from './ByondPanel'
-import { ControllerPanel, ControllerTitle } from './ControllerPanel'
 import { EditorPanel } from './EditorPanel'
 import { OutputPanel } from './OutputPanel'
 
@@ -14,10 +13,6 @@ export const PanelRegistry: Record<PanelId, PanelDescriptor> = {
   [PanelId.Console]: {
     title: 'Console',
     render: () => null,
-  },
-  [PanelId.Controller]: {
-    title: <ControllerTitle />,
-    render: () => <ControllerPanel />,
   },
   [PanelId.Editor]: {
     title: 'Editor',

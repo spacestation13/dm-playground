@@ -2,12 +2,22 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Terminal, type TerminalApi } from '../components/Terminal'
 import { emulatorService } from '../../services/EmulatorService'
+import { commandQueueService } from '../../services/CommandQueueService'
+import { green, red } from '../../utils/terminalColors'
+import { decodeController, decodeSent } from './console/controllerCodec'
+import { useSplitResize } from './console/useSplitResize'
 
 export function ConsolePanel() {
-  const [terminal, setTerminal] = useState<TerminalApi | null>(null)
+  const [consoleTerminal, setConsoleTerminal] = useState<TerminalApi | null>(
+    null
+  )
+  const [controllerTerminal, setControllerTerminal] =
+    useState<TerminalApi | null>(null)
+  const { splitContainerRef, splitPercent, handleSplitDragStart } =
+    useSplitResize(50)
 
   useEffect(() => {
-    if (!terminal) {
+    if (!consoleTerminal) {
       return
     }
 
@@ -15,11 +25,11 @@ export function ConsolePanel() {
       const detail = (event as CustomEvent<{ port: string; data: string }>)
         .detail
       if (detail.port === 'console') {
-        terminal.write(detail.data)
+        consoleTerminal.write(detail.data)
       }
     }
 
-    const handleReset = () => terminal.clear()
+    const handleReset = () => consoleTerminal.clear()
 
     emulatorService.addEventListener('receivedOutput', handleOutput)
     emulatorService.addEventListener('resetOutputConsole', handleReset)
@@ -28,7 +38,45 @@ export function ConsolePanel() {
       emulatorService.removeEventListener('receivedOutput', handleOutput)
       emulatorService.removeEventListener('resetOutputConsole', handleReset)
     }
-  }, [terminal])
+  }, [consoleTerminal])
+
+  useEffect(() => {
+    if (!controllerTerminal) {
+      return
+    }
+
+    const handleOutput = (event: Event) => {
+      const detail = (event as CustomEvent<{ port: string; data: string }>)
+        .detail
+      if (detail.port === 'controller') {
+        const decoded = decodeController(detail.data)
+        const filtered = decoded
+          .split('\n')
+          .map((line) => line.replace(/\0/g, '').trim())
+          .filter((line) => line && line !== 'OK')
+          .join(`\n${red('<<< ')}`)
+        if (!filtered) {
+          return
+        }
+        controllerTerminal.write(`\n${red('<<< ')}${filtered}`)
+      }
+    }
+
+    const handleSent = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail
+      if (detail.trim() === 'poll') {
+        return
+      }
+      controllerTerminal.write(`\n${green('>>> ')}${decodeSent(detail)}\n`)
+    }
+
+    emulatorService.addEventListener('receivedOutput', handleOutput)
+    commandQueueService.addEventListener('sent', handleSent)
+    return () => {
+      emulatorService.removeEventListener('receivedOutput', handleOutput)
+      commandQueueService.removeEventListener('sent', handleSent)
+    }
+  }, [controllerTerminal])
 
   // Responsive modal/bottom panel
   // Use portal for modal on desktop, inline for mobile
@@ -79,14 +127,20 @@ export function ConsolePanel() {
       className={
         isMobile
           ? 'w-full bg-slate-900 border-t border-slate-800 p-2'
-          : 'fixed z-50 w-[480px] max-w-full rounded-lg border border-slate-800 bg-slate-900 p-2 shadow-2xl'
+          : 'fixed z-40 flex flex-col rounded-lg border border-slate-800 bg-slate-900 p-2 shadow-2xl overflow-hidden'
       }
       style={
         isMobile
-          ? { minHeight: 200, maxHeight: 400 }
+          ? { minHeight: 320, maxHeight: 560 }
           : {
-              minHeight: 200,
-              maxHeight: 400,
+              width: 680,
+              height: 420,
+              minWidth: 480,
+              minHeight: 320,
+              maxWidth: window.innerWidth - 16,
+              maxHeight: window.innerHeight - 16,
+              resize: 'both',
+              overflow: 'hidden',
               top: `${modalPos.y + 16}px`,
               left: `${modalPos.x + 8}px`,
             }
@@ -98,18 +152,36 @@ export function ConsolePanel() {
           style={{ userSelect: 'none' }}
           onMouseDown={dragStart}
         >
-          Drag Console
+          Console
         </div>
       )}
-      <div className="h-full overflow-auto">
-        <Terminal
-          label="Console ready"
-          onReady={setTerminal}
-          onData={(value) => emulatorService.sendPort('console', value)}
-          onResize={(rows, cols) =>
-            emulatorService.resizePort('console', rows, cols)
-          }
-        />
+      <div className="flex-1 min-h-0 overflow-hidden rounded border border-slate-800">
+        <div ref={splitContainerRef} className="flex h-full min-h-0">
+          <div className="min-h-0" style={{ width: `${splitPercent}%` }}>
+            <Terminal
+              label="System Terminal"
+              onReady={setConsoleTerminal}
+              onData={(value) => emulatorService.sendPort('console', value)}
+              onResize={(rows, cols) =>
+                emulatorService.resizePort('console', rows, cols)
+              }
+            />
+          </div>
+          <div
+            className="w-2 cursor-col-resize bg-slate-800/80 hover:bg-slate-700"
+            onMouseDown={handleSplitDragStart}
+          />
+          <div className="min-h-0 flex-1">
+            <Terminal
+              readOnly
+              label="Controller"
+              onReady={setControllerTerminal}
+              onResize={(rows, cols) =>
+                emulatorService.resizePort('controller', rows, cols)
+              }
+            />
+          </div>
+        </div>
       </div>
     </div>
   )

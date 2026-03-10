@@ -1,6 +1,5 @@
 export const PanelId = {
   Console: 'Console',
-  Controller: 'Controller',
   Editor: 'Editor',
   Output: 'Output',
   Byond: 'Byond',
@@ -33,7 +32,7 @@ export interface LayoutRoot {
 
 export const defaultLayout: LayoutRoot = {
   version: 1,
-  nextBranchId: 4,
+  nextBranchId: 3,
   root: {
     type: 'branch',
     id: 0,
@@ -56,14 +55,9 @@ export const defaultLayout: LayoutRoot = {
         ],
       },
       {
-        type: 'branch',
-        id: 3,
-        split: 'horizontal',
+        type: 'leaf',
+        id: PanelId.Byond,
         size: 30,
-        children: [
-          { type: 'leaf', id: PanelId.Byond, size: 50 },
-          { type: 'leaf', id: PanelId.Controller, size: 50 },
-        ],
       },
     ],
   },

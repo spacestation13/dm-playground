@@ -6,7 +6,6 @@ import {
   type LayoutLeaf,
   type LayoutRoot,
 } from './layoutTypes'
-import { removePanel } from './layoutTreeUtils'
 import { updateBranchSizes } from './layoutUtils'
 
 const LAYOUT_STORAGE_KEY = 'layout'
@@ -57,10 +56,7 @@ export async function loadLayout(): Promise<LayoutRoot> {
       return defaultLayout
     }
 
-    // Remove Console panel from any stored layout
-    const sanitizedRoot = sanitizeNode(
-      removePanel(parsed.root, PanelId.Console)
-    )
+    const sanitizedRoot = sanitizeNode(parsed.root)
     const nextLayout =
       sanitizedRoot && sanitizedRoot.type === 'branch'
         ? { ...parsed, root: sanitizedRoot }

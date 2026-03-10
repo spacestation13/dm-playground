@@ -98,7 +98,7 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
         type="button"
         onClick={onRun}
         disabled={!onRun}
-        className="absolute right-2 top-2 z-50 rounded-md border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
+        className="absolute right-2 top-2 z-10 rounded-md border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
       >
         Run Code
       </button>
