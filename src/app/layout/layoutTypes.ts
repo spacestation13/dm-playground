@@ -31,33 +31,36 @@ export interface LayoutRoot {
 }
 
 export const defaultLayout: LayoutRoot = {
-  version: 1,
-  nextBranchId: 3,
+  version: 3,
+  nextBranchId: 2,
   root: {
     type: 'branch',
     id: 0,
-    split: 'vertical',
+    split: 'horizontal',
     children: [
+      {
+        type: 'leaf',
+        id: PanelId.Editor,
+        size: 70,
+        showTitlebar: false,
+      },
       {
         type: 'branch',
         id: 1,
-        split: 'horizontal',
-        size: 70,
+        split: 'vertical',
+        size: 30,
         children: [
-          { type: 'leaf', id: PanelId.Editor, size: 70, showTitlebar: false },
           {
-            type: 'branch',
-            id: 2,
-            split: 'vertical',
-            size: 30,
-            children: [{ type: 'leaf', id: PanelId.Output, size: 100 }],
+            type: 'leaf',
+            id: PanelId.Byond,
+            size: 40,
+          },
+          {
+            type: 'leaf',
+            id: PanelId.Output,
+            size: 60,
           },
         ],
-      },
-      {
-        type: 'leaf',
-        id: PanelId.Byond,
-        size: 30,
       },
     ],
   },

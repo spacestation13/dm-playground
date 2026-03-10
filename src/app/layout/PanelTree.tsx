@@ -28,7 +28,7 @@ interface PanelTreeBranchProps {
 function PanelTreeBranch({ node }: PanelTreeBranchProps) {
   const { updateBranchSizes } = useLayoutContext()
 
-  const direction = node.split === 'vertical' ? 'horizontal' : 'vertical'
+  const direction = node.split
   const isVertical = direction === 'vertical'
   const panelIds = useMemo(
     () => node.children.map((_, index) => `${node.id}-${index}`),
