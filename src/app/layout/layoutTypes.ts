@@ -65,3 +65,26 @@ export const defaultLayout: LayoutRoot = {
     ],
   },
 }
+
+export const embedLayout: LayoutRoot = {
+  version: 3,
+  nextBranchId: 1,
+  root: {
+    type: 'branch',
+    id: 0,
+    split: 'horizontal',
+    children: [
+      {
+        type: 'leaf',
+        id: PanelId.Editor,
+        size: 60,
+        showTitlebar: false,
+      },
+      {
+        type: 'leaf',
+        id: PanelId.Output,
+        size: 40,
+      },
+    ],
+  },
+}

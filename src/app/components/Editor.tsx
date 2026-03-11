@@ -14,13 +14,20 @@ interface EditorProps {
   value: string
   onChange: (value: string) => void
   onRun?: () => void
+  runDisabled?: boolean
   themeId: EditorThemeId
 }
 
 let dmLanguageRegistered = false
 let dmCompletionProviderRegistered = false
 
-export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
+export function Editor({
+  value,
+  onChange,
+  onRun,
+  runDisabled = !onRun,
+  themeId,
+}: EditorProps) {
   const monacoRef = useRef<typeof Monaco | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
   const [tabSize, setTabSize] = useTabSizeSetting()
@@ -178,7 +185,7 @@ export function Editor({ value, onChange, onRun, themeId }: EditorProps) {
         <button
           type="button"
           onClick={onRun}
-          disabled={!onRun}
+          disabled={runDisabled}
           className="rounded-md border border-emerald-700/70 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Run Code

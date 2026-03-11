@@ -38,7 +38,33 @@ npm run preview # Preview production build
 ```bash
 npm run lint   # Run ESLint
 npm run format # Format code with Prettier
+npm run test   # Run playwright tests
 ```
+
+## Embedding the playground
+
+Use the playground in an iframe with `?embed=1` to show an editor/output-only layout.
+
+```html
+<iframe
+	src="https://play.dm-lang.org/?embed=1&code=<base64>"
+	width="800"
+	height="500"
+></iframe>
+```
+
+Supported URL parameters:
+
+- `embed=1`: enables the embed layout and hides playground chrome.
+- `autorun=1`: runs the snippet automatically after the runtime is ready.
+- `theme=<themeId>`: sets the editor theme for the embed. Example values: `vs-light`, `one-dark`, `dracula`.
+- `code=<base64>`: seeds the editor with base64 text.
+- `codez=<compressed-base64url>`: seeds the editor with text compressed with gzip and then encoded as URL-safe base64. Takes priority.
+
+Embed requirements:
+
+- If you must `sandbox` it, the minimum flags are `allow-scripts allow-same-origin allow-popups`.
+- GitHub Pages does not send `X-Frame-Options` or `Content-Security-Policy: frame-ancestors`, so cross-origin framing works without deployment changes.
 
 ## License
 

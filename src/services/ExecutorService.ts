@@ -6,6 +6,7 @@ import {
 } from './CommandQueueService'
 import { byondService } from './ByondService'
 import useLocalSettings from '../app/settings/localSettings'
+import { ensureRuntime } from './runtimeBootstrap'
 
 export type ExecutorEventType = 'reset' | 'output' | 'status'
 const DREAM_DAEMON_STARTUP_BANNER_LINES = 3
@@ -44,6 +45,14 @@ export class ExecutorService {
     this.reset()
     this.setStatus('running')
 
+    try {
+      await ensureRuntime()
+    } catch (error) {
+      this.appendOutput(`Runtime initialization failed: ${String(error)}\n`)
+      this.setStatus('idle')
+      return
+    }
+
     const byondPath = byondService.getActiveVersion() ? '/var/lib/byond/' : null
     if (!byondPath) {
       this.appendOutput('No active BYOND version loaded.\n')
@@ -55,7 +64,6 @@ export class ExecutorService {
     const hostDme = `/mnt/host/${filename}.dme`
     const hostDmb = `/mnt/host/${filename}.dmb`
 
-    emulatorService.start()
     emulatorService.sendFile(`${filename}.dme`, new TextEncoder().encode(code))
 
     const env = new Map<string, string>([['LD_LIBRARY_PATH', byondPath]])

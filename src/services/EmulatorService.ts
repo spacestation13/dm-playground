@@ -5,7 +5,7 @@ import { commandQueueService } from './CommandQueueService'
 export type EmulatorOutboundMessage =
   | { type: 'sendPort'; port: EmulatorPort; data: string }
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
-  | { type: 'start' }
+  | { type: 'start'; assetBaseUrl: string }
   | { type: 'pause' }
   | { type: 'sendFile'; name: string; data: Uint8Array }
 
@@ -49,7 +49,10 @@ export class EmulatorService {
         )
       }
     )
-    this.post({ type: 'start' })
+    this.post({
+      type: 'start',
+      assetBaseUrl: new URL('lib/', window.location.href).toString(),
+    })
   }
 
   pause() {

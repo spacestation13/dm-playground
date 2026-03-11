@@ -1,13 +1,25 @@
 import { useCallback, useEffect, useState } from 'react'
-import { PanelId, type LayoutBranch, type LayoutRoot } from './layoutTypes'
+import { embedParams } from '../embed/embedParams'
+import {
+  PanelId,
+  embedLayout,
+  type LayoutBranch,
+  type LayoutRoot,
+} from './layoutTypes'
 import { updateBranchSizes } from './layoutUtils'
 import { loadLayout, saveLayout } from './layoutStorage'
 import { addPanel, removePanel } from './layoutTreeUtils'
 
 export function useLayoutManager() {
-  const [layout, setLayout] = useState<LayoutRoot | null>(null)
+  const [layout, setLayout] = useState<LayoutRoot | null>(() =>
+    embedParams.isEmbed ? embedLayout : null
+  )
 
   useEffect(() => {
+    if (embedParams.isEmbed) {
+      return
+    }
+
     let isMounted = true
 
     void loadLayout().then((loadedLayout) => {
@@ -33,7 +45,9 @@ export function useLayoutManager() {
           root: updateBranchSizes(prev.root, branchId, sizes),
         }
 
-        void saveLayout(next)
+        if (!embedParams.isEmbed) {
+          void saveLayout(next)
+        }
         return next
       })
     },
@@ -47,7 +61,9 @@ export function useLayoutManager() {
         ? addPanel(prev.root as LayoutBranch, PanelId.Console, 2, 30)
         : removePanel(prev.root as LayoutBranch, PanelId.Console)
       const nextLayout = { ...prev, root: newRoot }
-      void saveLayout(nextLayout)
+      if (!embedParams.isEmbed) {
+        void saveLayout(nextLayout)
+      }
       return nextLayout
     })
   }, [])

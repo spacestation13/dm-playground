@@ -13,7 +13,7 @@ declare const V86: new (config: Record<string, unknown>) => {
 type EmulatorInboundMessage =
   | { type: 'sendPort'; port: EmulatorPort; data: string }
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
-  | { type: 'start' }
+  | { type: 'start'; assetBaseUrl: string }
   | { type: 'pause' }
   | { type: 'sendFile'; name: string; data: Uint8Array }
 
@@ -23,7 +23,6 @@ type EmulatorOutboundMessage =
   | { type: 'asyncResponse'; commandId: string }
 
 const vmRemoteUrl = 'https://spacestation13.github.io/dm-playground-linux/'
-const vmLocalUrl = '/lib/'
 
 const decoder = new TextDecoder()
 const portToIndex: Record<EmulatorPort, number> = {
@@ -38,6 +37,7 @@ const post = (message: EmulatorOutboundMessage) => {
 
 let emulator: InstanceType<typeof V86> | null = null
 let emulatorPromise: Promise<InstanceType<typeof V86>> | null = null
+let vmLocalUrl: string | null = null
 
 const fetchBinary = async (urlValue: string) => {
   const response = await fetch(urlValue)
@@ -51,6 +51,10 @@ const fetchBinary = async (urlValue: string) => {
 const initEmulator = async () => {
   if (emulator) {
     return emulator
+  }
+
+  if (!vmLocalUrl) {
+    throw new Error('VM asset base URL was not provided')
   }
 
   importScripts(`${vmLocalUrl}libv86.js`)
@@ -153,6 +157,7 @@ self.addEventListener(
 
     switch (data.type) {
       case 'start': {
+        vmLocalUrl = data.assetBaseUrl
         post({ type: 'resetOutputConsole' })
         post({
           type: 'receivedOutput',

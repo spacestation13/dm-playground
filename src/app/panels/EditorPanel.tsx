@@ -1,41 +1,26 @@
-import { useEffect, useState } from 'react'
-import { Base64 } from 'js-base64'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Editor } from '../components/Editor'
 import { executorService } from '../../services/ExecutorService'
-import {
-  ByondEvent,
-  ByondStatus,
-  byondService,
-} from '../../services/ByondService'
 import { useTheme } from '../theme/useTheme'
+import { buildShareUrl, embedParams } from '../embed/embedParams'
+import { useRuntimeBootstrap } from '../hooks/useRuntimeBootstrap'
 
 const DEFAULT_CODE = `/world/New()\n\tworld.log << "meow"\n\t..()\n\teval("")\n\tshutdown()\n`
 
-const getSeededCode = () => {
-  const params = new URLSearchParams(window.location.search)
-  const encoded = params.get('code')
-  if (encoded) {
-    try {
-      return Base64.decode(encoded)
-    } catch {
-      return DEFAULT_CODE
-    }
-  }
-  return DEFAULT_CODE
-}
-
 export function EditorPanel() {
-  const [currentCode, setCurrentCode] = useState(() => getSeededCode())
+  const [currentCode, setCurrentCode] = useState(
+    () => embedParams.code ?? DEFAULT_CODE
+  )
   const [, setStatus] = useState<'running' | 'idle'>('idle')
-  const [isByondReady, setIsByondReady] = useState(() => {
-    const activeVersion = byondService.getActiveVersion()
-    if (!activeVersion) {
-      return false
-    }
-    return byondService.getStatus(activeVersion) === ByondStatus.Installed
-  })
-  const [isByondLoading, setIsByondLoading] = useState(false)
   const { themeId } = useTheme()
+  const hasAutoran = useRef(false)
+  const {
+    bootstrapRuntime,
+    canRun,
+    canTriggerRun,
+    isByondLoading,
+    isRuntimeBootstrapping,
+  } = useRuntimeBootstrap(embedParams.isEmbed)
 
   useEffect(() => {
     const handleStatus = (event: Event) => {
@@ -48,41 +33,40 @@ export function EditorPanel() {
   }, [])
 
   useEffect(() => {
-    const refreshByondReady = () => {
-      const activeVersion = byondService.getActiveVersion()
-      if (!activeVersion) {
-        setIsByondReady(false)
-        return
+    if (embedParams.isEmbed && embedParams.autorun) {
+      void bootstrapRuntime()
+    }
+  }, [bootstrapRuntime])
+
+  const handleRun = useCallback(() => {
+    void (async () => {
+      if (!canRun) {
+        if (!embedParams.isEmbed) {
+          return
+        }
+
+        const bootstrapped = await bootstrapRuntime()
+        if (!bootstrapped) {
+          return
+        }
       }
-      setIsByondReady(
-        byondService.getStatus(activeVersion) === ByondStatus.Installed
-      )
+
+      void executorService.executeImmediate(currentCode)
+    })()
+  }, [bootstrapRuntime, canRun, currentCode])
+
+  useEffect(() => {
+    if (!embedParams.autorun || hasAutoran.current || !canRun) {
+      return
     }
 
-    const handleLoading = (event: Event) => {
-      const detail = (event as CustomEvent<boolean>).detail
-      setIsByondLoading(detail)
-    }
-
-    refreshByondReady()
-    byondService.addEventListener(ByondEvent.Active, refreshByondReady)
-    byondService.addStatusListener(refreshByondReady)
-    byondService.addEventListener(ByondEvent.Loading, handleLoading)
-    return () => {
-      byondService.removeEventListener(ByondEvent.Loading, handleLoading)
-      byondService.removeStatusListener(refreshByondReady)
-      byondService.removeEventListener(ByondEvent.Active, refreshByondReady)
-    }
-  }, [])
-
-  const canRun = isByondReady && !isByondLoading
+    hasAutoran.current = true
+    handleRun()
+  }, [canRun, handleRun])
 
   useEffect(() => {
     const handleRequestShare = async () => {
-      const encoded = Base64.encode(currentCode)
-      const url = `${window.location.origin}${window.location.pathname}?code=${encodeURIComponent(
-        encoded
-      )}`
+      const url = await buildShareUrl(currentCode)
       try {
         await navigator.clipboard.writeText(url)
         window.alert('Share link copied to clipboard')
@@ -99,19 +83,15 @@ export function EditorPanel() {
       )
   }, [currentCode])
 
-  const handleRun = () => {
-    if (!canRun) {
-      return
-    }
-    void executorService.executeImmediate(currentCode)
-  }
-
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <Editor
         value={currentCode}
         onChange={setCurrentCode}
-        onRun={canRun ? handleRun : undefined}
+        onRun={canTriggerRun ? handleRun : undefined}
+        runDisabled={
+          canTriggerRun ? isByondLoading || isRuntimeBootstrapping : true
+        }
         themeId={themeId}
       />
     </div>

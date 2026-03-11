@@ -3,9 +3,7 @@ import packageJson from '../../package.json'
 import { PanelTree } from './layout/PanelTree'
 import { ConsolePanel } from './panels/ConsolePanel'
 import { LayoutProvider } from './layout/LayoutProvider'
-import { emulatorService } from '../services/EmulatorService'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { byondService } from '../services/ByondService'
 import { ThemeProvider } from './theme/ThemeContext'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 import {
@@ -15,8 +13,39 @@ import {
   useShowConsoleSetting,
 } from './settings/localSettings'
 import { useLayoutManager } from './layout/useLayoutManager'
+import { embedParams } from './embed/embedParams'
+import { ensureRuntime } from '../services/runtimeBootstrap'
+import type { LayoutRoot } from './layout/layoutTypes'
 
-export function App() {
+function PlaygroundLayout({
+  layout,
+  handleUpdateBranchSizes,
+  themeOverride,
+  showConsolePanel = false,
+}: {
+  layout: LayoutRoot
+  handleUpdateBranchSizes: (branchId: number, sizes: number[]) => void
+  themeOverride?: EditorThemeId | null
+  showConsolePanel?: boolean
+}) {
+  const [storedThemeId, setThemeId] = useThemeSetting()
+  const themeId = themeOverride ?? storedThemeId
+
+  return (
+    <div className="flex-1 min-h-0">
+      <ErrorBoundary>
+        <ThemeProvider value={{ themeId, setThemeId }}>
+          <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
+            <PanelTree node={layout.root} />
+          </LayoutProvider>
+          {showConsolePanel && <ConsolePanel />}
+        </ThemeProvider>
+      </ErrorBoundary>
+    </div>
+  )
+}
+
+function FullApp() {
   const { layout, handleUpdateBranchSizes, toggleConsolePanel } =
     useLayoutManager()
   const [showSettings, setShowSettings] = useState(false)
@@ -25,6 +54,10 @@ export function App() {
   const [streamCompilerOutput, setStreamCompilerOutput] =
     useStreamCompilerSetting()
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
+
+  useEffect(() => {
+    void ensureRuntime()
+  }, [])
 
   const handleDeleteSiteData = async () => {
     const confirmed = window.confirm(
@@ -44,11 +77,6 @@ export function App() {
     localStorage.removeItem('byondActiveVersion')
     window.location.reload()
   }
-
-  useEffect(() => {
-    emulatorService.start()
-    void byondService.initialize()
-  }, [])
 
   if (!layout) {
     return (
@@ -87,16 +115,11 @@ export function App() {
           </button>
         </div>
       </header>
-      <div className="flex-1 min-h-0">
-        <ErrorBoundary>
-          <ThemeProvider value={{ themeId, setThemeId }}>
-            <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
-              <PanelTree node={layout.root} />
-            </LayoutProvider>
-            {showConsolePanel && <ConsolePanel />}
-          </ThemeProvider>
-        </ErrorBoundary>
-      </div>
+      <PlaygroundLayout
+        layout={layout}
+        handleUpdateBranchSizes={handleUpdateBranchSizes}
+        showConsolePanel={showConsolePanel}
+      />
       {showSettings && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4"
@@ -197,4 +220,30 @@ export function App() {
       )}
     </div>
   )
+}
+
+function EmbedApp() {
+  const { layout, handleUpdateBranchSizes } = useLayoutManager()
+
+  if (!layout) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-slate-400">
+        Loading layout...
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <PlaygroundLayout
+        layout={layout}
+        handleUpdateBranchSizes={handleUpdateBranchSizes}
+        themeOverride={embedParams.theme}
+      />
+    </div>
+  )
+}
+
+export function App() {
+  return embedParams.isEmbed ? <EmbedApp /> : <FullApp />
 }

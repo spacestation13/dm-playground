@@ -36,6 +36,14 @@ export const editorThemeOptions: EditorThemeOption[] = [
   { id: 'hc-light', label: 'GitHub Light High Contrast', isLocal: true },
 ]
 
+const editorThemeIds = new Set<EditorThemeId>(
+  editorThemeOptions.map((option) => option.id)
+)
+
+export function isEditorThemeId(value: string): value is EditorThemeId {
+  return editorThemeIds.has(value as EditorThemeId)
+}
+
 const hardcodedThemes: Set<BuiltinThemeId> = new Set([
   'vs-dark',
   'vs-light',
