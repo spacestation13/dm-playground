@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { PanelId } from '../layout/layoutTypes'
 import { ByondPanel, ByondTitle } from './ByondPanel'
-import { EditorPanel } from './EditorPanel'
+import { LazyEditorPanel } from './LazyEditorPanel'
 import { OutputPanel } from './OutputPanel'
 
 interface PanelDescriptor {
@@ -16,7 +16,7 @@ export const PanelRegistry: Record<PanelId, PanelDescriptor> = {
   },
   [PanelId.Editor]: {
     title: 'Editor',
-    render: () => <EditorPanel />,
+    render: () => <LazyEditorPanel />,
   },
   [PanelId.Output]: {
     title: 'Output',

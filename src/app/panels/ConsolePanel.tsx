@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Terminal, type TerminalApi } from '../components/Terminal'
+import type { TerminalApi } from '../components/Terminal'
 import { emulatorService } from '../../services/EmulatorService'
 import { commandQueueService } from '../../services/CommandQueueService'
 import { green, red } from '../../utils/terminalColors'
+import { LoadingSpinner } from '../components/LoadingSpinner'
 import { decodeController, decodeSent } from './console/controllerCodec'
 import { useSplitResize } from './console/useSplitResize'
+
+const LazyTerminal = lazy(async () => {
+  const module = await import('../components/Terminal')
+  return { default: module.Terminal }
+})
 
 export function ConsolePanel() {
   const [consoleTerminal, setConsoleTerminal] = useState<TerminalApi | null>(
@@ -177,28 +183,32 @@ export function ConsolePanel() {
       <div className="flex-1 min-h-0 overflow-hidden rounded border border-slate-800">
         <div ref={splitContainerRef} className="flex h-full min-h-0">
           <div className="min-h-0" style={{ width: `${splitPercent}%` }}>
-            <Terminal
-              label="System Terminal"
-              onReady={setConsoleTerminal}
-              onData={(value) => emulatorService.sendPort('console', value)}
-              onResize={(rows, cols) =>
-                emulatorService.resizePort('console', rows, cols)
-              }
-            />
+            <Suspense fallback={<TerminalLoadingFallback />}>
+              <LazyTerminal
+                label="System Terminal"
+                onReady={setConsoleTerminal}
+                onData={(value) => emulatorService.sendPort('console', value)}
+                onResize={(rows, cols) =>
+                  emulatorService.resizePort('console', rows, cols)
+                }
+              />
+            </Suspense>
           </div>
           <div
             className="w-2 cursor-col-resize bg-slate-800/80 hover:bg-slate-700"
             onMouseDown={handleSplitDragStart}
           />
           <div className="min-h-0 flex-1">
-            <Terminal
-              readOnly
-              label="Controller"
-              onReady={setControllerTerminal}
-              onResize={(rows, cols) =>
-                emulatorService.resizePort('controller', rows, cols)
-              }
-            />
+            <Suspense fallback={<TerminalLoadingFallback />}>
+              <LazyTerminal
+                readOnly
+                label="Controller"
+                onReady={setControllerTerminal}
+                onResize={(rows, cols) =>
+                  emulatorService.resizePort('controller', rows, cols)
+                }
+              />
+            </Suspense>
           </div>
         </div>
       </div>
@@ -214,4 +224,12 @@ export function ConsolePanel() {
   }
   // Inline for mobile or fallback
   return panelContent
+}
+
+function TerminalLoadingFallback() {
+  return (
+    <div className="flex h-full items-center justify-center bg-slate-950/60">
+      <LoadingSpinner />
+    </div>
+  )
 }

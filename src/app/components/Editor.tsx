@@ -241,6 +241,7 @@ export function Editor({
           path={activeFile.id}
           value={activeFile.value}
           height="100%"
+          loading={null}
           theme={themeId}
           language="dm"
           onMount={handleMount}
