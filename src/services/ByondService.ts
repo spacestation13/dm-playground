@@ -211,7 +211,7 @@ export class ByondService {
       if (status !== ByondStatus.Installed) {
         this.setStatus(version, ByondStatus.Loading)
         const zipFile = await this.getVersion(version)
-        emulatorService.sendFile(
+        await emulatorService.sendFile(
           `byond/${version}.zip`,
           new Uint8Array(await zipFile.arrayBuffer())
         )

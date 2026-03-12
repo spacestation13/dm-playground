@@ -1,18 +1,15 @@
 import { Base64 } from 'js-base64'
-
-const encoder = new TextEncoder()
-const decoder = new TextDecoder()
+import { pack, unpack } from 'msgpackr'
 
 export class CompressionService {
   static async encode(value: unknown, urlsafe = false) {
-    const json = JSON.stringify(value)
-    const bytes = encoder.encode(json)
+    const packed = pack(value)
 
     if (typeof CompressionStream === 'undefined') {
-      return Base64.fromUint8Array(bytes, urlsafe)
+      return Base64.fromUint8Array(new Uint8Array(packed), urlsafe)
     }
 
-    const compressed = await this.compress(bytes)
+    const compressed = await this.compress(packed)
     return Base64.fromUint8Array(new Uint8Array(compressed), urlsafe)
   }
 
@@ -20,11 +17,11 @@ export class CompressionService {
     const bytes = Base64.toUint8Array(value)
 
     if (typeof DecompressionStream === 'undefined') {
-      return JSON.parse(decoder.decode(bytes)) as T
+      return unpack(new Uint8Array(bytes)) as T
     }
 
     const decompressed = await this.decompress(bytes)
-    return JSON.parse(decoder.decode(decompressed)) as T
+    return unpack(new Uint8Array(decompressed)) as T
   }
 
   private static async compress(input: Uint8Array) {

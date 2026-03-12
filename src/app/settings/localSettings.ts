@@ -19,6 +19,8 @@ type LocalSettingsState = {
   setStreamCompilerOutput: (v: boolean) => void
   showConsolePanel: boolean
   setShowConsolePanel: (v: boolean) => void
+  showAdvancedEditorTabs: boolean
+  setShowAdvancedEditorTabs: (v: boolean) => void
 }
 
 const DEFAULT_FONT_FAMILY = 'Consolas, "Liberation Mono", Courier, monospace'
@@ -62,6 +64,9 @@ export const useLocalSettings = create<LocalSettingsState>()(
       setStreamCompilerOutput: (v: boolean) => set({ streamCompilerOutput: v }),
       showConsolePanel: false,
       setShowConsolePanel: (v: boolean) => set({ showConsolePanel: v }),
+      showAdvancedEditorTabs: false,
+      setShowAdvancedEditorTabs: (v: boolean) =>
+        set({ showAdvancedEditorTabs: v }),
     }),
     {
       name: 'local-settings',
@@ -120,4 +125,14 @@ export const useShowConsoleSetting = () => {
     (s: LocalSettingsState) => s.setShowConsolePanel
   )
   return [showConsolePanel, setShowConsolePanel] as const
+}
+
+export const useShowAdvancedEditorTabsSetting = () => {
+  const showAdvancedEditorTabs = useLocalSettings(
+    (s: LocalSettingsState) => s.showAdvancedEditorTabs
+  )
+  const setShowAdvancedEditorTabs = useLocalSettings(
+    (s: LocalSettingsState) => s.setShowAdvancedEditorTabs
+  )
+  return [showAdvancedEditorTabs, setShowAdvancedEditorTabs] as const
 }

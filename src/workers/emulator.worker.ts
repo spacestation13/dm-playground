@@ -15,12 +15,17 @@ type EmulatorInboundMessage =
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
   | { type: 'start'; assetBaseUrl: string }
   | { type: 'pause' }
-  | { type: 'sendFile'; name: string; data: Uint8Array }
+  | {
+      type: 'sendFile'
+      commandId: string
+      name: string
+      data: Uint8Array
+    }
 
 type EmulatorOutboundMessage =
   | { type: 'receivedOutput'; port: EmulatorPort; data: string }
   | { type: 'resetOutputConsole' }
-  | { type: 'asyncResponse'; commandId: string }
+  | { type: 'asyncResponse'; commandId: string; error?: string }
 
 const vmRemoteUrl = 'https://spacestation13.github.io/dm-playground-linux/'
 
@@ -215,14 +220,35 @@ self.addEventListener(
         break
       }
       case 'sendFile': {
-        void ensureEmulator().then((instance) =>
-          instance.create_file(data.name, data.data).then(() => {
+        void ensureEmulator().then(
+          (instance) =>
+            instance.create_file(data.name, data.data).then(
+              () => {
+                post({
+                  type: 'receivedOutput',
+                  port: 'console',
+                  data: `<< ${data.name}\n`,
+                })
+                post({
+                  type: 'asyncResponse',
+                  commandId: data.commandId,
+                })
+              },
+              (error) => {
+                post({
+                  type: 'asyncResponse',
+                  commandId: data.commandId,
+                  error: String(error),
+                })
+              }
+            ),
+          (error) => {
             post({
-              type: 'receivedOutput',
-              port: 'console',
-              data: `<< ${data.name}\n`,
+              type: 'asyncResponse',
+              commandId: data.commandId,
+              error: String(error),
             })
-          })
+          }
         )
         break
       }

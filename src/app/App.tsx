@@ -9,6 +9,7 @@ import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 import {
   useThemeSetting,
   useFontFamilySetting,
+  useShowAdvancedEditorTabsSetting,
   useStreamCompilerSetting,
   useShowConsoleSetting,
 } from './settings/localSettings'
@@ -54,6 +55,8 @@ function FullApp() {
   const [streamCompilerOutput, setStreamCompilerOutput] =
     useStreamCompilerSetting()
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
+  const [showAdvancedEditorTabs, setShowAdvancedEditorTabs] =
+    useShowAdvancedEditorTabsSetting()
 
   useEffect(() => {
     void ensureRuntime()
@@ -193,6 +196,16 @@ function FullApp() {
                   }}
                 />
                 <span className="text-xs">Show Console panel</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showAdvancedEditorTabs}
+                  onChange={(e) => {
+                    setShowAdvancedEditorTabs(e.target.checked)
+                  }}
+                />
+                <span className="text-xs">Show advanced editor tabs</span>
               </label>
               <div className="pt-2">
                 <button

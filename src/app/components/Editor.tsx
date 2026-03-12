@@ -1,7 +1,8 @@
 import MonacoEditor, { type OnMount } from '@monaco-editor/react'
 import type * as Monaco from 'monaco-editor'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
+import type { EditableProjectFileName } from '../editorProject/projectState'
 import { ensureDmTextmate } from '../monaco/setupTextmate'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
 import {
@@ -10,9 +11,17 @@ import {
   useTabSizeSetting,
 } from '../settings/localSettings'
 
-interface EditorProps {
+interface EditorFileTab {
+  id: EditableProjectFileName
+  label: string
   value: string
-  onChange: (value: string) => void
+}
+
+interface EditorProps {
+  files: EditorFileTab[]
+  activeFileId: EditableProjectFileName
+  onActiveFileChange: (fileId: EditableProjectFileName) => void
+  onChange: (fileId: EditableProjectFileName, value: string) => void
   onRun?: () => void
   runDisabled?: boolean
   themeId: EditorThemeId
@@ -22,7 +31,9 @@ let dmLanguageRegistered = false
 let dmCompletionProviderRegistered = false
 
 export function Editor({
-  value,
+  files,
+  activeFileId,
+  onActiveFileChange,
   onChange,
   onRun,
   runDisabled = !onRun,
@@ -33,6 +44,10 @@ export function Editor({
   const [tabSize, setTabSize] = useTabSizeSetting()
   const [fontSize, setFontSize] = useFontSizeSetting()
   const [fontFamily] = useFontFamilySetting()
+  const activeFile = useMemo(
+    () => files.find((file) => file.id === activeFileId) ?? files[0],
+    [activeFileId, files]
+  )
 
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
@@ -138,11 +153,15 @@ export function Editor({
       indentSize: tabSize,
       trimAutoWhitespace: true,
     })
-  }, [tabSize, fontSize, fontFamily])
+  }, [activeFileId, tabSize, fontSize, fontFamily])
+
+  if (!activeFile) {
+    return null
+  }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded border border-slate-800 bg-slate-950/50">
-      <div className="flex items-center justify-end border-b border-slate-800 pl-2 pr-1 py-1">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded border border-slate-800 bg-[#1e1e1e]">
+      <div className="flex items-center justify-end border-b border-slate-800 bg-slate-900/80 pl-2 pr-1 py-1">
         <span className="text-xs font-semibold text-slate-300 mr-auto">
           DM Editor
         </span>
@@ -191,14 +210,42 @@ export function Editor({
           Run Code
         </button>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex items-end gap-px border-b border-slate-800 bg-[#252526] px-2 pt-1">
+        {files.map((file) => {
+          const isActive = file.id === activeFile.id
+          return (
+            <button
+              key={file.id}
+              type="button"
+              onClick={() => onActiveFileChange(file.id)}
+              className={[
+                'relative min-w-24 border border-b-0 px-3 py-1.5 text-left text-xs leading-none transition-colors',
+                isActive
+                  ? 'border-slate-700 bg-[#1e1e1e] text-slate-100'
+                  : 'border-transparent bg-[#2d2d2d] text-slate-400 hover:bg-[#323233] hover:text-slate-200',
+              ].join(' ')}
+            >
+              {isActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-0.5 bg-sky-400"
+                />
+              )}
+              {file.label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex-1 min-h-0 bg-[#1e1e1e]">
         <MonacoEditor
-          value={value}
+          path={activeFile.id}
+          value={activeFile.value}
           height="100%"
           theme={themeId}
           language="dm"
           onMount={handleMount}
-          onChange={(nextValue) => onChange(nextValue ?? '')}
+          saveViewState
+          onChange={(nextValue) => onChange(activeFile.id, nextValue ?? '')}
           options={{
             minimap: { enabled: false },
             lineNumbers: 'on',

@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "test": "playwright test",
     "format": "prettier --write . --list-different",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "share:encode": "node scripts/share-codec.mjs encode",
+    "share:encode:json": "node scripts/share-codec.mjs encode-json",
+    "share:decode": "node scripts/share-codec.mjs decode"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -20,6 +23,7 @@
     "monaco-editor-textmate": "^4.0.0",
     "monaco-textmate": "^3.0.1",
     "monaco-themes": "^0.4.8",
+    "msgpackr": "^1.11.9",
     "onigasm": "^2.2.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

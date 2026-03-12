@@ -4,6 +4,10 @@ import {
   type Process,
   type ProcessExit,
 } from './CommandQueueService'
+import {
+  buildProjectExecutionFiles,
+  type PlaygroundProject,
+} from '../app/editorProject/projectState'
 import { byondService } from './ByondService'
 import useLocalSettings from '../app/settings/localSettings'
 import { ensureRuntime } from './runtimeBootstrap'
@@ -41,7 +45,7 @@ export class ExecutorService {
     this.events.dispatchEvent(new CustomEvent('status', { detail: value }))
   }
 
-  async executeImmediate(code: string) {
+  async executeImmediate(project: PlaygroundProject) {
     this.reset()
     this.setStatus('running')
 
@@ -60,111 +64,130 @@ export class ExecutorService {
       return
     }
 
-    const filename = `tmp-${Date.now()}`
-    const hostDme = `/mnt/host/${filename}.dme`
-    const hostDmb = `/mnt/host/${filename}.dmb`
+    try {
+      const filename = `tmp-${Date.now()}`
+      const executionFiles = buildProjectExecutionFiles(project, filename)
+      const hostDme = `/mnt/host/${executionFiles.dmeName}`
+      const hostDmb = `/mnt/host/${executionFiles.dmbName}`
+      const hostCleanupTargets = [
+        executionFiles.dmeName,
+        executionFiles.dmbName,
+        ...executionFiles.files.map((file) => file.name),
+      ]
+      const cleanupArgs = hostCleanupTargets
+        .map((fileName) => `/mnt/host/${fileName}`)
+        .join('\0')
+      const encoder = new TextEncoder()
 
-    emulatorService.sendFile(`${filename}.dme`, new TextEncoder().encode(code))
+      await Promise.all([
+        emulatorService.sendFile(
+          executionFiles.dmeName,
+          encoder.encode(executionFiles.dmeContent)
+        ),
+        ...executionFiles.files.map((file) =>
+          emulatorService.sendFile(file.name, encoder.encode(file.value))
+        ),
+      ])
 
-    const env = new Map<string, string>([['LD_LIBRARY_PATH', byondPath]])
-    const streamCompilerOutput =
-      useLocalSettings.getState().streamCompilerOutput
+      const env = new Map<string, string>([['LD_LIBRARY_PATH', byondPath]])
+      const streamCompilerOutput =
+        useLocalSettings.getState().streamCompilerOutput
 
-    const dmProcess = await commandQueueService.runProcess(
-      `${byondPath}DreamMaker`,
-      hostDme,
-      env
-    )
+      const dmProcess = await commandQueueService.runProcess(
+        `${byondPath}DreamMaker`,
+        hostDme,
+        env
+      )
 
-    if (streamCompilerOutput) {
-      this.attachProcess(dmProcess)
+      if (streamCompilerOutput) {
+        this.attachProcess(dmProcess)
 
-      dmProcess.addEventListener('exit', async (event) => {
-        const detail = (event as CustomEvent<ProcessExit>).detail
-        const code = detail.cause === 'exit' ? detail.code : null
-        if (code === 0) {
-          this.appendOutput('-- DreamDaemon --\n')
-          try {
-            const ddProcess = await commandQueueService.runProcess(
-              `${byondPath}DreamDaemon`,
-              `${hostDmb}\0-trusted\0-invisible`,
-              env
-            )
-            this.attachProcess(ddProcess)
-            ddProcess.addEventListener('exit', () => {
-              commandQueueService
-                .runProcess('/bin/rm', `${hostDme}\0${hostDmb}`)
-                .catch((error) => {
-                  this.appendOutput(`Cleanup failed: ${String(error)}\n`)
-                })
-            })
-          } catch (error) {
-            this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
+        dmProcess.addEventListener('exit', async (event) => {
+          const detail = (event as CustomEvent<ProcessExit>).detail
+          const code = detail.cause === 'exit' ? detail.code : null
+          if (code === 0) {
+            this.appendOutput('-- DreamDaemon --\n')
+            try {
+              const ddProcess = await commandQueueService.runProcess(
+                `${byondPath}DreamDaemon`,
+                `${hostDmb}\0-trusted\0-invisible`,
+                env
+              )
+              this.attachProcess(ddProcess)
+              ddProcess.addEventListener('exit', () => {
+                commandQueueService
+                  .runProcess('/bin/rm', cleanupArgs)
+                  .catch((error) => {
+                    this.appendOutput(`Cleanup failed: ${String(error)}\n`)
+                  })
+              })
+            } catch (error) {
+              this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
+              this.setStatus('idle')
+            }
+          } else {
+            // compile failed: output has already been streamed live, just cleanup
+            try {
+              await commandQueueService.runProcess('/bin/rm', cleanupArgs)
+            } catch (error) {
+              this.appendOutput(`Cleanup failed: ${String(error)}\n`)
+            }
           }
-        } else {
-          // compile failed: output has already been streamed live, just cleanup
-          try {
-            await commandQueueService.runProcess(
-              '/bin/rm',
-              `${hostDme}\0${hostDmb}`
-            )
-          } catch (error) {
-            this.appendOutput(`Cleanup failed: ${String(error)}\n`)
-          }
-        }
-      })
-    } else {
-      // Buffer compiler output: suppress piping and only show on failure
-      this.attachProcess(dmProcess, { pipeOutput: false })
+        })
+      } else {
+        // Buffer compiler output: suppress piping and only show on failure
+        this.attachProcess(dmProcess, { pipeOutput: false })
 
-      const dmOutputBuf: string[] = []
-      dmProcess.addEventListener('stdout', (event) => {
-        const detail = (event as CustomEvent<string>).detail
-        dmOutputBuf.push(detail)
-      })
-      dmProcess.addEventListener('stderr', (event) => {
-        const detail = (event as CustomEvent<string>).detail
-        dmOutputBuf.push(detail)
-      })
+        const dmOutputBuf: string[] = []
+        dmProcess.addEventListener('stdout', (event) => {
+          const detail = (event as CustomEvent<string>).detail
+          dmOutputBuf.push(detail)
+        })
+        dmProcess.addEventListener('stderr', (event) => {
+          const detail = (event as CustomEvent<string>).detail
+          dmOutputBuf.push(detail)
+        })
 
-      dmProcess.addEventListener('exit', async (event) => {
-        const detail = (event as CustomEvent<ProcessExit>).detail
-        const code = detail.cause === 'exit' ? detail.code : null
+        dmProcess.addEventListener('exit', async (event) => {
+          const detail = (event as CustomEvent<ProcessExit>).detail
+          const code = detail.cause === 'exit' ? detail.code : null
 
-        if (code === 0) {
-          // successful compile: don't show compiler text, proceed to start DreamDaemon
-          try {
-            const ddProcess = await commandQueueService.runProcess(
-              `${byondPath}DreamDaemon`,
-              `${hostDmb}\0-trusted\0-invisible`,
-              env
-            )
-            this.attachProcess(ddProcess, { suppressDaemonBanner: true })
-            ddProcess.addEventListener('exit', () => {
-              commandQueueService
-                .runProcess('/bin/rm', `${hostDme}\0${hostDmb}`)
-                .catch((error) => {
-                  this.appendOutput(`Cleanup failed: ${String(error)}\n`)
-                })
-            })
-          } catch (error) {
-            this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
+          if (code === 0) {
+            // successful compile: don't show compiler text, proceed to start DreamDaemon
+            try {
+              const ddProcess = await commandQueueService.runProcess(
+                `${byondPath}DreamDaemon`,
+                `${hostDmb}\0-trusted\0-invisible`,
+                env
+              )
+              this.attachProcess(ddProcess, { suppressDaemonBanner: true })
+              ddProcess.addEventListener('exit', () => {
+                commandQueueService
+                  .runProcess('/bin/rm', cleanupArgs)
+                  .catch((error) => {
+                    this.appendOutput(`Cleanup failed: ${String(error)}\n`)
+                  })
+              })
+            } catch (error) {
+              this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
+              this.setStatus('idle')
+            }
+          } else {
+            // compile failed: show buffered compiler output and cleanup
+            if (dmOutputBuf.length > 0) {
+              this.appendOutput(dmOutputBuf.join(''))
+            }
+            try {
+              await commandQueueService.runProcess('/bin/rm', cleanupArgs)
+            } catch (error) {
+              this.appendOutput(`Cleanup failed: ${String(error)}\n`)
+            }
           }
-        } else {
-          // compile failed: show buffered compiler output and cleanup
-          if (dmOutputBuf.length > 0) {
-            this.appendOutput(dmOutputBuf.join(''))
-          }
-          try {
-            await commandQueueService.runProcess(
-              '/bin/rm',
-              `${hostDme}\0${hostDmb}`
-            )
-          } catch (error) {
-            this.appendOutput(`Cleanup failed: ${String(error)}\n`)
-          }
-        }
-      })
+        })
+      }
+    } catch (error) {
+      this.appendOutput(`Execution failed: ${String(error)}\n`)
+      this.setStatus('idle')
     }
   }
 

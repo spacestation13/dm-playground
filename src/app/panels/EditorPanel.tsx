@@ -4,15 +4,24 @@ import { executorService } from '../../services/ExecutorService'
 import { useTheme } from '../theme/useTheme'
 import { buildShareUrl, embedParams } from '../embed/embedParams'
 import { useRuntimeBootstrap } from '../hooks/useRuntimeBootstrap'
-
-const DEFAULT_CODE = `/world/New()\n\tworld.log << "meow"\n\t..()\n\teval("")\n\tshutdown()\n`
+import {
+  MAIN_FILE_NAME,
+  createDefaultProject,
+  getVisibleProjectFiles,
+  updateProjectFile,
+  type EditableProjectFileName,
+} from '../editorProject/projectState'
+import { useShowAdvancedEditorTabsSetting } from '../settings/localSettings'
 
 export function EditorPanel() {
-  const [currentCode, setCurrentCode] = useState(
-    () => embedParams.code ?? DEFAULT_CODE
+  const [project, setProject] = useState(
+    () => embedParams.project ?? createDefaultProject()
   )
+  const [activeFile, setActiveFile] =
+    useState<EditableProjectFileName>(MAIN_FILE_NAME)
   const [, setStatus] = useState<'running' | 'idle'>('idle')
   const { themeId } = useTheme()
+  const [showAdvancedEditorTabs] = useShowAdvancedEditorTabsSetting()
   const hasAutoran = useRef(false)
   const {
     bootstrapRuntime,
@@ -21,6 +30,15 @@ export function EditorPanel() {
     isByondLoading,
     isRuntimeBootstrapping,
   } = useRuntimeBootstrap(embedParams.isEmbed)
+  const visibleFiles = getVisibleProjectFiles(
+    project,
+    !embedParams.isEmbed && showAdvancedEditorTabs
+  )
+  const resolvedActiveFile = visibleFiles.some(
+    (file) => file.name === activeFile
+  )
+    ? activeFile
+    : MAIN_FILE_NAME
 
   useEffect(() => {
     const handleStatus = (event: Event) => {
@@ -51,9 +69,9 @@ export function EditorPanel() {
         }
       }
 
-      void executorService.executeImmediate(currentCode)
+      void executorService.executeImmediate(project)
     })()
-  }, [bootstrapRuntime, canRun, currentCode])
+  }, [bootstrapRuntime, canRun, project])
 
   useEffect(() => {
     if (!embedParams.autorun || hasAutoran.current || !canRun) {
@@ -66,7 +84,8 @@ export function EditorPanel() {
 
   useEffect(() => {
     const handleRequestShare = async () => {
-      const url = await buildShareUrl(currentCode)
+      const url = await buildShareUrl(project)
+      console.log('Share payload', project)
       try {
         await navigator.clipboard.writeText(url)
         window.alert('Share link copied to clipboard')
@@ -81,13 +100,19 @@ export function EditorPanel() {
         'requestShare',
         handleRequestShare as EventListener
       )
-  }, [currentCode])
+  }, [project])
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <Editor
-        value={currentCode}
-        onChange={setCurrentCode}
+        files={visibleFiles}
+        activeFileId={resolvedActiveFile}
+        onActiveFileChange={setActiveFile}
+        onChange={(fileName, value) => {
+          setProject((currentProject) =>
+            updateProjectFile(currentProject, fileName, value)
+          )
+        }}
         onRun={canTriggerRun ? handleRun : undefined}
         runDisabled={
           canTriggerRun ? isByondLoading || isRuntimeBootstrapping : true

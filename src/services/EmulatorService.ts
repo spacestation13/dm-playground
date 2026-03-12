@@ -7,16 +7,29 @@ export type EmulatorOutboundMessage =
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
   | { type: 'start'; assetBaseUrl: string }
   | { type: 'pause' }
-  | { type: 'sendFile'; name: string; data: Uint8Array }
+  | {
+      type: 'sendFile'
+      commandId: string
+      name: string
+      data: Uint8Array
+    }
 
 export type EmulatorInboundMessage =
   | { type: 'receivedOutput'; port: EmulatorPort; data: string }
   | { type: 'resetOutputConsole' }
-  | { type: 'asyncResponse'; commandId: string }
+  | { type: 'asyncResponse'; commandId: string; error?: string }
 
 export class EmulatorService {
   private worker: Worker | null = null
   private events = new EventTarget()
+  private pendingResponses = new Map<
+    string,
+    {
+      resolve: () => void
+      reject: (error: Error) => void
+    }
+  >()
+  private nextCommandId = 0
 
   addEventListener(
     type: EmulatorInboundMessage['type'],
@@ -44,6 +57,19 @@ export class EmulatorService {
       'message',
       (event: MessageEvent<EmulatorInboundMessage>) => {
         const payload = event.data
+
+        if (payload.type === 'asyncResponse') {
+          const pending = this.pendingResponses.get(payload.commandId)
+          if (pending) {
+            this.pendingResponses.delete(payload.commandId)
+            if (payload.error) {
+              pending.reject(new Error(payload.error))
+            } else {
+              pending.resolve()
+            }
+          }
+        }
+
         this.events.dispatchEvent(
           new CustomEvent(payload.type, { detail: payload })
         )
@@ -68,7 +94,17 @@ export class EmulatorService {
   }
 
   sendFile(name: string, data: Uint8Array) {
-    this.post({ type: 'sendFile', name, data })
+    if (!this.worker) {
+      return Promise.reject(new Error('Emulator has not been started'))
+    }
+
+    const commandId = `send-file-${this.nextCommandId}`
+    this.nextCommandId += 1
+
+    return new Promise<void>((resolve, reject) => {
+      this.pendingResponses.set(commandId, { resolve, reject })
+      this.post({ type: 'sendFile', commandId, name, data })
+    })
   }
 
   private post(message: EmulatorOutboundMessage) {
