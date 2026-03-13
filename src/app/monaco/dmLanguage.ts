@@ -411,6 +411,8 @@ const dmMonarchLanguage: Monaco.languages.IMonarchLanguage = {
       [dmBuiltinFunctionMatch, 'support.function'],
       [dmTypeKeywordMatch, 'support.type'],
       [dmLanguageConstantMatch, 'support.constant'],
+      // Treat ALL_CAPS identifiers as constants for now.
+      // DM does not guarantee that case = const, so maybe change this. idk.
       [/[A-Z_][A-Z_0-9]*\b/, 'constant'],
       [dmFunctionCallMatch, 'entity.name.function'],
       [dmIdentifierMatch, 'identifier'],
@@ -426,13 +428,82 @@ const dmMonarchLanguage: Monaco.languages.IMonarchLanguage = {
       [/./, { token: '', next: '@pop', goBack: 1 }],
     ],
 
+    // Handles the start of a proc/verb declaration (name and type)
     callableDeclaration: [
       { include: '@whitespace' },
       [/\//, 'delimiter'],
       [dmTypeKeywordBeforeDeclarationNameMatch, 'support.type'],
       [dmIdentifierBeforeSlashMatch, 'support.type'],
-      [dmIdentifierMatch, { token: 'entity.name.function', next: '@pop' }],
+      [
+        dmIdentifierMatch,
+        {
+          token: 'entity.name.function',
+          switchTo: '@callableDeclarationAfterName',
+        },
+      ],
       [/./, { token: '', next: '@pop', goBack: 1 }],
+    ],
+
+    // Handles tokens after the proc/verb name (parameters or end)
+    callableDeclarationAfterName: [
+      { include: '@whitespace' },
+      [/[\r\n]+/, { token: '', next: '@pop', goBack: 1 }],
+      [/\(/, { token: '@brackets', next: '@callableParameters' }],
+      [/./, { token: '', next: '@pop', goBack: 1 }],
+    ],
+
+    // Handles the parameter list of a proc/verb
+    callableParameters: [
+      { include: '@whitespace' },
+      [/\)/, { token: '@brackets', next: '@pop' }],
+      [/,/, 'delimiter'],
+      [
+        dmIdentifierMatch,
+        { token: 'variable.parameter', next: '@callableParameterAfterName' },
+      ],
+      [/@\{"/, { token: 'string.quote', next: '@rawMultilineString' }],
+      [/\{"/, { token: 'string.quote', next: '@multilineString' }],
+      [/"/, { token: 'string.quote', next: '@string' }],
+      [/'/, { token: 'string.quote', next: '@singleQuotedString' }],
+      [/./, { token: '', next: '@pop', goBack: 1 }],
+    ],
+
+    // Handles tokens after a parameter name (type, default, etc.)
+    callableParameterAfterName: [
+      { include: '@whitespace' },
+      [/[,)]/, { token: '', next: '@pop', goBack: 1 }],
+      [/\b(?:as|in)\b/, 'keyword.operator'],
+      [/=/, { token: 'delimiter', next: '@callableParameterDefault' }],
+      [/@\{"/, { token: 'string.quote', next: '@rawMultilineString' }],
+      [/\{"/, { token: 'string.quote', next: '@multilineString' }],
+      [/"/, { token: 'string.quote', next: '@string' }],
+      [/'/, { token: 'string.quote', next: '@singleQuotedString' }],
+      { include: '@common' },
+      [/./, { token: '', next: '@pop', goBack: 1 }],
+    ],
+
+    // Handles default values for parameters
+    callableParameterDefault: [
+      { include: '@whitespace' },
+      [/[,)]/, { token: '', next: '@pop', goBack: 1 }],
+      [/[([{]/, { token: '@brackets', next: '@callableParameterNested' }],
+      [/@\{"/, { token: 'string.quote', next: '@rawMultilineString' }],
+      [/\{"/, { token: 'string.quote', next: '@multilineString' }],
+      [/"/, { token: 'string.quote', next: '@string' }],
+      [/'/, { token: 'string.quote', next: '@singleQuotedString' }],
+      { include: '@common' },
+    ],
+
+    // Handles nested expressions in parameter defaults (arbitrary expressions)
+    callableParameterNested: [
+      { include: '@whitespace' },
+      [/[([{]/, { token: '@brackets', next: '@callableParameterNested' }],
+      [/[\])}]/, { token: '@brackets', next: '@pop' }],
+      [/@\{"/, { token: 'string.quote', next: '@rawMultilineString' }],
+      [/\{"/, { token: 'string.quote', next: '@multilineString' }],
+      [/"/, { token: 'string.quote', next: '@string' }],
+      [/'/, { token: 'string.quote', next: '@singleQuotedString' }],
+      { include: '@common' },
     ],
 
     path: [
