@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react'
 
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
+import { installHighlightingTestBridge } from '../monaco/highlightingTestBridge'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
 import {
   useFontFamilySetting,
@@ -53,6 +54,10 @@ export function Editor({
     monacoRef.current = monaco as typeof Monaco
     editorRef.current = editor
     ensureDmLanguage(monaco as typeof Monaco)
+
+    if (import.meta.env.DEV) {
+      installHighlightingTestBridge(monaco as typeof Monaco)
+    }
 
     if (!dmCompletionProviderRegistered) {
       monaco.languages.registerCompletionItemProvider('dm', {

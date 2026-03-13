@@ -3,7 +3,6 @@ import type * as Monaco from 'monaco-editor'
 const DM_LANGUAGE_ID = 'dm'
 
 const controlKeywords = [
-  'as',
   'break',
   'catch',
   'continue',
@@ -23,7 +22,15 @@ const otherKeywords = ['del', 'new']
 
 const declarationKeywords = ['operator', 'proc', 'var', 'verb']
 
-const modifierKeywords = ['const', 'final', 'global', 'set', 'static', 'tmp']
+const modifierKeywords = [
+  'as',
+  'const',
+  'final',
+  'global',
+  'set',
+  'static',
+  'tmp',
+]
 
 const runtimeKeywords = ['sleep', 'spawn']
 
@@ -472,7 +479,8 @@ const dmMonarchLanguage: Monaco.languages.IMonarchLanguage = {
     callableParameterAfterName: [
       { include: '@whitespace' },
       [/[,)]/, { token: '', next: '@pop', goBack: 1 }],
-      [/\b(?:as|in)\b/, 'keyword.operator'],
+      [/\bas\b/, 'storage.modifier'],
+      [/\bin\b/, 'keyword.operator'],
       [/=/, { token: 'delimiter', next: '@callableParameterDefault' }],
       [/@\{"/, { token: 'string.quote', next: '@rawMultilineString' }],
       [/\{"/, { token: 'string.quote', next: '@multilineString' }],
