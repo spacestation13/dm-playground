@@ -60,13 +60,6 @@ test('embed mode Run Code works with the real worker', async ({ page }) => {
   await expect(runButton).toBeVisible()
   await runButton.click()
 
-  await expect(page.locator('pre')).not.toHaveText(
-    'Initializing runtime...\n',
-    {
-      timeout: 30000,
-    }
-  )
-
   await expect(runButton).toBeEnabled({ timeout: 30000 })
   await expect(page.locator('pre')).toContainText('playwright-ok', {
     timeout: 30000,

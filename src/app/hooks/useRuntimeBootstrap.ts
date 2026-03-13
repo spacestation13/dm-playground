@@ -55,11 +55,31 @@ export function useRuntimeBootstrap() {
       return runtimeBootstrapRef.current
     }
 
+    const loadingMessages = [
+      'Reticulating splines…',
+      'Processing geometry…',
+      'Compiling shaders…',
+      'Generating mipmaps…',
+      'Calculating trajectories…',
+      'Loading mods…',
+      'Streaming assets…',
+    ]
+    let intervalId: number | undefined
+    let shuffled: string[] = []
+    const showNextMessage = () => {
+      if (shuffled.length === 0) {
+        shuffled = loadingMessages.slice().sort(() => Math.random() - 0.5)
+      }
+      executorService.appendOutput(shuffled.shift() + '\n')
+    }
+
     const promise = (async () => {
       executorService.reset()
       executorService.setStatus('running')
-      executorService.appendOutput('Initializing runtime...\n')
       setIsRuntimeBootstrapping(true)
+
+      showNextMessage()
+      intervalId = window.setInterval(showNextMessage, 800)
 
       try {
         await ensureRuntime()
@@ -71,6 +91,9 @@ export function useRuntimeBootstrap() {
         executorService.setStatus('idle')
         return false
       } finally {
+        if (intervalId !== undefined) {
+          clearInterval(intervalId)
+        }
         runtimeBootstrapRef.current = null
         setIsRuntimeBootstrapping(false)
       }
