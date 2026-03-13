@@ -3,7 +3,7 @@ import type * as Monaco from 'monaco-editor'
 import { useEffect, useMemo, useRef } from 'react'
 
 import type { EditableProjectFileName } from '../editorProject/projectState'
-import { ensureDmTextmate } from '../monaco/setupTextmate'
+import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
 import {
   useFontFamilySetting,
@@ -27,7 +27,6 @@ interface EditorProps {
   themeId: EditorThemeId
 }
 
-let dmLanguageRegistered = false
 let dmCompletionProviderRegistered = false
 
 export function Editor({
@@ -53,10 +52,7 @@ export function Editor({
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
     editorRef.current = editor
-    if (!dmLanguageRegistered) {
-      monaco.languages.register({ id: 'dm' })
-      dmLanguageRegistered = true
-    }
+    ensureDmLanguage(monaco as typeof Monaco)
 
     if (!dmCompletionProviderRegistered) {
       monaco.languages.registerCompletionItemProvider('dm', {
@@ -72,41 +68,7 @@ export function Editor({
             endColumn: word.endColumn,
           }
 
-          const keywords = [
-            'as',
-            'break',
-            'catch',
-            'const',
-            'continue',
-            'del',
-            'do',
-            'else',
-            'for',
-            'global',
-            'goto',
-            'if',
-            'in',
-            'new',
-            'proc',
-            'return',
-            'set',
-            'sleep',
-            'spawn',
-            'static',
-            'switch',
-            'throw',
-            'tmp',
-            'try',
-            'var',
-            'verb',
-            'while',
-            'world',
-            'src',
-            'usr',
-            'args',
-          ]
-
-          const suggestions = keywords.map((keyword) => ({
+          const suggestions = dmCompletionKeywords.map((keyword) => ({
             label: keyword,
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: keyword,
@@ -120,7 +82,6 @@ export function Editor({
     }
     await ensureMonacoTheme(monaco as typeof Monaco, themeId)
     monaco.editor.setTheme(themeId)
-    await ensureDmTextmate(monaco as typeof Monaco)
   }
 
   useEffect(() => {

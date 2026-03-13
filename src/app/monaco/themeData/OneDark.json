@@ -211,6 +211,10 @@
     },
     {
       "foreground": "#d19a66",
+      "token": "support.constant"
+    },
+    {
+      "foreground": "#d19a66",
       "token": "support.constant.property.math"
     },
     {
@@ -438,6 +442,10 @@
       "token": "support.function"
     },
     {
+      "foreground": "#e5c07b",
+      "token": "support.type"
+    },
+    {
       "foreground": "#abb2bf",
       "token": "support.type.property-name"
     },
@@ -515,15 +523,15 @@
     },
     {
       "foreground": "#ffffff",
+      "token": "invalid"
+    },
+    {
+      "foreground": "#ffffff",
       "token": "invalid.illegal"
     },
     {
-      "foreground": "#abb2bf",
-      "token": "invalid.illegal.bad-ampersand.html"
-    },
-    {
       "foreground": "#e06c75",
-      "token": "invalid.illegal.unrecognized-tag.html"
+      "token": "invalid.illegal.bad-escape"
     },
     {
       "foreground": "#ffffff",
@@ -532,10 +540,6 @@
     {
       "foreground": "#ffffff",
       "token": "invalid.deprecated"
-    },
-    {
-      "foreground": "#d19a66",
-      "token": "invalid.deprecated.entity.other.attribute-name.html"
     },
     {
       "foreground": "#ffffff",
