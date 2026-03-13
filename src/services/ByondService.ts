@@ -30,6 +30,7 @@ export class ByondService {
   private events = new EventTarget()
   private initialized = false
   private loading = false
+  private runtimePreparationPromise: Promise<void> | null = null
 
   private static readonly LOCAL_VERSION_STATUSES = new Set<ByondStatus>([
     ByondStatus.Fetched,
@@ -68,10 +69,7 @@ export class ByondService {
     const localVersions = await this.getLocalVersions()
     const storedActive = localStorage.getItem(ACTIVE_VERSION_KEY)
 
-    await commandQueueService.runToSuccess(
-      '/bin/mkdir',
-      `-p\0${HOST_BYOND_PATH}`
-    )
+    await this.ensureRuntimePrepared()
 
     if (storedActive && localVersions.includes(storedActive)) {
       this.activeVersion = storedActive
@@ -226,6 +224,8 @@ export class ByondService {
       throw new Error('Another version is currently being loaded')
     }
 
+    await this.ensureRuntimePrepared()
+
     const status = this.versions.get(version)
     if (
       !status ||
@@ -240,19 +240,21 @@ export class ByondService {
     )
     try {
       const installPath = `${HOST_BYOND_PATH}/${version}`
+      const stagedArchiveName = `${version}.zip`
+      const stagedArchivePath = `/mnt/host/${stagedArchiveName}`
 
       if (status !== ByondStatus.Installed) {
         this.setStatus(version, ByondStatus.Loading)
         const zipFile = await this.getVersion(version)
         await emulatorService.sendFile(
-          `byond/${version}.zip`,
+          stagedArchiveName,
           new Uint8Array(await zipFile.arrayBuffer())
         )
         await commandQueueService.runToSuccess([
           `/bin/rm -rf ${installPath}`,
           `/bin/mkdir -p ${installPath}`,
-          `/bin/unzip ${HOST_BYOND_PATH}/${version}.zip 'byond/bin*' -j -d ${installPath}`,
-          `/bin/rm -f ${HOST_BYOND_PATH}/${version}.zip`,
+          `/bin/unzip ${stagedArchivePath} 'byond/bin*' -j -d ${installPath}`,
+          `/bin/rm -f ${stagedArchivePath}`,
         ])
         this.setStatus(version, ByondStatus.Installed)
       }
@@ -278,6 +280,8 @@ export class ByondService {
   }
 
   async deleteVersion(version: string) {
+    await this.ensureRuntimePrepared()
+
     const directory = await this.getByondDirectory()
     const wasActive = this.activeVersion === version
 
@@ -371,6 +375,23 @@ export class ByondService {
   private async getByondDirectory() {
     const root = await navigator.storage.getDirectory()
     return root.getDirectoryHandle('byond', { create: true })
+  }
+
+  private ensureRuntimePrepared() {
+    if (!this.runtimePreparationPromise) {
+      this.runtimePreparationPromise = (async () => {
+        emulatorService.start()
+        await commandQueueService.runToSuccess(
+          '/bin/mkdir',
+          `-p\0${HOST_BYOND_PATH}`
+        )
+      })().catch((error) => {
+        this.runtimePreparationPromise = null
+        throw error
+      })
+    }
+
+    return this.runtimePreparationPromise
   }
 }
 
