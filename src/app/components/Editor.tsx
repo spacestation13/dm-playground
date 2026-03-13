@@ -48,6 +48,7 @@ export function Editor({
     () => files.find((file) => file.id === activeFileId) ?? files[0],
     [activeFileId, files]
   )
+  const showFileTabs = files.length > 1
 
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
@@ -210,32 +211,34 @@ export function Editor({
           Run Code
         </button>
       </div>
-      <div className="flex items-end gap-px border-b border-slate-800 bg-[#252526] px-2 pt-1">
-        {files.map((file) => {
-          const isActive = file.id === activeFile.id
-          return (
-            <button
-              key={file.id}
-              type="button"
-              onClick={() => onActiveFileChange(file.id)}
-              className={[
-                'relative min-w-24 border border-b-0 px-3 py-1.5 text-left text-xs leading-none transition-colors',
-                isActive
-                  ? 'border-slate-700 bg-[#1e1e1e] text-slate-100'
-                  : 'border-transparent bg-[#2d2d2d] text-slate-400 hover:bg-[#323233] hover:text-slate-200',
-              ].join(' ')}
-            >
-              {isActive && (
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-0 top-0 h-0.5 bg-sky-400"
-                />
-              )}
-              {file.label}
-            </button>
-          )
-        })}
-      </div>
+      {showFileTabs && (
+        <div className="flex items-end gap-px border-b border-slate-800 bg-[#252526] px-2 pt-1">
+          {files.map((file) => {
+            const isActive = file.id === activeFile.id
+            return (
+              <button
+                key={file.id}
+                type="button"
+                onClick={() => onActiveFileChange(file.id)}
+                className={[
+                  'relative min-w-24 border border-b-0 px-3 py-1.5 text-left text-xs leading-none transition-colors',
+                  isActive
+                    ? 'border-slate-700 bg-[#1e1e1e] text-slate-100'
+                    : 'border-transparent bg-[#2d2d2d] text-slate-400 hover:bg-[#323233] hover:text-slate-200',
+                ].join(' ')}
+              >
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-0.5 bg-sky-400"
+                  />
+                )}
+                {file.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
       <div className="flex-1 min-h-0 bg-[#1e1e1e]">
         <MonacoEditor
           path={activeFile.id}
