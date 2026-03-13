@@ -14,7 +14,8 @@ test('full mode advanced editor tabs are hidden by default', async ({
 }) => {
   await page.goto('/')
 
-  await expect(page.getByRole('button', { name: 'main.dm' })).toBeVisible()
+  await expect(page.getByText('DM Editor')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'main.dm' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'bootstrap.dm' })).toHaveCount(
     0
   )
@@ -22,6 +23,7 @@ test('full mode advanced editor tabs are hidden by default', async ({
   await page.getByRole('button', { name: 'Settings' }).click()
   await page.getByLabel('Show advanced editor tabs').check()
 
+  await expect(page.getByRole('button', { name: 'main.dm' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'bootstrap.dm' })).toBeVisible()
 })
 
@@ -48,7 +50,8 @@ test('embed mode Run Code works with the real worker', async ({ page }) => {
 
   await page.goto(`/?${params.toString()}#${hashPayload}`)
 
-  await expect(page.getByRole('button', { name: 'main.dm' })).toBeVisible()
+  await expect(page.getByText('DM Editor')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'main.dm' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'bootstrap.dm' })).toHaveCount(
     0
   )
