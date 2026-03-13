@@ -18,7 +18,8 @@ const controlKeywords = [
   'while',
 ]
 
-const otherKeywords = ['del', 'new']
+const constructorKeyword = 'new'
+const otherKeywords = ['del']
 
 const declarationKeywords = ['operator', 'proc', 'var', 'verb']
 
@@ -298,6 +299,7 @@ function createWordMatch(words: string[]): RegExp {
 
 const dmKeywordMatch = createWordMatch([...controlKeywords, ...runtimeKeywords])
 const dmOtherKeywordMatch = createWordMatch(otherKeywords)
+const dmConstructorKeywordMatch = createWordMatch([constructorKeyword])
 const dmModifierKeywordMatch = createWordMatch(modifierKeywords)
 const dmOperatorWordMatch = createWordMatch(operatorWords)
 const dmSpecialIdentifierMatch = createWordMatch(specialIdentifiers)
@@ -330,6 +332,7 @@ export const dmCompletionKeywords = Array.from(
   new Set([
     ...controlKeywords,
     ...otherKeywords,
+    constructorKeyword,
     ...declarationKeywords,
     ...modifierKeywords,
     ...runtimeKeywords,
@@ -406,6 +409,10 @@ const dmMonarchLanguage: Monaco.languages.IMonarchLanguage = {
       [/[;,]/, 'delimiter'],
       [/:/, 'delimiter'],
       [dmKeywordMatch, 'keyword.control'],
+      [
+        dmConstructorKeywordMatch,
+        { token: 'keyword.other', next: '@afterNewKeyword' },
+      ],
       [dmOtherKeywordMatch, 'keyword.other'],
       [/\bvar\b/, { token: 'storage.type', next: '@varDeclaration' }],
       [
@@ -512,6 +519,33 @@ const dmMonarchLanguage: Monaco.languages.IMonarchLanguage = {
       [/"/, { token: 'string.quote', next: '@string' }],
       [/'/, { token: 'string.quote', next: '@singleQuotedString' }],
       { include: '@common' },
+    ],
+
+    // Handles the token immediately after `new` so constructor paths stay path-colored.
+    afterNewKeyword: [
+      { include: '@whitespace' },
+      [/\//, { token: 'delimiter', next: '@constructorPath' }],
+      [/./, { token: '', next: '@pop', goBack: 1 }],
+    ],
+
+    // Handles the `/foo/bar` portion of a constructor path after `new`.
+    constructorPath: [
+      [
+        dmTypeKeywordMatch,
+        { token: 'support.type', next: '@constructorPathAfterSegment' },
+      ],
+      [
+        dmIdentifierMatch,
+        { token: 'identifier', next: '@constructorPathAfterSegment' },
+      ],
+      [/./, { token: '', next: '@pop', goBack: 1 }],
+    ],
+
+    // Handles separators or constructor arguments after each constructor path segment.
+    constructorPathAfterSegment: [
+      [/\//, { token: 'delimiter', next: '@constructorPath' }],
+      [/\(/, { token: '@brackets', next: '@callableParameterNested' }],
+      [/./, { token: '', next: '@pop', goBack: 1 }],
     ],
 
     path: [
