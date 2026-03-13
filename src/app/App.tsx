@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import packageJson from '../../package.json'
 import { PanelTree } from './layout/PanelTree'
 import { ConsolePanel } from './panels/ConsolePanel'
@@ -15,7 +15,6 @@ import {
 } from './settings/localSettings'
 import { useLayoutManager } from './layout/useLayoutManager'
 import { embedParams } from './embed/embedParams'
-import { ensureRuntime } from '../services/runtimeBootstrap'
 import type { LayoutRoot } from './layout/layoutTypes'
 
 function PlaygroundLayout({
@@ -57,10 +56,6 @@ function FullApp() {
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
   const [showAdvancedEditorTabs, setShowAdvancedEditorTabs] =
     useShowAdvancedEditorTabsSetting()
-
-  useEffect(() => {
-    void ensureRuntime()
-  }, [])
 
   const handleDeleteSiteData = async () => {
     const confirmed = window.confirm(

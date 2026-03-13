@@ -28,7 +28,7 @@ export function EditorPanel() {
     canTriggerRun,
     isByondLoading,
     isRuntimeBootstrapping,
-  } = useRuntimeBootstrap(embedParams.isEmbed)
+  } = useRuntimeBootstrap()
   const visibleFiles = getVisibleProjectFiles(
     project,
     !embedParams.isEmbed && showAdvancedEditorTabs
@@ -48,10 +48,6 @@ export function EditorPanel() {
   const handleRun = useCallback(() => {
     void (async () => {
       if (!canRun) {
-        if (!embedParams.isEmbed) {
-          return
-        }
-
         const bootstrapped = await bootstrapRuntime()
         if (!bootstrapped) {
           return

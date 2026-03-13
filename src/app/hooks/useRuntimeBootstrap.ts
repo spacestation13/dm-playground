@@ -7,7 +7,7 @@ import {
 } from '../../services/ByondService'
 import { ensureRuntime } from '../../services/runtimeBootstrap'
 
-export function useRuntimeBootstrap(isEmbed: boolean) {
+export function useRuntimeBootstrap() {
   const [isByondReady, setIsByondReady] = useState(() => {
     const activeVersion = byondService.getActiveVersion()
     if (!activeVersion) {
@@ -85,7 +85,7 @@ export function useRuntimeBootstrap(isEmbed: boolean) {
   return {
     bootstrapRuntime,
     canRun,
-    canTriggerRun: canRun || isEmbed,
+    canTriggerRun: true,
     isByondLoading,
     isRuntimeBootstrapping,
   }
