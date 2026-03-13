@@ -291,7 +291,6 @@ function createWordMatch(words: string[]): RegExp {
 
 const dmKeywordMatch = createWordMatch([...controlKeywords, ...runtimeKeywords])
 const dmOtherKeywordMatch = createWordMatch(otherKeywords)
-const dmDeclarationKeywordMatch = createWordMatch(declarationKeywords)
 const dmModifierKeywordMatch = createWordMatch(modifierKeywords)
 const dmOperatorWordMatch = createWordMatch(operatorWords)
 const dmSpecialIdentifierMatch = createWordMatch(specialIdentifiers)
@@ -304,11 +303,21 @@ const dmDirectiveKeywordMatch = createWordMatch(directiveKeywords)
 const dmEscapeSequenceMatch =
   /\\(?:[Tt]he|[Aa]n?|[Hh]e|[Ss]he|[Hh]is|him|himself|herself|hers|proper|improper|th|s|(?:icon|ref|[Rr]oman)(?=\[)|\.\.\.|t|n|"|\\|<|>|\[|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{6})/
 const dmIdentifierMatch = /[A-Za-z_][A-Za-z0-9_$-]*\b/
+const dmIdentifierBeforeSlashMatch = /[A-Za-z_][A-Za-z0-9_$-]*\b(?=\s*\/)/
 const dmScopedIdentifierMatch = /::[A-Za-z_][A-Za-z0-9_$-]*\b/
+const dmFunctionCallMatch = /[A-Za-z_][A-Za-z0-9_$-]*\b(?=\s*\()/
 const dmMemberAccessMatch = /\.(?!\d)[A-Za-z_][A-Za-z0-9_$-]*\b/
+const dmMemberFunctionCallMatch =
+  /(\.)(?!\d)([A-Za-z_][A-Za-z0-9_$-]*\b)(?=\s*\()/
 const dmPathStartMatch = /(^|[\s([{:;,=<>!&|?+\-*%~])(\/)(?=[A-Za-z_])/
 const dmOperatorMatch =
   /(?:\?\[\]|\?\.|\?:|<=>|<<=|>>=|&&=|\|\|=|%%=|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|:=|~=|~!|\|\||&&|%%|\+\+|--|\*\*|<<|>>|<=|>=|==|!=|<>|=|\?|[+\-*/%&|^~!.])/
+const dmModifierKeywordBeforeDeclarationNameMatch = new RegExp(
+  `${dmModifierKeywordMatch.source}(?=\\s*(?:\\/|${dmIdentifierMatch.source}))`
+)
+const dmTypeKeywordBeforeDeclarationNameMatch = new RegExp(
+  `${dmTypeKeywordMatch.source}(?=\\s*(?:\\/|${dmIdentifierMatch.source}))`
+)
 
 export const dmCompletionKeywords = Array.from(
   new Set([
@@ -382,6 +391,7 @@ const dmMonarchLanguage: Monaco.languages.IMonarchLanguage = {
       [/\b(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?\b/, 'number'],
       [dmPathStartMatch, ['', 'delimiter'], '@path'],
       [dmScopedIdentifierMatch, 'identifier'],
+      [dmMemberFunctionCallMatch, ['delimiter', 'entity.name.function']],
       [dmMemberAccessMatch, 'identifier'],
       [dmOperatorWordMatch, 'keyword.operator'],
       [dmOperatorMatch, 'keyword.operator'],
@@ -390,14 +400,39 @@ const dmMonarchLanguage: Monaco.languages.IMonarchLanguage = {
       [/:/, 'delimiter'],
       [dmKeywordMatch, 'keyword.control'],
       [dmOtherKeywordMatch, 'keyword.other'],
-      [dmDeclarationKeywordMatch, 'storage.type'],
+      [/\bvar\b/, { token: 'storage.type', next: '@varDeclaration' }],
+      [
+        /\b(?:proc|verb)\b/,
+        { token: 'storage.type', next: '@callableDeclaration' },
+      ],
+      [/\boperator\b/, 'storage.type'],
       [dmModifierKeywordMatch, 'storage.modifier'],
       [dmSpecialIdentifierMatch, 'variable.language'],
       [dmBuiltinFunctionMatch, 'support.function'],
       [dmTypeKeywordMatch, 'support.type'],
       [dmLanguageConstantMatch, 'support.constant'],
       [/[A-Z_][A-Z_0-9]*\b/, 'constant'],
+      [dmFunctionCallMatch, 'entity.name.function'],
       [dmIdentifierMatch, 'identifier'],
+    ],
+
+    varDeclaration: [
+      { include: '@whitespace' },
+      [/\//, 'delimiter'],
+      [dmModifierKeywordBeforeDeclarationNameMatch, 'storage.modifier'],
+      [dmTypeKeywordBeforeDeclarationNameMatch, 'support.type'],
+      [dmIdentifierBeforeSlashMatch, 'support.type'],
+      [dmIdentifierMatch, { token: 'variable', next: '@pop' }],
+      [/./, { token: '', next: '@pop', goBack: 1 }],
+    ],
+
+    callableDeclaration: [
+      { include: '@whitespace' },
+      [/\//, 'delimiter'],
+      [dmTypeKeywordBeforeDeclarationNameMatch, 'support.type'],
+      [dmIdentifierBeforeSlashMatch, 'support.type'],
+      [dmIdentifierMatch, { token: 'entity.name.function', next: '@pop' }],
+      [/./, { token: '', next: '@pop', goBack: 1 }],
     ],
 
     path: [
