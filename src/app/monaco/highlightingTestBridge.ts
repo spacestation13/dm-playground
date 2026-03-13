@@ -31,7 +31,7 @@ function createHighlightingTestTokenizer(
           const startIndex = token.offset
           const endIndex =
             tokenIndex + 1 < tokens.length
-              ? tokens[tokenIndex + 1]?.offset ?? line.length
+              ? (tokens[tokenIndex + 1]?.offset ?? line.length)
               : line.length
           const text = line.slice(startIndex, endIndex)
 

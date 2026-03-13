@@ -38,9 +38,9 @@ Use the playground in an iframe with `?embed=1` to show an editor/output-only la
 
 ```html
 <iframe
-	src="https://play.dm-lang.org/?embed=1#<msgpack-gzip-b64>"
-	width="800"
-	height="500"
+  src="https://play.dm-lang.org/?embed=1#<msgpack-gzip-b64>"
+  width="800"
+  height="500"
 ></iframe>
 ```
 
