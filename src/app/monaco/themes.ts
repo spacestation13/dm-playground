@@ -1,4 +1,6 @@
 import type * as Monaco from 'monaco-editor'
+import { builtinThemeColors } from './builtinThemeColors'
+import oneDarkTheme from './themeData/OneDark.json'
 
 export type BuiltinThemeId = 'vs-dark' | 'vs-light' | 'hc-black' | 'hc-light'
 
@@ -19,21 +21,27 @@ export interface EditorThemeOption {
   id: EditorThemeId
   label: string
   isLocal?: boolean
+  isLight?: boolean
 }
 
 export const editorThemeOptions: EditorThemeOption[] = [
   { id: 'vs-dark', label: 'VS Dark', isLocal: true },
-  { id: 'vs-light', label: 'VS Light', isLocal: true },
+  { id: 'vs-light', label: 'VS Light', isLocal: true, isLight: true },
   { id: 'monokai', label: 'Monokai' },
   { id: 'one-dark', label: 'One Dark', isLocal: true },
   { id: 'dracula', label: 'Dracula' },
   { id: 'nord', label: 'Nord' },
   { id: 'solarized-dark', label: 'Solarized Dark' },
-  { id: 'solarized-light', label: 'Solarized Light' },
+  { id: 'solarized-light', label: 'Solarized Light', isLight: true },
   { id: 'github-dark', label: 'GitHub Dark' },
-  { id: 'github-light', label: 'GitHub Light' },
+  { id: 'github-light', label: 'GitHub Light', isLight: true },
   { id: 'hc-black', label: 'GitHub Dark High Contrast', isLocal: true },
-  { id: 'hc-light', label: 'GitHub Light High Contrast', isLocal: true },
+  {
+    id: 'hc-light',
+    label: 'GitHub Light High Contrast',
+    isLocal: true,
+    isLight: true,
+  },
 ]
 
 const editorThemeIds = new Set<EditorThemeId>(
@@ -54,7 +62,7 @@ const hardcodedThemes: Set<BuiltinThemeId> = new Set([
 const localThemeLoaders: Partial<
   Record<LocalThemeId, () => Promise<{ default: unknown }>>
 > = {
-  'one-dark': () => import('./themeData/OneDark.json'),
+  'one-dark': async () => ({ default: oneDarkTheme }),
 }
 
 const remoteThemeUrls: Record<RemoteThemeId, string> = {
@@ -70,6 +78,10 @@ const remoteThemeUrls: Record<RemoteThemeId, string> = {
 }
 
 const loadedThemes = new Set<EditorThemeId>()
+const loadedThemeData = new Map<
+  EditorThemeId,
+  Monaco.editor.IStandaloneThemeData
+>()
 
 export async function ensureMonacoTheme(
   monaco: typeof Monaco,
@@ -86,10 +98,9 @@ export async function ensureMonacoTheme(
   const localLoader = localThemeLoaders[themeId as LocalThemeId]
   if (localLoader) {
     const { default: theme } = await localLoader()
-    monaco.editor.defineTheme(
-      themeId,
-      theme as Monaco.editor.IStandaloneThemeData
-    )
+    const themeData = theme as Monaco.editor.IStandaloneThemeData
+    monaco.editor.defineTheme(themeId, themeData)
+    loadedThemeData.set(themeId, themeData)
     loadedThemes.add(themeId)
     return
   }
@@ -105,5 +116,15 @@ export async function ensureMonacoTheme(
   }
   const theme = (await response.json()) as Monaco.editor.IStandaloneThemeData
   monaco.editor.defineTheme(themeId, theme)
+  loadedThemeData.set(themeId, theme)
   loadedThemes.add(themeId)
+}
+
+export function getThemeColors(
+  themeId: EditorThemeId
+): Record<string, string> | undefined {
+  if (hardcodedThemes.has(themeId as BuiltinThemeId)) {
+    return builtinThemeColors[themeId as BuiltinThemeId]
+  }
+  return loadedThemeData.get(themeId)?.colors
 }

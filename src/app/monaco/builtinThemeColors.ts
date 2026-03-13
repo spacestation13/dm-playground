@@ -1,0 +1,55 @@
+import type { BuiltinThemeId } from './themes'
+
+export const builtinThemeColors: Record<
+  BuiltinThemeId,
+  Record<string, string>
+> = {
+  'vs-dark': {
+    'editor.background': '#1e1e1e',
+    'editor.foreground': '#d4d4d4',
+    'activityBar.background': '#2d2d30',
+    'editorGroup.background': '#2d2d30',
+    'tab.inactiveBackground': '#2d2d30',
+    'tab.activeBackground': '#1e1e1e',
+    'tab.hoverBackground': '#37373d',
+    'input.background': '#3c3c3c',
+    'input.border': '#3c3c3c',
+    'panel.border': '#3c3c3c',
+  },
+  'vs-light': {
+    'editor.background': '#ffffff',
+    'editor.foreground': '#000000',
+    'activityBar.background': '#f3f3f3',
+    'editorGroup.background': '#f3f3f3',
+    'tab.inactiveBackground': '#f3f3f3',
+    'tab.activeBackground': '#ffffff',
+    'tab.hoverBackground': '#e5e5e5',
+    'input.background': '#ffffff',
+    'input.border': '#d4d4d4',
+    'panel.border': '#d4d4d4',
+  },
+  'hc-black': {
+    'editor.background': '#000000',
+    'editor.foreground': '#ffffff',
+    'activityBar.background': '#000000',
+    'editorGroup.background': '#000000',
+    'tab.inactiveBackground': '#000000',
+    'tab.activeBackground': '#000000',
+    'tab.hoverBackground': '#0f0f23',
+    'input.background': '#000000',
+    'input.border': '#6fc3df',
+    'panel.border': '#6fc3df',
+  },
+  'hc-light': {
+    'editor.background': '#ffffff',
+    'editor.foreground': '#000000',
+    'activityBar.background': '#ffffff',
+    'editorGroup.background': '#ffffff',
+    'tab.inactiveBackground': '#ffffff',
+    'tab.activeBackground': '#ffffff',
+    'tab.hoverBackground': '#f0f0f0',
+    'input.background': '#ffffff',
+    'input.border': '#0f4a85',
+    'panel.border': '#0f4a85',
+  },
+}

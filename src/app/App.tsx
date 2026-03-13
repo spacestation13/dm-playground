@@ -120,7 +120,7 @@ function FullApp() {
       />
       {showSettings && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/70 p-4"
           onClick={() => setShowSettings(false)}
         >
           <div

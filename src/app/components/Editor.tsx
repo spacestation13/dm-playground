@@ -6,6 +6,7 @@ import type { EditableProjectFileName } from '../editorProject/projectState'
 import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
 import { installHighlightingTestBridge } from '../monaco/highlightingTestBridge'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
+import { useApplyThemeVariables } from '../hooks/useApplyThemeVariables'
 import {
   useFontFamilySetting,
   useFontSizeSetting,
@@ -49,6 +50,7 @@ export function Editor({
     [activeFileId, files]
   )
   const showFileTabs = files.length > 1
+  const applyThemeVariables = useApplyThemeVariables()
 
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
@@ -87,18 +89,20 @@ export function Editor({
     }
     await ensureMonacoTheme(monaco as typeof Monaco, themeId)
     monaco.editor.setTheme(themeId)
+    applyThemeVariables(themeId)
   }
 
   useEffect(() => {
-    if (!monacoRef.current) {
+    if (!monacoRef.current || !editorRef.current) {
       return
     }
 
     void (async () => {
       await ensureMonacoTheme(monacoRef.current as typeof Monaco, themeId)
       monacoRef.current?.editor.setTheme(themeId)
+      applyThemeVariables(themeId)
     })()
-  }, [themeId])
+  }, [themeId, applyThemeVariables])
 
   useEffect(() => {
     const editor = editorRef.current
@@ -127,12 +131,12 @@ export function Editor({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded border border-slate-800 bg-[#1e1e1e]">
-      <div className="flex items-center justify-end border-b border-slate-800 bg-slate-900/80 pl-2 pr-1 py-1">
-        <span className="text-xs font-semibold text-slate-300 mr-auto">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded border border-[var(--editor-border)] bg-[var(--editor-bg)]">
+      <div className="flex items-center justify-end border-b border-[var(--editor-border)] bg-[var(--editor-header-bg)] pl-2 pr-1 py-1">
+        <span className="text-xs font-semibold text-[var(--editor-text)] mr-auto">
           DM Editor
         </span>
-        <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-slate-300">
+        <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-[var(--editor-text)]">
           <span>Font size</span>
           <input
             type="number"
@@ -146,11 +150,14 @@ export function Editor({
               }
               setFontSize(parsed)
             }}
-            className="w-14 rounded border border-slate-700 bg-slate-950/60 px-1 py-0.5 text-xs text-slate-200"
+            className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
           />
         </label>
-        <span className="mr-2 h-4 w-px bg-slate-700" aria-hidden="true" />
-        <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-slate-300">
+        <span
+          className="mr-2 h-4 w-px bg-[var(--editor-border)]"
+          aria-hidden="true"
+        />
+        <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-[var(--editor-text)]">
           <span>Tab size</span>
           <input
             type="number"
@@ -164,21 +171,24 @@ export function Editor({
               }
               setTabSize(parsed)
             }}
-            className="w-14 rounded border border-slate-700 bg-slate-950/60 px-1 py-0.5 text-xs text-slate-200"
+            className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
           />
         </label>
-        <span className="mr-2 h-4 w-px bg-slate-700" aria-hidden="true" />
+        <span
+          className="mr-2 h-4 w-px bg-[var(--editor-border)]"
+          aria-hidden="true"
+        />
         <button
           type="button"
           onClick={onRun}
           disabled={runDisabled}
-          className="rounded-md border border-emerald-700/70 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md border border-[var(--editor-button-border)] bg-[var(--editor-button-bg)] px-3 py-1 text-xs font-semibold text-[var(--editor-button-text)] hover:border-[var(--editor-button-border-hover)] hover:bg-[var(--editor-button-bg-hover)] hover:text-[var(--editor-button-text-hover)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Run Code
         </button>
       </div>
       {showFileTabs && (
-        <div className="flex items-end gap-px border-b border-slate-800 bg-[#252526] px-2 pt-1">
+        <div className="flex items-end gap-px border-b border-[var(--editor-border)] bg-[var(--editor-tab-bar-bg)] px-2 pt-1">
           {files.map((file) => {
             const isActive = file.id === activeFile.id
             return (
@@ -189,14 +199,14 @@ export function Editor({
                 className={[
                   'relative min-w-24 border border-b-0 px-3 py-1.5 text-left text-xs leading-none transition-colors',
                   isActive
-                    ? 'border-slate-700 bg-[#1e1e1e] text-slate-100'
-                    : 'border-transparent bg-[#2d2d2d] text-slate-400 hover:bg-[#323233] hover:text-slate-200',
+                    ? 'border-[var(--editor-border)] bg-[var(--editor-tab-active-bg)] text-[var(--editor-text)]'
+                    : 'border-transparent bg-[var(--editor-tab-inactive-bg)] text-[var(--editor-text)] hover:bg-[var(--editor-tab-hover-bg)] hover:text-[var(--editor-text)]',
                 ].join(' ')}
               >
                 {isActive && (
                   <span
                     aria-hidden="true"
-                    className="absolute inset-x-0 top-0 h-0.5 bg-sky-400"
+                    className="absolute inset-x-0 bottom-0 h-0.25 bg-[var(--editor-text)]"
                   />
                 )}
                 {file.label}
@@ -205,7 +215,7 @@ export function Editor({
           })}
         </div>
       )}
-      <div className="flex-1 min-h-0 bg-[#1e1e1e]">
+      <div className="flex-1 min-h-0 bg-[var(--editor-bg)]">
         <MonacoEditor
           path={activeFile.id}
           value={activeFile.value}

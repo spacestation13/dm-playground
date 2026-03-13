@@ -79,7 +79,7 @@ export function useRuntimeBootstrap() {
       setIsRuntimeBootstrapping(true)
 
       showNextMessage()
-      intervalId = window.setInterval(showNextMessage, 800)
+      intervalId = window.setInterval(showNextMessage, 1_000)
 
       try {
         await ensureRuntime()
