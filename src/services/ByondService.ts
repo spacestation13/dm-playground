@@ -165,49 +165,60 @@ export class ByondService {
     this.setStatus(version, ByondStatus.Fetching)
     const major = version.split('.')[0]
     const url = `${DOWNLOAD_BASE_URL}/${major}/${version}_byond_linux.zip`
-    const response = await fetch(url)
+    let directory: FileSystemDirectoryHandle | null = null
 
-    if (!response.ok) {
-      this.setStatus(version, ByondStatus.Error)
-      throw new Error(`Failed to download BYOND ${version}: ${response.status}`)
-    }
+    try {
+      const response = await fetch(url)
 
-    const directory = await this.getByondDirectory()
-    const fileHandle = await directory.getFileHandle(`${version}.zip`, {
-      create: true,
-    })
-    const writable = await fileHandle.createWritable()
+      if (!response.ok) {
+        throw new Error(
+          `Failed to download BYOND ${version}: ${response.status}`
+        )
+      }
 
-    if (!response.body) {
-      const buffer = await response.arrayBuffer()
-      await writable.write(buffer)
+      directory = await this.getByondDirectory()
+      const fileHandle = await directory.getFileHandle(`${version}.zip`, {
+        create: true,
+      })
+      const writable = await fileHandle.createWritable()
+
+      if (!response.body) {
+        const buffer = await response.arrayBuffer()
+        await writable.write(buffer)
+        await writable.close()
+        onProgress?.(1)
+        this.setStatus(version, ByondStatus.Fetched)
+        return
+      }
+
+      const reader = response.body.getReader()
+      const contentLength = Number(response.headers.get('content-length') ?? 0)
+      let received = 0
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) {
+          break
+        }
+        if (value) {
+          received += value.length
+          await writable.write(value)
+          if (contentLength > 0) {
+            onProgress?.(received / contentLength)
+          }
+        }
+      }
+
       await writable.close()
       onProgress?.(1)
       this.setStatus(version, ByondStatus.Fetched)
-      return
-    }
-
-    const reader = response.body.getReader()
-    const contentLength = Number(response.headers.get('content-length') ?? 0)
-    let received = 0
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) {
-        break
+    } catch (error) {
+      if (directory) {
+        await this.removeDirectoryEntry(directory, `${version}.zip`, false)
       }
-      if (value) {
-        received += value.length
-        await writable.write(value)
-        if (contentLength > 0) {
-          onProgress?.(received / contentLength)
-        }
-      }
+      this.clearStatus(version)
+      throw error
     }
-
-    await writable.close()
-    onProgress?.(1)
-    this.setStatus(version, ByondStatus.Fetched)
   }
 
   async load(version: string, setActive = true) {
@@ -330,6 +341,15 @@ export class ByondService {
     this.versions.set(version, status)
     this.events.dispatchEvent(
       new CustomEvent('status', { detail: { version, status } })
+    )
+  }
+
+  private clearStatus(version: string) {
+    this.versions.delete(version)
+    this.events.dispatchEvent(
+      new CustomEvent('status', {
+        detail: { version, status: ByondStatus.Idle },
+      })
     )
   }
 

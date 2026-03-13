@@ -90,9 +90,18 @@ export function ByondPanel() {
       const active = byondService.getActiveVersion()
       setActiveVersion(active)
       setStatus((prev) => {
-        const next: StatusMap = { ...prev }
+        const next: StatusMap = {}
         localVersions.forEach((version) => {
           next[version] = byondService.getStatus(version)
+        })
+        Object.entries(prev).forEach(([version, versionStatus]) => {
+          if (
+            !localVersions.includes(version) &&
+            (versionStatus === ByondStatus.Fetching ||
+              versionStatus === ByondStatus.Loading)
+          ) {
+            next[version] = versionStatus
+          }
         })
         return next
       })
@@ -134,6 +143,16 @@ export function ByondPanel() {
       const detail = (
         event as CustomEvent<{ version: string; status: ByondStatus }>
       ).detail
+      if (detail.status === ByondStatus.Idle) {
+        setStatus((prev) => {
+          const next = { ...prev }
+          delete next[detail.version]
+          return next
+        })
+        setLocal((prev) => prev.filter((version) => version !== detail.version))
+        return
+      }
+
       setStatus((prev) => ({ ...prev, [detail.version]: detail.status }))
       if (
         detail.status === ByondStatus.Fetched ||
@@ -144,10 +163,6 @@ export function ByondPanel() {
           prev.includes(detail.version) ? prev : [detail.version, ...prev]
         )
         return
-      }
-
-      if (detail.status === ByondStatus.Idle) {
-        setLocal((prev) => prev.filter((version) => version !== detail.version))
       }
     }
     byondService.addStatusListener(handleStatus)
@@ -177,7 +192,11 @@ export function ByondPanel() {
       setLocal((prev) => (prev.includes(version) ? prev : [version, ...prev]))
       setStatus((prev) => ({ ...prev, [version]: ByondStatus.Fetched }))
     } catch (downloadError) {
-      setStatus((prev) => ({ ...prev, [version]: ByondStatus.Error }))
+      setStatus((prev) => {
+        const next = { ...prev }
+        delete next[version]
+        return next
+      })
       setError(
         downloadError instanceof Error
           ? downloadError.message
