@@ -31,6 +31,12 @@ export class ByondService {
   private initialized = false
   private loading = false
 
+  private static readonly LOCAL_VERSION_STATUSES = new Set<ByondStatus>([
+    ByondStatus.Fetched,
+    ByondStatus.Loading,
+    ByondStatus.Installed,
+  ])
+
   addEventListener(
     type: ByondEvent,
     listener: EventListenerOrEventListenerObject
@@ -132,7 +138,23 @@ export class ByondService {
       }
     }
 
+    for (const [version, currentStatus] of this.versions.entries()) {
+      if (
+        ByondService.LOCAL_VERSION_STATUSES.has(currentStatus) &&
+        !statuses.has(version)
+      ) {
+        statuses.set(version, currentStatus)
+      }
+    }
+
     for (const [version, status] of statuses.entries()) {
+      const currentStatus = this.versions.get(version)
+      if (
+        currentStatus === ByondStatus.Loading ||
+        currentStatus === ByondStatus.Installed
+      ) {
+        continue
+      }
       this.setStatus(version, status)
     }
 

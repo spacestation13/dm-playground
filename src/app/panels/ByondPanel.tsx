@@ -56,11 +56,22 @@ export function ByondPanel() {
 
   const displayVersions = useMemo(() => {
     const list = [...local]
+    Object.entries(status).forEach(([version, versionStatus]) => {
+      if (versionStatus !== ByondStatus.Idle && !list.includes(version)) {
+        list.push(version)
+      }
+    })
     if (latestVersion && !list.includes(latestVersion)) {
       list.push(latestVersion)
     }
     return list
-  }, [local, latestVersion])
+  }, [local, latestVersion, status])
+
+  const isVersionAvailable = (version: string, versionStatus: ByondStatus) =>
+    local.includes(version) ||
+    versionStatus === ByondStatus.Fetched ||
+    versionStatus === ByondStatus.Loading ||
+    versionStatus === ByondStatus.Installed
 
   const refresh = async () => {
     try {
@@ -85,23 +96,6 @@ export function ByondPanel() {
         })
         return next
       })
-
-      if (!active && localVersions.length > 0) {
-        const latest = localVersions[0]
-        setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Loading }))
-        void byondService
-          .load(latest, true)
-          .then(() => {
-            setActiveVersion(latest)
-            setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Installed }))
-          })
-          .catch((loadError) => {
-            setStatus((prev) => ({ ...prev, [latest]: ByondStatus.Error }))
-            setError(
-              loadError instanceof Error ? loadError.message : 'Load failed'
-            )
-          })
-      }
     } catch (fetchError) {
       setError(
         fetchError instanceof Error
@@ -141,6 +135,20 @@ export function ByondPanel() {
         event as CustomEvent<{ version: string; status: ByondStatus }>
       ).detail
       setStatus((prev) => ({ ...prev, [detail.version]: detail.status }))
+      if (
+        detail.status === ByondStatus.Fetched ||
+        detail.status === ByondStatus.Loading ||
+        detail.status === ByondStatus.Installed
+      ) {
+        setLocal((prev) =>
+          prev.includes(detail.version) ? prev : [detail.version, ...prev]
+        )
+        return
+      }
+
+      if (detail.status === ByondStatus.Idle) {
+        setLocal((prev) => prev.filter((version) => version !== detail.version))
+      }
     }
     byondService.addStatusListener(handleStatus)
     return () => byondService.removeStatusListener(handleStatus)
@@ -211,6 +219,15 @@ export function ByondPanel() {
       })
   }
 
+  const customVersion = `${customMajor}.${customMinor}`
+  const customStatus = status[customVersion] ?? ByondStatus.Idle
+  const customVersionKnown =
+    local.includes(customVersion) ||
+    customStatus === ByondStatus.Fetching ||
+    customStatus === ByondStatus.Fetched ||
+    customStatus === ByondStatus.Loading ||
+    customStatus === ByondStatus.Installed
+
   return (
     <div className="flex h-full flex-col gap-3 text-sm text-slate-300">
       <div className="flex items-center gap-2">
@@ -234,19 +251,14 @@ export function ByondPanel() {
         <button
           type="button"
           onClick={() => {
-            const version = `${customMajor}.${customMinor}`
             if (!customMajor || !customMinor) return
-            if (local.includes(version)) return
-            void handleDownload(version)
+            if (customVersionKnown) return
+            void handleDownload(customVersion)
           }}
-          disabled={
-            !customMajor ||
-            !customMinor ||
-            local.includes(`${customMajor}.${customMinor}`)
-          }
+          disabled={!customMajor || !customMinor || customVersionKnown}
           title={
-            local.includes(`${customMajor}.${customMinor}`)
-              ? 'Version already installed'
+            customVersionKnown
+              ? 'Version already available or in progress'
               : undefined
           }
           className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-50"
@@ -268,12 +280,17 @@ export function ByondPanel() {
           </thead>
           <tbody>
             {displayVersions.map((version) => {
-              const isLocal = local.includes(version)
-              const isActive = activeVersion === version
-              const isLatest = version === latestVersion
               const versionStatus =
                 status[version] ??
-                (isLocal ? ByondStatus.Installed : ByondStatus.Idle)
+                (local.includes(version)
+                  ? ByondStatus.Installed
+                  : ByondStatus.Idle)
+              const isAvailable = isVersionAvailable(version, versionStatus)
+              const isActive = activeVersion === version
+              const isLatest = version === latestVersion
+              const canDownload =
+                versionStatus === ByondStatus.Idle ||
+                versionStatus === ByondStatus.Error
 
               return (
                 <tr key={version} className="border-t border-slate-800">
@@ -288,7 +305,7 @@ export function ByondPanel() {
                   <td className="px-3 py-2 text-slate-400">{versionStatus}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-2">
-                      {!isLocal && (
+                      {canDownload && (
                         <button
                           type="button"
                           onClick={() => void handleDownload(version)}
@@ -297,7 +314,7 @@ export function ByondPanel() {
                           Download
                         </button>
                       )}
-                      {isLocal && (
+                      {isAvailable && (
                         <button
                           type="button"
                           onClick={() => handleSetActive(version)}
@@ -314,7 +331,7 @@ export function ByondPanel() {
                           Set active
                         </button>
                       )}
-                      {isLocal && (
+                      {isAvailable && (
                         <button
                           type="button"
                           onClick={() => void handleDelete(version)}

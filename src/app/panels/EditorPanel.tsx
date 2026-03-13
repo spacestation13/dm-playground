@@ -19,7 +19,6 @@ export function EditorPanel() {
   )
   const [activeFile, setActiveFile] =
     useState<EditableProjectFileName>(MAIN_FILE_NAME)
-  const [, setStatus] = useState<'running' | 'idle'>('idle')
   const { themeId } = useTheme()
   const [showAdvancedEditorTabs] = useShowAdvancedEditorTabsSetting()
   const hasAutoran = useRef(false)
@@ -39,16 +38,6 @@ export function EditorPanel() {
   )
     ? activeFile
     : MAIN_FILE_NAME
-
-  useEffect(() => {
-    const handleStatus = (event: Event) => {
-      const detail = (event as CustomEvent<'running' | 'idle'>).detail
-      setStatus(detail)
-    }
-
-    executorService.addEventListener('status', handleStatus)
-    return () => executorService.removeEventListener('status', handleStatus)
-  }, [])
 
   useEffect(() => {
     if (embedParams.isEmbed && embedParams.autorun) {
