@@ -35,10 +35,10 @@ export const editorThemeOptions: EditorThemeOption[] = [
   { id: 'solarized-light', label: 'Solarized Light', isLight: true },
   { id: 'github-dark', label: 'GitHub Dark' },
   { id: 'github-light', label: 'GitHub Light', isLight: true },
-  { id: 'hc-black', label: 'GitHub Dark High Contrast', isLocal: true },
+  { id: 'hc-black', label: 'High Contrast Dark', isLocal: true },
   {
     id: 'hc-light',
-    label: 'GitHub Light High Contrast',
+    label: 'High Contrast Light',
     isLocal: true,
     isLight: true,
   },
