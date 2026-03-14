@@ -1,7 +1,6 @@
 import MonacoEditor, { type OnMount } from '@monaco-editor/react'
-import type * as Monaco from 'monaco-editor'
+import * as Monaco from 'monaco-editor'
 import { useEffect, useMemo, useRef } from 'react'
-
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
 import { installHighlightingTestBridge } from '../monaco/highlightingTestBridge'
@@ -40,8 +39,10 @@ export function Editor({
   runDisabled = !onRun,
   themeId,
 }: EditorProps) {
+  const shellRef = useRef<HTMLDivElement | null>(null)
   const monacoRef = useRef<typeof Monaco | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
+  const contextViewSyncCleanupRef = useRef<(() => void) | null>(null)
   const [tabSize, setTabSize] = useTabSizeSetting()
   const [fontSize, setFontSize] = useFontSizeSetting()
   const [fontFamily] = useFontFamilySetting()
@@ -52,9 +53,42 @@ export function Editor({
   const showFileTabs = files.length > 1
   const applyThemeVariables = useApplyThemeVariables()
 
+  const installContextViewOffsetSync = (
+    editor: Monaco.editor.IStandaloneCodeEditor
+  ) => {
+    contextViewSyncCleanupRef.current?.()
+
+    const shell = shellRef.current
+    if (!shell) {
+      contextViewSyncCleanupRef.current = null
+      return
+    }
+
+    const editorContainer = editor.getContainerDomNode()
+    const updateContextViewOffset = () => {
+      const rect = editorContainer.getBoundingClientRect()
+      shell.style.setProperty('--dm-editor-context-offset-x', `${rect.left}px`)
+      shell.style.setProperty('--dm-editor-context-offset-y', `${rect.top}px`)
+    }
+
+    updateContextViewOffset()
+
+    const layoutListener = editor.onDidLayoutChange(() => {
+      updateContextViewOffset()
+    })
+
+    window.addEventListener('resize', updateContextViewOffset)
+
+    contextViewSyncCleanupRef.current = () => {
+      layoutListener.dispose()
+      window.removeEventListener('resize', updateContextViewOffset)
+    }
+  }
+
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
     editorRef.current = editor
+    installContextViewOffsetSync(editor)
     ensureDmLanguage(monaco as typeof Monaco)
 
     if (import.meta.env.DEV) {
@@ -126,12 +160,22 @@ export function Editor({
     })
   }, [activeFileId, tabSize, fontSize, fontFamily])
 
+  useEffect(() => {
+    return () => {
+      contextViewSyncCleanupRef.current?.()
+      contextViewSyncCleanupRef.current = null
+    }
+  }, [])
+
   if (!activeFile) {
     return null
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded border border-[var(--editor-border)] bg-[var(--editor-bg)]">
+    <div
+      ref={shellRef}
+      className="dm-editor-shell flex h-full min-h-0 flex-col overflow-hidden rounded border border-[var(--editor-border)] bg-[var(--editor-bg)]"
+    >
       <div className="flex items-center justify-end border-b border-[var(--editor-border)] bg-[var(--editor-header-bg)] pl-2 pr-1 py-1">
         <span className="text-xs font-semibold text-[var(--editor-text)] mr-auto">
           DM Editor
@@ -227,20 +271,24 @@ export function Editor({
           saveViewState
           onChange={(nextValue) => onChange(activeFile.id, nextValue ?? '')}
           options={{
-            minimap: { enabled: false },
+            codeLens: false,
+            colorDecorators: true,
+            contextmenu: false,
+            detectIndentation: false,
+            glyphMargin: false,
+            insertSpaces: false,
+            lightbulb: { enabled: Monaco.editor.ShowLightbulbIconMode.Off },
             lineNumbers: 'on',
             lineNumbersMinChars: 4,
             lineDecorationsWidth: 10,
-            glyphMargin: false,
-            contextmenu: false,
+            links: false,
+            minimap: { enabled: false },
             scrollBeyondLastLine: false,
-            wordWrap: 'off',
             renderWhitespace: 'all',
-            detectIndentation: false,
-            insertSpaces: false,
             tabSize,
             fontFamily,
             fontSize,
+            wordWrap: 'off',
           }}
         />
       </div>

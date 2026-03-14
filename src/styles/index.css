@@ -15,3 +15,12 @@ body {
   color: #f8fafc;
   margin: 0;
 }
+
+/* Ensure Monaco's context view (see: Ctrl+F) is positioned correctly */
+.dm-editor-shell .context-view.monaco-component {
+  position: fixed !important;
+  transform: translate(
+    var(--dm-editor-context-offset-x, 0px),
+    var(--dm-editor-context-offset-y, 0px)
+  );
+}
