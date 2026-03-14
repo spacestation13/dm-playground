@@ -16,17 +16,20 @@ import {
 import { useLayoutManager } from './layout/useLayoutManager'
 import { embedParams } from './embed/embedParams'
 import type { LayoutRoot } from './layout/layoutTypes'
+import { useIsMobile } from './hooks/useIsMobile'
 
 function PlaygroundLayout({
   layout,
   handleUpdateBranchSizes,
   themeOverride,
   showConsolePanel = false,
+  isMobile,
 }: {
   layout: LayoutRoot
   handleUpdateBranchSizes: (branchId: number, sizes: number[]) => void
   themeOverride?: EditorThemeId | null
   showConsolePanel?: boolean
+  isMobile: boolean
 }) {
   const [storedThemeId, setThemeId] = useThemeSetting()
   const themeId = themeOverride ?? storedThemeId
@@ -36,7 +39,7 @@ function PlaygroundLayout({
       <ErrorBoundary>
         <ThemeProvider value={{ themeId, setThemeId }}>
           <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
-            <PanelTree node={layout.root} />
+            <PanelTree node={layout.root} isMobile={isMobile} />
           </LayoutProvider>
           {showConsolePanel && <ConsolePanel />}
         </ThemeProvider>
@@ -56,6 +59,7 @@ function FullApp() {
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
   const [showAdvancedEditorTabs, setShowAdvancedEditorTabs] =
     useShowAdvancedEditorTabsSetting()
+  const isMobile = useIsMobile()
 
   const handleDeleteSiteData = async () => {
     const confirmed = window.confirm(
@@ -78,9 +82,7 @@ function FullApp() {
 
   if (!layout) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-slate-400">
-        Loading layout...
-      </div>
+      <div className="flex h-full items-center justify-center text-sm text-slate-400"></div>
     )
   }
 
@@ -117,6 +119,7 @@ function FullApp() {
         layout={layout}
         handleUpdateBranchSizes={handleUpdateBranchSizes}
         showConsolePanel={showConsolePanel}
+        isMobile={isMobile}
       />
       {showSettings && (
         <div
@@ -232,12 +235,11 @@ function FullApp() {
 
 function EmbedApp() {
   const { layout, handleUpdateBranchSizes } = useLayoutManager()
+  const isMobile = useIsMobile()
 
   if (!layout) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-slate-400">
-        Loading layout...
-      </div>
+      <div className="flex h-full items-center justify-center text-sm text-slate-400"></div>
     )
   }
 
@@ -246,6 +248,7 @@ function EmbedApp() {
       <PlaygroundLayout
         layout={layout}
         handleUpdateBranchSizes={handleUpdateBranchSizes}
+        isMobile={isMobile}
         themeOverride={embedParams.theme}
       />
     </div>
