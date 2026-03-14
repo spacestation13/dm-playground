@@ -6,6 +6,7 @@ import { OutputPanel, OutputPanelHeader } from './OutputPanel'
 
 export interface PanelHeaderState {
   headerFunction?: () => void
+  stopFunction?: () => void
   isLoading?: boolean
 }
 

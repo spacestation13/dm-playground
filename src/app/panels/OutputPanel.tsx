@@ -8,27 +8,42 @@ import type { PanelHeaderProps, PanelRenderProps } from './PanelRegistry'
 export function OutputPanelHeader({
   isMobile,
   headerFunction: openByondModal,
+  stopFunction,
   isLoading = false,
 }: PanelHeaderProps) {
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <span>Output</span>
-      {isLoading && (
-        <span
-          className="h-3.5 w-3.5 animate-spin rounded-full border border-slate-400 border-t-transparent"
-          aria-label="DreamDaemon is executing"
-          title="DreamDaemon is executing"
-        />
-      )}
-      {isMobile && openByondModal && (
-        <button
-          type="button"
-          className="ml-2 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
-          onClick={openByondModal}
-        >
-          BYOND Version
-        </button>
-      )}
+    <div className="flex w-full min-w-0 items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <span>Output</span>
+        {isLoading && (
+          <span
+            className="h-3.5 w-3.5 animate-spin rounded-full border border-slate-400 border-t-transparent"
+            aria-label="DreamDaemon is executing"
+            title="DreamDaemon is executing"
+          />
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {isMobile && openByondModal && (
+          <button
+            type="button"
+            className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
+            onClick={openByondModal}
+          >
+            BYOND Version
+          </button>
+        )}
+        {stopFunction && (
+          <button
+            type="button"
+            className="rounded border border-red-700/70 bg-red-950/40 px-2 py-1 text-xs text-red-200 hover:border-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={stopFunction}
+            disabled={!isLoading}
+          >
+            Stop Execution
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -49,6 +64,10 @@ export function OutputPanel({
 
   const handleCloseByondModal = useCallback(() => {
     setShowByondModal(false)
+  }, [])
+
+  const handleStopExecution = useCallback(() => {
+    executorService.cancel()
   }, [])
 
   useEffect(() => {
@@ -80,13 +99,20 @@ export function OutputPanel({
 
     registerHeaderState({
       headerFunction: isMobile ? handleOpenByondModal : undefined,
+      stopFunction: handleStopExecution,
       isLoading: status === 'running',
     })
 
     return () => {
       registerHeaderState({})
     }
-  }, [handleOpenByondModal, isMobile, registerHeaderState, status])
+  }, [
+    handleOpenByondModal,
+    handleStopExecution,
+    isMobile,
+    registerHeaderState,
+    status,
+  ])
 
   return (
     <>
