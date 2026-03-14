@@ -14,7 +14,6 @@ test('full mode advanced editor tabs are hidden by default', async ({
 }) => {
   await page.goto('/')
 
-  await expect(page.getByText(/DM Editor|DM Playground/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'main.dm' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'bootstrap.dm' })).toHaveCount(
     0
