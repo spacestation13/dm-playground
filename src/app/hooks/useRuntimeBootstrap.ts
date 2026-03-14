@@ -56,6 +56,7 @@ export function useRuntimeBootstrap() {
     }
 
     const loadingMessages = [
+      'Loading…',
       'Reticulating splines…',
       'Processing geometry…',
       'Compiling shaders…',
@@ -63,6 +64,16 @@ export function useRuntimeBootstrap() {
       'Calculating trajectories…',
       'Loading mods…',
       'Streaming assets…',
+      'Optimizing pylon build order…',
+      'Acquiring spoons…',
+      'Consulting the manual…',
+      'Debugging debugger…',
+      'Simulating program execution…',
+      'Adding more work…',
+      'Computing optimal square packing…',
+      'Normalizing quaternions…',
+      'Lecturing late subsystems…',
+      'Ascending…',
     ]
     let intervalId: number | undefined
     let shuffled: string[] = []
