@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import useExecutorStore from '../stores/executorStore'
+import type { ExecutorState } from '../stores/executorStore'
 import { executorService } from '../../services/ExecutorService'
-import { useExecutorStatus } from '../hooks/useExecutorStatus'
 import { useFontFamilySetting } from '../settings/localSettings'
 import { ByondPanel } from './ByondPanel'
 import type { PanelHeaderProps, PanelRenderProps } from './PanelRegistry'
@@ -52,10 +53,8 @@ export function OutputPanel({
   isMobile = false,
   registerHeaderState,
 }: PanelRenderProps) {
-  const [output, setOutput] = useState<Array<{ text: string; color?: string }>>(
-    []
-  )
-  const status = useExecutorStatus()
+  const output = useExecutorStore((s: ExecutorState) => s.output)
+  const status = useExecutorStore((s: ExecutorState) => s.status)
   const outputRef = useRef<HTMLDivElement | null>(null)
   const [fontFamily] = useFontFamilySetting()
   const [showByondModal, setShowByondModal] = useState(false)
@@ -70,23 +69,6 @@ export function OutputPanel({
 
   const handleStopExecution = useCallback(() => {
     executorService.cancel()
-  }, [])
-
-  useEffect(() => {
-    const handleOutput = (event: Event) => {
-      const detail = (event as CustomEvent<{ text: string; color?: string }>)
-        .detail
-      setOutput((prev) => [...prev, detail])
-    }
-
-    const handleReset = () => setOutput([])
-
-    executorService.addEventListener('output', handleOutput)
-    executorService.addEventListener('reset', handleReset)
-    return () => {
-      executorService.removeEventListener('output', handleOutput)
-      executorService.removeEventListener('reset', handleReset)
-    }
   }, [])
 
   useEffect(() => {

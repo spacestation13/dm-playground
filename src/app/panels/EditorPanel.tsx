@@ -3,7 +3,8 @@ import { Editor } from '../components/Editor'
 import { executorService } from '../../services/ExecutorService'
 import { useThemeSetting } from '../settings/localSettings'
 import { buildShareUrl, embedParams } from '../embed/embedParams'
-import { useExecutorStatus } from '../hooks/useExecutorStatus'
+import useExecutorStore from '../stores/executorStore'
+import type { ExecutorState } from '../stores/executorStore'
 import { useRuntimeBootstrap } from '../hooks/useRuntimeBootstrap'
 import { type EditableProjectFileName } from '../editorProject/projectState'
 import { useShowAdvancedEditorTabsSetting } from '../settings/localSettings'
@@ -26,7 +27,7 @@ export function EditorPanel() {
     isByondLoading,
     isRuntimeBootstrapping,
   } = useRuntimeBootstrap()
-  const executionStatus = useExecutorStatus()
+  const executionStatus = useExecutorStore((s: ExecutorState) => s.status)
   const visibleFiles = useVisibleFiles(
     !embedParams.isEmbed && showAdvancedEditorTabs
   )
