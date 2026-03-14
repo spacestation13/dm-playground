@@ -19,6 +19,7 @@ export class ExecutorService {
   private events = new EventTarget()
   private activePids = new Set<number>()
   private status: 'running' | 'idle' = 'idle'
+  private cancelled = false
 
   addEventListener(
     type: ExecutorEventType,
@@ -35,11 +36,14 @@ export class ExecutorService {
   }
 
   reset() {
+    this.cancelled = false
     this.events.dispatchEvent(new CustomEvent('reset'))
   }
 
-  appendOutput(value: string) {
-    this.events.dispatchEvent(new CustomEvent('output', { detail: value }))
+  appendOutput(value: string, color?: string) {
+    this.events.dispatchEvent(
+      new CustomEvent('output', { detail: { text: value, color } })
+    )
   }
 
   getStatus() {
@@ -70,7 +74,7 @@ export class ExecutorService {
     }
 
     try {
-      const filename = `tmp-${Date.now()}`
+      const filename = Date.now().toString().slice(-6)
       const executionFiles = buildProjectExecutionFiles(project, filename)
       const hostDme = `/mnt/host/${executionFiles.dmeName}`
       const hostDmb = `/mnt/host/${executionFiles.dmbName}`
@@ -113,7 +117,7 @@ export class ExecutorService {
           const detail = (event as CustomEvent<ProcessExit>).detail
           const code = detail.cause === 'exit' ? detail.code : null
           if (code === 0) {
-            this.appendOutput('-- DreamDaemon --\n')
+            this.appendOutput('-- DreamDaemon --\n', 'rgb(0, 160, 90)')
             try {
               const ddProcess = await commandQueueService.runProcess(
                 `${byondPath}DreamDaemon`,
@@ -204,11 +208,12 @@ export class ExecutorService {
   }
 
   cancel() {
+    this.cancelled = true
     for (const pid of this.activePids) {
       commandQueueService.signal(pid, 15)
     }
     this.activePids.clear()
-    this.appendOutput('Execution cancelled.\n')
+    this.appendOutput('// Execution cancelled\n', 'rgb(204, 0, 0)')
     this.setStatus('idle')
   }
 
@@ -251,6 +256,7 @@ export class ExecutorService {
 
     if (opts.pipeOutput !== false) {
       process.addEventListener('stdout', (event) => {
+        if (this.cancelled) return
         const detail = (event as CustomEvent<string>).detail
         const output = dropInitialDaemonBannerLines(detail)
         if (output) {
@@ -258,6 +264,7 @@ export class ExecutorService {
         }
       })
       process.addEventListener('stderr', (event) => {
+        if (this.cancelled) return
         const detail = (event as CustomEvent<string>).detail
         const output = dropInitialDaemonBannerLines(detail)
         if (output) {

@@ -52,9 +52,11 @@ export function OutputPanel({
   isMobile = false,
   registerHeaderState,
 }: PanelRenderProps) {
-  const [output, setOutput] = useState<string>('')
+  const [output, setOutput] = useState<Array<{ text: string; color?: string }>>(
+    []
+  )
   const status = useExecutorStatus()
-  const outputRef = useRef<HTMLPreElement | null>(null)
+  const outputRef = useRef<HTMLDivElement | null>(null)
   const [fontFamily] = useFontFamilySetting()
   const [showByondModal, setShowByondModal] = useState(false)
 
@@ -72,11 +74,12 @@ export function OutputPanel({
 
   useEffect(() => {
     const handleOutput = (event: Event) => {
-      const detail = (event as CustomEvent<string>).detail
-      setOutput((prev) => `${prev}${detail}`)
+      const detail = (event as CustomEvent<{ text: string; color?: string }>)
+        .detail
+      setOutput((prev) => [...prev, detail])
     }
 
-    const handleReset = () => setOutput('')
+    const handleReset = () => setOutput([])
 
     executorService.addEventListener('output', handleOutput)
     executorService.addEventListener('reset', handleReset)
@@ -117,13 +120,17 @@ export function OutputPanel({
   return (
     <>
       <div className="h-full relative">
-        <pre
+        <div
           ref={outputRef}
           className="h-full overflow-auto whitespace-pre-wrap rounded bg-slate-950/60 p-3 text-xs text-slate-200"
           style={{ fontFamily }}
         >
-          {output}
-        </pre>
+          {output.map((item, i) => (
+            <span key={i} style={item.color ? { color: item.color } : {}}>
+              {item.text}
+            </span>
+          ))}
+        </div>
       </div>
       {isMobile && showByondModal && (
         <div
