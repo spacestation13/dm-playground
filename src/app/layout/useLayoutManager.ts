@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
-import { embedParams } from '../embed/embedParams'
+import { useCallback, useEffect } from 'react'
 import {
   PanelId,
-  embedLayout,
   type LayoutBranch,
   type LayoutLeaf,
   type LayoutRoot,
 } from './layoutTypes'
-import { swapSplitDirections, updateBranchSizes } from './layoutUtils'
-import { loadLayout, saveLayout } from './layoutStorage'
-import { addPanel, removePanel } from './layoutTreeUtils'
+import { swapSplitDirections } from './layoutUtils'
+import { useIsMobile } from '../hooks/useIsMobile'
+import useLayoutStore from '../stores/layoutStore'
 
 function filterByondPanel(
   node: LayoutBranch | LayoutLeaf
@@ -27,36 +25,15 @@ function filterByondPanel(
 }
 
 export function useLayoutManager() {
-  const [desktopLayout, setDesktopLayout] = useState<LayoutRoot | null>(() =>
-    embedParams.isEmbed ? embedLayout : null
-  )
-  const [isMobile, setIsMobile] = useState(false)
+  const desktopLayout = useLayoutStore((s) => s.desktopLayout)
+  const loadInitialLayout = useLayoutStore((s) => s.loadInitialLayout)
+  const updateBranchSizes = useLayoutStore((s) => s.updateBranchSizes)
+  const toggleConsolePanel = useLayoutStore((s) => s.toggleConsolePanel)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
-    const checkMobile = () =>
-      setIsMobile(window.innerHeight > window.innerWidth)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  useEffect(() => {
-    if (embedParams.isEmbed) {
-      return
-    }
-
-    let isMounted = true
-
-    void loadLayout().then((loadedLayout) => {
-      if (isMounted) {
-        setDesktopLayout(loadedLayout)
-      }
-    })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
+    void loadInitialLayout()
+  }, [loadInitialLayout])
 
   let layout: LayoutRoot | null = null
   if (desktopLayout) {
@@ -72,42 +49,19 @@ export function useLayoutManager() {
 
   const handleUpdateBranchSizes = useCallback(
     (branchId: number, sizes: number[]) => {
-      setDesktopLayout((prev) => {
-        if (!prev) {
-          return prev
-        }
-
-        const next = {
-          ...prev,
-          root: updateBranchSizes(prev.root, branchId, sizes),
-        }
-
-        if (!embedParams.isEmbed) {
-          void saveLayout(next)
-        }
-        return next
-      })
+      void updateBranchSizes(branchId, sizes)
     },
-    []
+    [updateBranchSizes]
   )
 
-  const toggleConsolePanel = useCallback((show: boolean) => {
-    setDesktopLayout((prev) => {
-      if (!prev) return prev
-      const newRoot = show
-        ? addPanel(prev.root as LayoutBranch, PanelId.Console, 2, 30)
-        : removePanel(prev.root as LayoutBranch, PanelId.Console)
-      const nextLayout = { ...prev, root: newRoot }
-      if (!embedParams.isEmbed) {
-        void saveLayout(nextLayout)
-      }
-      return nextLayout
-    })
-  }, [])
+  const handleToggleConsolePanel = useCallback(
+    (show: boolean) => void toggleConsolePanel(show),
+    [toggleConsolePanel]
+  )
 
   return {
     layout,
     handleUpdateBranchSizes,
-    toggleConsolePanel,
+    toggleConsolePanel: handleToggleConsolePanel,
   }
 }
