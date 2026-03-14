@@ -64,7 +64,7 @@ export function useRuntimeBootstrap() {
       'Calculating trajectories…',
       'Loading mods…',
       'Streaming assets…',
-      'Optimizing pylon build order…',
+      'Optimizing build order…',
       'Acquiring spoons…',
       'Consulting the manual…',
       'Debugging debugger…',
@@ -90,7 +90,7 @@ export function useRuntimeBootstrap() {
       setIsRuntimeBootstrapping(true)
 
       showNextMessage()
-      intervalId = window.setInterval(showNextMessage, 1_000)
+      intervalId = window.setInterval(showNextMessage, 1_300)
 
       try {
         await ensureRuntime()

@@ -24,7 +24,7 @@ export function ByondTitle() {
 
   return (
     <div className="flex flex-1 items-center gap-2">
-      <span>BYOND</span>
+      BYOND Versions
       {isLoading && (
         <span
           className="h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-transparent"
@@ -250,7 +250,7 @@ export function ByondPanel() {
   return (
     <div className="flex h-full flex-col gap-3 text-sm text-slate-300">
       <div className="flex items-center gap-2">
-        <label className="text-xs text-slate-400">BYOND Version:</label>
+        <label className="text-xs text-slate-400">Version:</label>
         <input
           type="number"
           min={0}
