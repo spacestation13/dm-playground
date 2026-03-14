@@ -256,7 +256,7 @@ export function ByondPanel() {
           min={0}
           value={customMajor}
           onChange={(e) => setCustomMajor(e.target.value)}
-          className="w-20 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-slate-200"
+          className="w-16 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-slate-200"
           placeholder="major"
         />
         <input
@@ -264,7 +264,7 @@ export function ByondPanel() {
           min={0}
           value={customMinor}
           onChange={(e) => setCustomMinor(e.target.value)}
-          className="w-24 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-slate-200"
+          className="w-18 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-slate-200"
           placeholder="minor"
         />
         <button
