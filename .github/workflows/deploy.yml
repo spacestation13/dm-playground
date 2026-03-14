@@ -31,17 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
       - name: Install Playwright browsers
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
         run: npx playwright install --with-deps chromium
 
       - name: Lint
