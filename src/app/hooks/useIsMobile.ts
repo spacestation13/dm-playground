@@ -1,16 +1,5 @@
-import { useEffect, useState } from 'react'
+import useUIStore from '../stores/uiStore'
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(
-    window.innerHeight > window.innerWidth
-  )
-
-  useEffect(() => {
-    const checkMobile = () =>
-      setIsMobile(window.innerHeight > window.innerWidth)
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  return isMobile
+  return useUIStore((s) => s.isMobile)
 }

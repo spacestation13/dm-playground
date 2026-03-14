@@ -1,16 +1,17 @@
 import { useCallback, useState } from 'react'
 import { PanelId } from './layoutTypes'
 import { PanelRegistry, type PanelHeaderState } from '../panels/PanelRegistry'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface PanelProps {
   id: PanelId
   showTitlebar?: boolean
-  isMobile: boolean
 }
 
-export function Panel({ id, showTitlebar, isMobile }: PanelProps) {
+export function Panel({ id, showTitlebar }: PanelProps) {
   const panel = PanelRegistry[id]
   const [headerState, setHeaderState] = useState<PanelHeaderState>({})
+  const isMobile = useIsMobile()
 
   const registerHeaderState = useCallback((state: PanelHeaderState) => {
     setHeaderState(state)
@@ -28,10 +29,7 @@ export function Panel({ id, showTitlebar, isMobile }: PanelProps) {
         </header>
       ) : null}
       <div className="flex-1 overflow-auto p-2">
-        {panel.render({
-          isMobile,
-          registerHeaderState,
-        })}
+        {panel.render({ registerHeaderState, isMobile })}
       </div>
     </section>
   )

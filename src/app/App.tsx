@@ -4,7 +4,6 @@ import { PanelTree } from './layout/PanelTree'
 import { ConsolePanel } from './panels/ConsolePanel'
 import { LayoutProvider } from './layout/LayoutProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { ThemeProvider } from './theme/ThemeContext'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 import {
   useThemeSetting,
@@ -16,33 +15,23 @@ import {
 import { useLayoutManager } from './layout/useLayoutManager'
 import { embedParams } from './embed/embedParams'
 import type { LayoutRoot } from './layout/layoutTypes'
-import { useIsMobile } from './hooks/useIsMobile'
 
 function PlaygroundLayout({
   layout,
   handleUpdateBranchSizes,
-  themeOverride,
   showConsolePanel = false,
-  isMobile,
 }: {
   layout: LayoutRoot
   handleUpdateBranchSizes: (branchId: number, sizes: number[]) => void
-  themeOverride?: EditorThemeId | null
   showConsolePanel?: boolean
-  isMobile: boolean
 }) {
-  const [storedThemeId, setThemeId] = useThemeSetting()
-  const themeId = themeOverride ?? storedThemeId
-
   return (
     <div className="flex-1 min-h-0">
       <ErrorBoundary>
-        <ThemeProvider value={{ themeId, setThemeId }}>
-          <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
-            <PanelTree node={layout.root} isMobile={isMobile} />
-          </LayoutProvider>
-          {showConsolePanel && <ConsolePanel />}
-        </ThemeProvider>
+        <LayoutProvider updateBranchSizes={handleUpdateBranchSizes}>
+          <PanelTree node={layout.root} />
+        </LayoutProvider>
+        {showConsolePanel && <ConsolePanel />}
       </ErrorBoundary>
     </div>
   )
@@ -59,7 +48,6 @@ function FullApp() {
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
   const [showAdvancedEditorTabs, setShowAdvancedEditorTabs] =
     useShowAdvancedEditorTabsSetting()
-  const isMobile = useIsMobile()
 
   const handleDeleteSiteData = async () => {
     const confirmed = window.confirm(
@@ -119,7 +107,6 @@ function FullApp() {
         layout={layout}
         handleUpdateBranchSizes={handleUpdateBranchSizes}
         showConsolePanel={showConsolePanel}
-        isMobile={isMobile}
       />
       {showSettings && (
         <div
@@ -235,7 +222,6 @@ function FullApp() {
 
 function EmbedApp() {
   const { layout, handleUpdateBranchSizes } = useLayoutManager()
-  const isMobile = useIsMobile()
 
   if (!layout) {
     return (
@@ -248,8 +234,6 @@ function EmbedApp() {
       <PlaygroundLayout
         layout={layout}
         handleUpdateBranchSizes={handleUpdateBranchSizes}
-        isMobile={isMobile}
-        themeOverride={embedParams.theme}
       />
     </div>
   )

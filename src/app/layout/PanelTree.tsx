@@ -9,33 +9,25 @@ import {
 import type { LayoutBranch, LayoutLeaf } from './layoutTypes'
 import { useLayoutContext } from './useLayoutContext'
 import { PanelId } from './layoutTypes'
+import { useIsMobile } from '../hooks/useIsMobile'
 
-interface PanelTreeProps {
-  node: LayoutBranch | LayoutLeaf
-  isMobile: boolean
-}
+export function PanelTree({ node }: { node: LayoutBranch | LayoutLeaf }) {
+  const isMobile = useIsMobile()
 
-export function PanelTree({ node, isMobile }: PanelTreeProps) {
   if (node.type === 'leaf') {
     if (isMobile && node.id === PanelId.Byond) return null
-    return (
-      <Panel
-        id={node.id}
-        showTitlebar={node.showTitlebar}
-        isMobile={isMobile}
-      />
-    )
+    return <Panel id={node.id} showTitlebar={node.showTitlebar} />
   }
 
-  return <PanelTreeBranch node={node} isMobile={isMobile} />
+  return <PanelTreeBranch node={node} />
 }
 
 interface PanelTreeBranchProps {
   node: LayoutBranch
-  isMobile: boolean
 }
 
-function PanelTreeBranch({ node, isMobile }: PanelTreeBranchProps) {
+function PanelTreeBranch({ node }: PanelTreeBranchProps) {
+  const isMobile = useIsMobile()
   const { updateBranchSizes } = useLayoutContext()
 
   const direction = node.split
@@ -92,7 +84,7 @@ function PanelTreeBranch({ node, isMobile }: PanelTreeBranchProps) {
             minSize={10}
             className="min-h-0 min-w-0"
           >
-            <PanelTree node={child} isMobile={isMobile} />
+            <PanelTree node={child} />
           </ResizablePanel>
           {index < filteredChildren.length - 1 && (
             <Separator

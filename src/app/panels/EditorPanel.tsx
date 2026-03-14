@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Editor } from '../components/Editor'
 import { executorService } from '../../services/ExecutorService'
-import { useTheme } from '../theme/useTheme'
+import { useThemeSetting } from '../settings/localSettings'
 import { buildShareUrl, embedParams } from '../embed/embedParams'
 import { useExecutorStatus } from '../hooks/useExecutorStatus'
 import { useRuntimeBootstrap } from '../hooks/useRuntimeBootstrap'
@@ -20,7 +20,7 @@ export function EditorPanel() {
   )
   const [activeFile, setActiveFile] =
     useState<EditableProjectFileName>(MAIN_FILE_NAME)
-  const { themeId } = useTheme()
+  const [themeId] = useThemeSetting()
   const [showAdvancedEditorTabs] = useShowAdvancedEditorTabsSetting()
   const hasAutoran = useRef(false)
   const {
