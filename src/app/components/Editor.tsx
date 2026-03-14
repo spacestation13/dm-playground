@@ -1,5 +1,5 @@
 import MonacoEditor, { type OnMount } from '@monaco-editor/react'
-import * as Monaco from 'monaco-editor'
+import type * as Monaco from 'monaco-editor'
 import { useEffect, useMemo, useRef } from 'react'
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
@@ -90,6 +90,21 @@ export function Editor({
     editorRef.current = editor
     installContextViewOffsetSync(editor)
     ensureDmLanguage(monaco as typeof Monaco)
+
+    // Disable built-in language services for JS, CSS, HTML, & JSON
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+    })
+    monaco.languages.css.cssDefaults.setOptions({
+      validate: false,
+    })
+    monaco.languages.html.htmlDefaults.setOptions({
+      validate: false,
+    })
+    monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+      validate: false,
+    })
 
     if (import.meta.env.DEV) {
       installHighlightingTestBridge(monaco as typeof Monaco)
@@ -277,7 +292,7 @@ export function Editor({
             detectIndentation: false,
             glyphMargin: false,
             insertSpaces: false,
-            lightbulb: { enabled: Monaco.editor.ShowLightbulbIconMode.Off },
+            // lightbulb: { enabled: Monaco.editor.ShowLightbulbIconMode.Off },
             lineNumbers: 'on',
             lineNumbersMinChars: 4,
             lineDecorationsWidth: 10,
