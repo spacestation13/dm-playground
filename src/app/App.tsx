@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import packageJson from '../../package.json'
 import { PanelTree } from './layout/PanelTree'
 import { ConsolePanel } from './panels/ConsolePanel'
 import { LayoutProvider } from './layout/LayoutProvider'
@@ -201,7 +200,7 @@ function FullApp() {
                   Delete all site data
                 </button>
               </div>
-              <div>Version {packageJson.version}</div>
+              <div>Version {__APP_VERSION__}</div>
               <div>
                 <a
                   className="text-sky-300 hover:text-sky-200"
