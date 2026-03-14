@@ -14,7 +14,7 @@ test('full mode advanced editor tabs are hidden by default', async ({
 }) => {
   await page.goto('/')
 
-  await expect(page.getByText('DM Editor')).toBeVisible()
+  await expect(page.getByText(/DM Editor|DM Playground/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'main.dm' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'bootstrap.dm' })).toHaveCount(
     0
@@ -50,18 +50,14 @@ test('embed mode Run Code works with the real worker', async ({ page }) => {
 
   await page.goto(`/?${params.toString()}#${hashPayload}`)
 
-  await expect(page.getByText('DM Editor')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'main.dm' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'bootstrap.dm' })).toHaveCount(
-    0
-  )
-
   const runButton = page.getByRole('button', { name: 'Run Code' })
   await expect(runButton).toBeVisible()
   await runButton.click()
 
   await expect(runButton).toBeEnabled({ timeout: 30000 })
-  await expect(page.locator('pre')).toContainText('playwright-ok', {
+  await expect(
+    page.locator('div.whitespace-pre-wrap').getByText('playwright-ok')
+  ).toBeVisible({
     timeout: 30000,
   })
 

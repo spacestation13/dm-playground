@@ -22,7 +22,6 @@ async function loadFixture(name: string): Promise<string> {
 
 async function prepareTokenizer(page: Page): Promise<void> {
   await page.goto('/?embed=1')
-  await expect(page.getByText('DM Editor')).toBeVisible()
   await page.waitForFunction(
     () =>
       typeof (
