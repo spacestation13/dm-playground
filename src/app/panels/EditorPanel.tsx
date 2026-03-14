@@ -1,25 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Editor } from '../components/Editor'
 import { executorService } from '../../services/ExecutorService'
 import { useThemeSetting } from '../settings/localSettings'
 import { buildShareUrl, embedParams } from '../embed/embedParams'
 import { useExecutorStatus } from '../hooks/useExecutorStatus'
 import { useRuntimeBootstrap } from '../hooks/useRuntimeBootstrap'
-import {
-  MAIN_FILE_NAME,
-  createDefaultProject,
-  getVisibleProjectFiles,
-  updateProjectFile,
-  type EditableProjectFileName,
-} from '../editorProject/projectState'
+import { type EditableProjectFileName } from '../editorProject/projectState'
 import { useShowAdvancedEditorTabsSetting } from '../settings/localSettings'
+import useProjectStore, {
+  useResolvedActiveFile,
+  useVisibleFiles,
+} from '../stores/projectStore'
 
 export function EditorPanel() {
-  const [project, setProject] = useState(
-    () => embedParams.project ?? createDefaultProject()
-  )
-  const [activeFile, setActiveFile] =
-    useState<EditableProjectFileName>(MAIN_FILE_NAME)
+  const project = useProjectStore((s) => s.project)
+  const setActiveFile = useProjectStore((s) => s.setActiveFile)
+  const updateFile = useProjectStore((s) => s.updateFile)
   const [themeId] = useThemeSetting()
   const [showAdvancedEditorTabs] = useShowAdvancedEditorTabsSetting()
   const hasAutoran = useRef(false)
@@ -31,15 +27,12 @@ export function EditorPanel() {
     isRuntimeBootstrapping,
   } = useRuntimeBootstrap()
   const executionStatus = useExecutorStatus()
-  const visibleFiles = getVisibleProjectFiles(
-    project,
+  const visibleFiles = useVisibleFiles(
     !embedParams.isEmbed && showAdvancedEditorTabs
   )
-  const resolvedActiveFile = visibleFiles.some(
-    (file) => file.name === activeFile
+  const resolvedActiveFile = useResolvedActiveFile(
+    !embedParams.isEmbed && showAdvancedEditorTabs
   )
-    ? activeFile
-    : MAIN_FILE_NAME
 
   useEffect(() => {
     if (embedParams.isEmbed && embedParams.autorun) {
@@ -96,9 +89,7 @@ export function EditorPanel() {
         activeFileId={resolvedActiveFile}
         onActiveFileChange={setActiveFile}
         onChange={(fileName, value) => {
-          setProject((currentProject) =>
-            updateProjectFile(currentProject, fileName, value)
-          )
+          updateFile(fileName as EditableProjectFileName, value)
         }}
         onRun={canTriggerRun ? handleRun : undefined}
         runDisabled={
