@@ -37,7 +37,7 @@ export function OutputPanel() {
   }, [output])
 
   return (
-    <div className="h-full">
+    <div className="h-full relative">
       <pre
         ref={outputRef}
         className="h-full overflow-auto whitespace-pre-wrap rounded bg-slate-950/60 p-3 text-xs text-slate-200"
@@ -47,7 +47,7 @@ export function OutputPanel() {
           (status === 'running' ? (
             <span className="inline-flex items-center gap-2 text-slate-400">
               <span className="h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-transparent" />
-              Waiting for output...
+              Waiting for output…
             </span>
           ) : null)}
       </pre>
