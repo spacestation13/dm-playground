@@ -7,11 +7,7 @@ import { monaco } from '@bithero/monaco-editor-vite-plugin'
 export default defineConfig({
   base: './',
   plugins: [
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
-      },
-    }),
+    react(),
     tailwindcss(),
     monaco({
       languages: [],
