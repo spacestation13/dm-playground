@@ -88,10 +88,10 @@ export function useApplyThemeVariables() {
 
     root.setProperty('--editor-button-bg', '#064e3b')
     root.setProperty('--editor-button-border', '#049060')
-    root.setProperty('--editor-button-text', '#b1cac5')
+    root.setProperty('--editor-button-text', '#d1eae5')
     root.setProperty('--editor-button-bg-hover', '#065f46')
     root.setProperty('--editor-button-border-hover', '#30d090')
-    root.setProperty('--editor-button-text-hover', '#b1cac5')
+    root.setProperty('--editor-button-text-hover', '#d1eae5')
   }
 
   return applyThemeVariables
