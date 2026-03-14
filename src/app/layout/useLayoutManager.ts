@@ -4,11 +4,27 @@ import {
   PanelId,
   embedLayout,
   type LayoutBranch,
+  type LayoutLeaf,
   type LayoutRoot,
 } from './layoutTypes'
 import { swapSplitDirections, updateBranchSizes } from './layoutUtils'
 import { loadLayout, saveLayout } from './layoutStorage'
 import { addPanel, removePanel } from './layoutTreeUtils'
+
+function filterByondPanel(
+  node: LayoutBranch | LayoutLeaf
+): LayoutBranch | LayoutLeaf | null {
+  if (node.type === 'leaf') {
+    if (node.id === PanelId.Byond) return null
+    return node
+  }
+  return {
+    ...node,
+    children: node.children.map(filterByondPanel).filter(Boolean) as Array<
+      LayoutBranch | LayoutLeaf
+    >,
+  }
+}
 
 export function useLayoutManager() {
   const [desktopLayout, setDesktopLayout] = useState<LayoutRoot | null>(() =>
@@ -42,14 +58,17 @@ export function useLayoutManager() {
     }
   }, [])
 
-  const layout = desktopLayout
-    ? {
-        ...desktopLayout,
-        root: isMobile
-          ? swapSplitDirections(desktopLayout.root)
-          : desktopLayout.root,
-      }
-    : null
+  let layout: LayoutRoot | null = null
+  if (desktopLayout) {
+    const swapped = isMobile
+      ? swapSplitDirections(desktopLayout.root)
+      : desktopLayout.root
+    const filtered = isMobile && swapped ? filterByondPanel(swapped) : swapped
+    layout = {
+      ...desktopLayout,
+      root: filtered as LayoutBranch,
+    }
+  }
 
   const handleUpdateBranchSizes = useCallback(
     (branchId: number, sizes: number[]) => {

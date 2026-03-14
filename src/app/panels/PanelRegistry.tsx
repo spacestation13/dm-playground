@@ -4,13 +4,20 @@ import { ByondPanel, ByondTitle } from './ByondPanel'
 import { LazyEditorPanel } from './LazyEditorPanel'
 import { OutputPanel } from './OutputPanel'
 
+export interface PanelRenderProps {
+  isMobile?: boolean
+  registerHeaderAction?: (action?: () => void) => void
+}
+
+export interface PanelHeaderProps {
+  isMobile: boolean
+  headerFunction?: () => void
+}
+
 interface PanelDescriptor {
   title: ReactNode
-  render: (props?: { isMobile?: boolean }) => ReactNode
-  header?: (props: {
-    isMobile: boolean
-    customFunction?: () => void
-  }) => ReactNode
+  render: (props?: PanelRenderProps) => ReactNode
+  header?: (props: PanelHeaderProps) => ReactNode
 }
 
 export const PanelRegistry: Record<PanelId, PanelDescriptor> = {
@@ -24,15 +31,20 @@ export const PanelRegistry: Record<PanelId, PanelDescriptor> = {
   },
   [PanelId.Output]: {
     title: 'Output',
-    render: () => <OutputPanel />,
-    header: ({ isMobile, customFunction: openByondModal }) => (
+    render: ({ isMobile, registerHeaderAction } = {}) => (
+      <OutputPanel
+        isMobile={!!isMobile}
+        registerHeaderAction={registerHeaderAction}
+      />
+    ),
+    header: ({ isMobile, headerFunction }) => (
       <>
         Output
-        {isMobile && openByondModal && (
+        {isMobile && headerFunction && (
           <button
             type="button"
             className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:border-slate-500 ml-2"
-            onClick={openByondModal}
+            onClick={headerFunction}
           >
             BYOND Version
           </button>

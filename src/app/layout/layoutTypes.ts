@@ -41,24 +41,24 @@ export const defaultLayout: LayoutRoot = {
       {
         type: 'leaf',
         id: PanelId.Editor,
-        size: 70,
+        size: 65,
         showTitlebar: false,
       },
       {
         type: 'branch',
         id: 1,
         split: 'vertical',
-        size: 30,
+        size: 35,
         children: [
           {
             type: 'leaf',
             id: PanelId.Byond,
-            size: 35,
+            size: 30,
           },
           {
             type: 'leaf',
             id: PanelId.Output,
-            size: 65,
+            size: 70,
           },
         ],
       },
