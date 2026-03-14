@@ -1,6 +1,9 @@
 import MonacoEditor, { type OnMount } from '@monaco-editor/react'
 import type * as Monaco from 'monaco-editor'
 import { useEffect, useMemo, useRef } from 'react'
+import type { MouseEvent } from 'react'
+import { embedParams, buildShareUrl } from '../embed/embedParams'
+import { createDefaultProject } from '../editorProject/projectState'
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
 import { installHighlightingTestBridge } from '../monaco/highlightingTestBridge'
@@ -52,6 +55,21 @@ export function Editor({
   )
   const showFileTabs = files.length > 1
   const applyThemeVariables = useApplyThemeVariables()
+
+  const handleOpenPlayground = async (ev: MouseEvent<HTMLAnchorElement>) => {
+    ev.preventDefault()
+    const main = files.find((f) => f.id === 'main')?.value ?? activeFile.value
+    const bootstrap =
+      files.find((f) => f.id === 'bootstrap')?.value ??
+      createDefaultProject().files.bootstrap
+
+    try {
+      const url = await buildShareUrl({ files: { main, bootstrap } })
+      window.open(url, '_blank', 'noopener')
+    } catch {
+      window.open('https://play.dm-lang.org', '_blank', 'noopener')
+    }
+  }
 
   const installContextViewOffsetSync = (
     editor: Monaco.editor.IStandaloneCodeEditor
@@ -192,9 +210,19 @@ export function Editor({
       className="dm-editor-shell flex h-full min-h-0 flex-col overflow-hidden rounded border border-[var(--editor-border)] bg-[var(--editor-bg)]"
     >
       <div className="flex items-center justify-end border-b border-[var(--editor-border)] bg-[var(--editor-header-bg)] pl-2 pr-1 py-1">
-        <span className="text-xs font-semibold text-[var(--editor-text)] mr-auto">
-          DM Editor
-        </span>
+        {embedParams.isEmbed ? (
+          <a
+            href="#"
+            onClick={handleOpenPlayground}
+            className="text-xs font-semibold text-[var(--editor-text)] mr-auto underline"
+          >
+            DM Playground
+          </a>
+        ) : (
+          <span className="text-xs font-semibold text-[var(--editor-text)] mr-auto">
+            DM Editor
+          </span>
+        )}
         <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-[var(--editor-text)]">
           <span>Font size</span>
           <input
