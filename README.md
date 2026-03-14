@@ -34,11 +34,11 @@ npm run test   # Run playwright tests
 
 ## Embedding the playground
 
-Use the playground in an iframe with `?embed=1` to show an editor/output-only layout.
+Use the playground in an iframe with `?embed` to show an editor/output-only layout.
 
 ```html
 <iframe
-  src="https://play.dm-lang.org/?embed=1#<msgpack-gzip-b64>"
+  src="https://play.dm-lang.org/?embed#<msgpack-gzip-b64>"
   width="800"
   height="500"
 ></iframe>
@@ -46,8 +46,8 @@ Use the playground in an iframe with `?embed=1` to show an editor/output-only la
 
 Supported URL parameters:
 
-- `embed=1`: enables the embed layout and hides playground chrome.
-- `autorun=1`: runs the snippet automatically after the runtime is ready.
+- `embed`: enables the minimized embedded layout.
+- `autorun`: runs the snippet automatically after the runtime is ready.
 - `theme=<themeId>`: sets the editor theme for the embed. Example values: `vs-light`, `one-dark`, `dracula`.
 - `code=<base64>`: seeds the main editor with base64 text.
 - `#<msgpack-gzip-b64>`: seeds the editor with a [compressed share string](#share-payload-helpers). Format: `{v: 1, f: {main: string}}`.

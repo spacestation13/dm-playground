@@ -63,8 +63,8 @@ const resolveTheme = (): EditorThemeId | null => {
 }
 
 export const embedParams = {
-  isEmbed: searchParams.get('embed') === '1',
-  autorun: searchParams.get('autorun') === '1',
+  isEmbed: searchParams.has('embed'),
+  autorun: searchParams.has('autorun'),
   project: await resolveProject(),
   theme: resolveTheme(),
 }
