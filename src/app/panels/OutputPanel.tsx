@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { executorService } from '../../services/ExecutorService'
+import { useExecutorStatus } from '../hooks/useExecutorStatus'
 import { useFontFamilySetting } from '../settings/localSettings'
 import { ByondPanel } from './ByondPanel'
 import type { PanelHeaderProps, PanelRenderProps } from './PanelRegistry'
@@ -7,29 +8,37 @@ import type { PanelHeaderProps, PanelRenderProps } from './PanelRegistry'
 export function OutputPanelHeader({
   isMobile,
   headerFunction: openByondModal,
+  isLoading = false,
 }: PanelHeaderProps) {
   return (
-    <>
-      Output
+    <div className="flex min-w-0 items-center gap-2">
+      <span>Output</span>
+      {isLoading && (
+        <span
+          className="h-3.5 w-3.5 animate-spin rounded-full border border-slate-400 border-t-transparent"
+          aria-label="DreamDaemon is executing"
+          title="DreamDaemon is executing"
+        />
+      )}
       {isMobile && openByondModal && (
         <button
           type="button"
-          className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:border-slate-500 ml-2"
+          className="ml-2 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
           onClick={openByondModal}
         >
           BYOND Version
         </button>
       )}
-    </>
+    </div>
   )
 }
 
 export function OutputPanel({
   isMobile = false,
-  registerHeaderAction,
+  registerHeaderState,
 }: PanelRenderProps) {
   const [output, setOutput] = useState<string>('')
-  const [status, setStatus] = useState<'running' | 'idle'>('idle')
+  const status = useExecutorStatus()
   const outputRef = useRef<HTMLPreElement | null>(null)
   const [fontFamily] = useFontFamilySetting()
   const [showByondModal, setShowByondModal] = useState(false)
@@ -49,18 +58,12 @@ export function OutputPanel({
     }
 
     const handleReset = () => setOutput('')
-    const handleStatus = (event: Event) => {
-      const detail = (event as CustomEvent<'running' | 'idle'>).detail
-      setStatus(detail)
-    }
 
     executorService.addEventListener('output', handleOutput)
     executorService.addEventListener('reset', handleReset)
-    executorService.addEventListener('status', handleStatus)
     return () => {
       executorService.removeEventListener('output', handleOutput)
       executorService.removeEventListener('reset', handleReset)
-      executorService.removeEventListener('status', handleStatus)
     }
   }, [])
 
@@ -71,16 +74,19 @@ export function OutputPanel({
   }, [output])
 
   useEffect(() => {
-    if (!registerHeaderAction) {
+    if (!registerHeaderState) {
       return
     }
 
-    registerHeaderAction(isMobile ? handleOpenByondModal : undefined)
+    registerHeaderState({
+      headerFunction: isMobile ? handleOpenByondModal : undefined,
+      isLoading: status === 'running',
+    })
 
     return () => {
-      registerHeaderAction(undefined)
+      registerHeaderState({})
     }
-  }, [handleOpenByondModal, isMobile, registerHeaderAction])
+  }, [handleOpenByondModal, isMobile, registerHeaderState, status])
 
   return (
     <>
@@ -90,13 +96,7 @@ export function OutputPanel({
           className="h-full overflow-auto whitespace-pre-wrap rounded bg-slate-950/60 p-3 text-xs text-slate-200"
           style={{ fontFamily }}
         >
-          {output ||
-            (status === 'running' ? (
-              <span className="inline-flex items-center gap-2 text-slate-400">
-                <span className="h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-transparent" />
-                Waiting for output…
-              </span>
-            ) : null)}
+          {output}
         </pre>
       </div>
       {isMobile && showByondModal && (

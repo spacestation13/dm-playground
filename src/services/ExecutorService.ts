@@ -18,6 +18,7 @@ const DREAM_DAEMON_STARTUP_BANNER_LINES = 3
 export class ExecutorService {
   private events = new EventTarget()
   private activePids = new Set<number>()
+  private status: 'running' | 'idle' = 'idle'
 
   addEventListener(
     type: ExecutorEventType,
@@ -41,13 +42,17 @@ export class ExecutorService {
     this.events.dispatchEvent(new CustomEvent('output', { detail: value }))
   }
 
+  getStatus() {
+    return this.status
+  }
+
   setStatus(value: 'running' | 'idle') {
+    this.status = value
     this.events.dispatchEvent(new CustomEvent('status', { detail: value }))
   }
 
   async executeImmediate(project: PlaygroundProject) {
     this.reset()
-    this.setStatus('running')
 
     try {
       await ensureRuntime()
@@ -93,6 +98,8 @@ export class ExecutorService {
       const streamCompilerOutput =
         useLocalSettings.getState().streamCompilerOutput
 
+      this.setStatus('running')
+
       const dmProcess = await commandQueueService.runProcess(
         `${byondPath}DreamMaker`,
         hostDme,
@@ -100,7 +107,7 @@ export class ExecutorService {
       )
 
       if (streamCompilerOutput) {
-        this.attachProcess(dmProcess)
+        this.attachProcess(dmProcess, { suppressIdleOnExit: true })
 
         dmProcess.addEventListener('exit', async (event) => {
           const detail = (event as CustomEvent<ProcessExit>).detail
@@ -132,11 +139,15 @@ export class ExecutorService {
             } catch (error) {
               this.appendOutput(`Cleanup failed: ${String(error)}\n`)
             }
+            this.setStatus('idle')
           }
         })
       } else {
         // Buffer compiler output: suppress piping and only show on failure
-        this.attachProcess(dmProcess, { pipeOutput: false })
+        this.attachProcess(dmProcess, {
+          pipeOutput: false,
+          suppressIdleOnExit: true,
+        })
 
         const dmOutputBuf: string[] = []
         dmProcess.addEventListener('stdout', (event) => {
@@ -182,6 +193,7 @@ export class ExecutorService {
             } catch (error) {
               this.appendOutput(`Cleanup failed: ${String(error)}\n`)
             }
+            this.setStatus('idle')
           }
         })
       }
@@ -202,7 +214,11 @@ export class ExecutorService {
 
   private attachProcess(
     process: Process,
-    opts: { pipeOutput?: boolean; suppressDaemonBanner?: boolean } = {
+    opts: {
+      pipeOutput?: boolean
+      suppressDaemonBanner?: boolean
+      suppressIdleOnExit?: boolean
+    } = {
       pipeOutput: true,
     }
   ) {
@@ -251,7 +267,7 @@ export class ExecutorService {
     }
     process.addEventListener('exit', () => {
       this.activePids.delete(process.pid)
-      if (this.activePids.size === 0) {
+      if (this.activePids.size === 0 && !opts.suppressIdleOnExit) {
         this.setStatus('idle')
       }
     })

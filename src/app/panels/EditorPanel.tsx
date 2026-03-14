@@ -3,6 +3,7 @@ import { Editor } from '../components/Editor'
 import { executorService } from '../../services/ExecutorService'
 import { useTheme } from '../theme/useTheme'
 import { buildShareUrl, embedParams } from '../embed/embedParams'
+import { useExecutorStatus } from '../hooks/useExecutorStatus'
 import { useRuntimeBootstrap } from '../hooks/useRuntimeBootstrap'
 import {
   MAIN_FILE_NAME,
@@ -29,6 +30,7 @@ export function EditorPanel() {
     isByondLoading,
     isRuntimeBootstrapping,
   } = useRuntimeBootstrap()
+  const executionStatus = useExecutorStatus()
   const visibleFiles = getVisibleProjectFiles(
     project,
     !embedParams.isEmbed && showAdvancedEditorTabs
@@ -100,7 +102,11 @@ export function EditorPanel() {
         }}
         onRun={canTriggerRun ? handleRun : undefined}
         runDisabled={
-          canTriggerRun ? isByondLoading || isRuntimeBootstrapping : true
+          canTriggerRun
+            ? isByondLoading ||
+              isRuntimeBootstrapping ||
+              executionStatus === 'running'
+            : true
         }
         themeId={themeId}
       />
