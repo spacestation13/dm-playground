@@ -321,7 +321,7 @@ export function Editor({
           options={{
             codeLens: false,
             colorDecorators: true,
-            contextmenu: false,
+            contextmenu: true,
             detectIndentation: false,
             glyphMargin: false,
             insertSpaces: false,
