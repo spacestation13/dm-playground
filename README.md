@@ -8,30 +8,6 @@ The playground allows you to experiment with [DM](http://ref.dm-lang.org/) code 
 
 The frontend is powered by [React](https://reactjs.org/), while [v86](https://github.com/copy/v86) emulates x86 running a Linux environment where BYOND is installed. **Everything happens 100% client-side.**
 
-## Development
-
-### Build the UI
-
-```bash
-npm install
-npm run dev # Starts development server with hot reload
-```
-
-### Build for production
-
-```bash
-npm run build   # Type-check and build
-npm run preview # Preview production build
-```
-
-### Code quality
-
-```bash
-npm run lint   # Run ESLint
-npm run format # Format code with Prettier
-npm run test   # Run playwright tests
-```
-
 ## Embedding the playground
 
 Use the playground in an iframe with `?embed` to show an editor/output-only layout.
@@ -69,6 +45,35 @@ npm run share:decode -- "<msgpack-gzip-b64>"
 ```
 
 If you omit the value, the script prompts for it interactively.
+
+## Development
+
+The serial controller is found here: https://github.com/spacestation13/dm-playground_controller
+
+The buildroot linux image code is found here: https://github.com/spacestation13/dm-playground-linux
+
+### Build the UI
+
+```bash
+npm install
+npm run dev # Starts development server with hot reload
+```
+
+### Build for production
+
+```bash
+npm run build   # Type-check and build
+npm run preview # Preview production build
+```
+
+### Code quality
+
+```bash
+npm run lint   # Run ESLint
+npm run format # Format code with Prettier
+npm run test   # Run playwright tests
+```
+
 
 ## License
 
