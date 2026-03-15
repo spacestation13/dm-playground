@@ -7,6 +7,8 @@ import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 import {
   useThemeSetting,
   useFontFamilySetting,
+  useFontSizeSetting,
+  useTabSizeSetting,
   useShowAdvancedEditorTabsSetting,
   useStreamCompilerSetting,
   useShowConsoleSetting,
@@ -42,6 +44,8 @@ function FullApp() {
   const [showSettings, setShowSettings] = useState(false)
   const [themeId, setThemeId] = useThemeSetting()
   const [fontFamily, setFontFamily] = useFontFamilySetting()
+  const [fontSize, setFontSize] = useFontSizeSetting()
+  const [tabSize, setTabSize] = useTabSizeSetting()
   const [streamCompilerOutput, setStreamCompilerOutput] =
     useStreamCompilerSetting()
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
@@ -159,6 +163,42 @@ function FullApp() {
                   className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
                 />
               </label>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2">
+                  <span className="text-xs uppercase tracking-wide text-slate-400">
+                    Font size
+                  </span>
+                  <input
+                    type="number"
+                    min={8}
+                    max={40}
+                    value={fontSize}
+                    onChange={(e) => {
+                      const parsed = Number.parseInt(e.target.value, 10)
+                      if (Number.isNaN(parsed)) return
+                      setFontSize(parsed)
+                    }}
+                    className="w-16 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                  />
+                </label>
+                <label className="flex items-center gap-2">
+                  <span className="text-xs uppercase tracking-wide text-slate-400">
+                    Tab size
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={8}
+                    value={tabSize}
+                    onChange={(e) => {
+                      const parsed = Number.parseInt(e.target.value, 10)
+                      if (Number.isNaN(parsed)) return
+                      setTabSize(parsed)
+                    }}
+                    className="w-12 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                  />
+                </label>
+              </div>
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"

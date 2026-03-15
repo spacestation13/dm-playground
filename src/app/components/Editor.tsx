@@ -9,6 +9,7 @@ import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
 import { installHighlightingTestBridge } from '../monaco/highlightingTestBridge'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
 import { useApplyThemeVariables } from '../hooks/useApplyThemeVariables'
+import useUIStore from '../stores/uiStore'
 import {
   useFontFamilySetting,
   useFontSizeSetting,
@@ -42,6 +43,8 @@ export function Editor({
   runDisabled = !onRun,
   themeId,
 }: EditorProps) {
+  // use global UI store for responsive breakpoint
+  const showInlineSettings = useUIStore((s) => s.isWideEditorControls)
   const shellRef = useRef<HTMLDivElement | null>(null)
   const monacoRef = useRef<typeof Monaco | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
@@ -219,57 +222,59 @@ export function Editor({
             DM Playground
           </a>
         ) : (
-          <span className="text-xs font-semibold text-[var(--editor-text)] mr-auto">
-            DM Editor
-          </span>
+          <span className="text-xs font-semibold text-[var(--editor-text)] mr-auto"></span>
         )}
-        <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-[var(--editor-text)]">
-          <span>Font size</span>
-          <input
-            type="number"
-            min={8}
-            max={40}
-            value={fontSize}
-            onChange={(event) => {
-              const parsed = Number.parseInt(event.target.value, 10)
-              if (Number.isNaN(parsed)) {
-                return
-              }
-              setFontSize(parsed)
-            }}
-            className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
-          />
-        </label>
-        <span
-          className="mr-2 h-4 w-px bg-[var(--editor-border)]"
-          aria-hidden="true"
-        />
-        <label className="mr-2 inline-flex items-center gap-1.5 text-xs text-[var(--editor-text)]">
-          <span>Tab size</span>
-          <input
-            type="number"
-            min={1}
-            max={8}
-            value={tabSize}
-            onChange={(event) => {
-              const parsed = Number.parseInt(event.target.value, 10)
-              if (Number.isNaN(parsed)) {
-                return
-              }
-              setTabSize(parsed)
-            }}
-            className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
-          />
-        </label>
-        <span
-          className="mr-2 h-4 w-px bg-[var(--editor-border)]"
-          aria-hidden="true"
-        />
+        {showInlineSettings && (
+          <>
+            <label className="mr-1 inline-flex items-center gap-0 text-xs text-[var(--editor-text)]">
+              <span className="mr-1">Font size</span>
+              <input
+                type="number"
+                min={8}
+                max={40}
+                value={fontSize}
+                onChange={(event) => {
+                  const parsed = Number.parseInt(event.target.value, 10)
+                  if (Number.isNaN(parsed)) {
+                    return
+                  }
+                  setFontSize(parsed)
+                }}
+                className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
+              />
+            </label>
+            <span
+              className="mr-1 h-4 w-px bg-[var(--editor-border)]"
+              aria-hidden="true"
+            />
+            <label className="mr-1 inline-flex items-center gap-0 text-xs text-[var(--editor-text)]">
+              <span className="mr-1">Tab size</span>
+              <input
+                type="number"
+                min={1}
+                max={8}
+                value={tabSize}
+                onChange={(event) => {
+                  const parsed = Number.parseInt(event.target.value, 10)
+                  if (Number.isNaN(parsed)) {
+                    return
+                  }
+                  setTabSize(parsed)
+                }}
+                className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
+              />
+            </label>
+            <span
+              className="mr-1 h-4 w-px bg-[var(--editor-border)]"
+              aria-hidden="true"
+            />
+          </>
+        )}
         <button
           type="button"
           onClick={onRun}
           disabled={runDisabled}
-          className="rounded-md border border-[var(--editor-button-border)] bg-[var(--editor-button-bg)] px-3 py-1 text-xs font-semibold text-[var(--editor-button-text)] hover:border-[var(--editor-button-border-hover)] hover:bg-[var(--editor-button-bg-hover)] hover:text-[var(--editor-button-text-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md whitespace-nowrap border border-[var(--editor-button-border)] bg-[var(--editor-button-bg)] px-3 py-1 text-xs font-semibold text-[var(--editor-button-text)] hover:border-[var(--editor-button-border-hover)] hover:bg-[var(--editor-button-bg-hover)] hover:text-[var(--editor-button-text-hover)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Run Code
         </button>
@@ -322,8 +327,8 @@ export function Editor({
             insertSpaces: false,
             // lightbulb: { enabled: Monaco.editor.ShowLightbulbIconMode.Off },
             lineNumbers: 'on',
-            lineNumbersMinChars: 4,
-            lineDecorationsWidth: 10,
+            lineNumbersMinChars: 2,
+            lineDecorationsWidth: 3,
             links: false,
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
