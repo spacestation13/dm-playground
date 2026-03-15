@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useEffectEvent, useRef } from 'react'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
@@ -26,6 +26,15 @@ export function Terminal({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const terminalRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
+  const emitReady = useEffectEvent((api: TerminalApi) => {
+    onReady?.(api)
+  })
+  const emitData = useEffectEvent((value: string) => {
+    onData?.(value)
+  })
+  const emitResize = useEffectEvent((rows: number, cols: number) => {
+    onResize?.(rows, cols)
+  })
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -63,21 +72,21 @@ export function Terminal({
       }
       return true
     })
-    const dataDisposable = terminal.onData((value) => onData?.(value))
+    const dataDisposable = terminal.onData((value) => emitData(value))
     fitAddon.fit()
-    onResize?.(terminal.rows, terminal.cols)
+    emitResize(terminal.rows, terminal.cols)
     if (label) {
       terminal.write(`${label}\r\n`)
     }
 
-    onReady?.({
+    emitReady({
       write: (value) => terminal.write(value),
       clear: () => terminal.clear(),
     })
 
     const observer = new ResizeObserver(() => {
       fitAddon.fit()
-      onResize?.(terminal.rows, terminal.cols)
+      emitResize(terminal.rows, terminal.cols)
     })
     observer.observe(containerRef.current)
 
@@ -89,7 +98,7 @@ export function Terminal({
       dataDisposable.dispose()
       terminal.dispose()
     }
-  }, [label, readOnly, onReady, onData, onResize])
+  }, [label, readOnly])
 
   return (
     <div
