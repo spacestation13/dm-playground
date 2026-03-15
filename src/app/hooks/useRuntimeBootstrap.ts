@@ -56,7 +56,6 @@ export function useRuntimeBootstrap() {
     }
 
     const loadingMessages = [
-      'Loading…',
       'Reticulating splines…',
       'Processing geometry…',
       'Compiling shaders…',
@@ -77,7 +76,13 @@ export function useRuntimeBootstrap() {
     ]
     let intervalId: number | undefined
     let shuffled: string[] = []
+    let firstMessageShown = false
     const showNextMessage = () => {
+      if (!firstMessageShown) {
+        executorService.appendOutput('Loading…\n')
+        firstMessageShown = true
+        return
+      }
       if (shuffled.length === 0) {
         shuffled = loadingMessages.slice().sort(() => Math.random() - 0.5)
       }
@@ -90,7 +95,7 @@ export function useRuntimeBootstrap() {
       setIsRuntimeBootstrapping(true)
 
       showNextMessage()
-      intervalId = window.setInterval(showNextMessage, 1_300)
+      intervalId = window.setInterval(showNextMessage, 1_500)
 
       try {
         await ensureRuntime()
