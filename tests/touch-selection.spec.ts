@@ -1,5 +1,20 @@
 import { expect, test } from '@playwright/test'
 
+const localSettingsWithConsole = {
+  state: {
+    themeId: 'vs-dark',
+    editor: {
+      fontFamily: 'Consolas, "Liberation Mono", Courier, monospace',
+      fontSize: 14,
+      tabSize: 2,
+    },
+    streamCompilerOutput: false,
+    showConsolePanel: true,
+    showAdvancedEditorTabs: false,
+  },
+  version: 0,
+}
+
 test('touch-capable devices enable Monaco text selection affordances', async ({
   browserName,
   isMobile,
@@ -123,4 +138,102 @@ test('touch-capable devices allow draft editing of inline numeric settings', asy
   await expect(tabSizeInput).toHaveValue('4')
   await tabSizeInput.blur()
   await expect(tabSizeInput).toHaveValue('4')
+})
+
+test('touch drags over Monaco can continue page scroll to lower panels', async ({
+  browserName,
+  isMobile,
+  page,
+}) => {
+  test.skip(browserName !== 'chromium', 'CDP touch injection is Chromium-only')
+  test.skip(!isMobile, 'This regression only applies to touch-capable projects')
+
+  await page.addInitScript((persistedSettings) => {
+    window.localStorage.setItem(
+      'local-settings',
+      JSON.stringify(persistedSettings)
+    )
+  }, localSettingsWithConsole)
+
+  await page.goto('/')
+
+  const viewLines = page.locator('.monaco-editor .view-lines').first()
+
+  await expect(viewLines).toBeVisible()
+  await expect
+    .poll(() => page.evaluate(() => document.querySelectorAll('.xterm').length))
+    .toBeGreaterThan(0)
+
+  const initialMetrics = await page.evaluate(() => ({
+    viewportHeight: window.innerHeight,
+    scrollHeight: document.scrollingElement?.scrollHeight ?? 0,
+    scrollY: window.scrollY,
+    consoleTop: document.querySelector('.xterm')?.getBoundingClientRect().top,
+  }))
+
+  expect(initialMetrics.scrollHeight).toBeGreaterThan(
+    initialMetrics.viewportHeight
+  )
+  expect(initialMetrics.scrollY).toBe(0)
+  expect(initialMetrics.consoleTop).toBeDefined()
+  expect(initialMetrics.consoleTop ?? 0).toBeGreaterThan(
+    initialMetrics.viewportHeight
+  )
+
+  const bounds = await viewLines.boundingBox()
+  expect(bounds).not.toBeNull()
+
+  const target = bounds!
+  const x = Math.round(target.x + target.width / 2)
+  const startY = Math.round(target.y + target.height * 0.6)
+  const totalDeltaY = 220
+  const cdp = await page.context().newCDPSession(page)
+
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [
+      {
+        id: 1,
+        x,
+        y: startY,
+        radiusX: 2,
+        radiusY: 2,
+        force: 1,
+      },
+    ],
+  })
+
+  for (let step = 1; step <= 8; step += 1) {
+    const progress = step / 8
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [
+        {
+          id: 1,
+          x,
+          y: Math.round(startY - totalDeltaY * progress),
+          radiusX: 2,
+          radiusY: 2,
+          force: 1,
+        },
+      ],
+    })
+    await page.waitForTimeout(16)
+  }
+
+  const scrollDuringDrag = await page.evaluate(() => window.scrollY)
+  expect(scrollDuringDrag).toBeGreaterThan(40)
+
+  const consoleTopDuringDrag = await page.evaluate(
+    () => document.querySelector('.xterm')?.getBoundingClientRect().top ?? null
+  )
+  expect(consoleTopDuringDrag).not.toBeNull()
+  expect(consoleTopDuringDrag!).toBeLessThan(
+    initialMetrics.consoleTop ?? Infinity
+  )
+
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: [],
+  })
 })

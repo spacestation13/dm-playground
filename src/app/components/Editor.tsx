@@ -13,6 +13,7 @@ import {
   installTouchSelectionHandler,
   syncTouchSelectionMode,
 } from '../monaco/touchSelection'
+import { installTouchScrollHandoff } from '../monaco/touchScrollHandoff'
 import { useApplyThemeVariables } from '../hooks/useApplyThemeVariables'
 import useUIStore from '../stores/uiStore'
 import {
@@ -55,6 +56,7 @@ export function Editor({
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
   const contextViewSyncCleanupRef = useRef<(() => void) | null>(null)
   const touchSelectionCleanupRef = useRef<(() => void) | null>(null)
+  const touchScrollCleanupRef = useRef<(() => void) | null>(null)
   const [tabSize, setTabSize] = useTabSizeSetting()
   const [fontSize, setFontSize] = useFontSizeSetting()
   const [fontFamily] = useFontFamilySetting()
@@ -130,7 +132,12 @@ export function Editor({
     editorRef.current = editor
     syncTouchSelectionMode(editor, touchSelectionEnabled)
     touchSelectionCleanupRef.current?.()
+    touchScrollCleanupRef.current?.()
     touchSelectionCleanupRef.current = installTouchSelectionHandler(
+      editor,
+      touchSelectionEnabled
+    )
+    touchScrollCleanupRef.current = installTouchScrollHandoff(
       editor,
       touchSelectionEnabled
     )
@@ -228,6 +235,8 @@ export function Editor({
       contextViewSyncCleanupRef.current = null
       touchSelectionCleanupRef.current?.()
       touchSelectionCleanupRef.current = null
+      touchScrollCleanupRef.current?.()
+      touchScrollCleanupRef.current = null
     }
   }, [])
 

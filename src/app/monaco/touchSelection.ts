@@ -101,13 +101,8 @@ export function installTouchSelectionHandler(
       return
     }
 
-    const position = getPositionAtPoint(event.clientX, event.clientY)
-    if (!position) {
-      return
-    }
-
     pointerId = event.pointerId
-    anchor = position
+    anchor = getPositionAtPoint(event.clientX, event.clientY)
     selecting = false
     startX = event.clientX
     startY = event.clientY
@@ -132,7 +127,8 @@ export function installTouchSelectionHandler(
     if (!selecting) {
       const moved = Math.hypot(event.clientX - startX, event.clientY - startY)
       if (moved > TOUCH_SELECTION_MOVE_TOLERANCE_PX) {
-        resetState()
+        clearHoldTimer()
+        anchor = null
       }
       return
     }
