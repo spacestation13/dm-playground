@@ -9,6 +9,6 @@ const warningLines = [
 
 export function printConsoleWarnings() {
   for (const line of warningLines) {
-    console.error('%c' + line, warningStyle)
+    console.warn('%c' + line, warningStyle)
   }
 }
