@@ -212,17 +212,13 @@ export function Editor({
     editor.updateOptions({
       dragAndDrop: !touchSelectionEnabled,
       tabSize,
-      insertSpaces: false,
-      detectIndentation: false,
       fontSize,
       fontFamily,
     })
 
     editor.getModel()?.updateOptions({
-      insertSpaces: false,
       tabSize,
       indentSize: tabSize,
-      trimAutoWhitespace: true,
     })
   }, [activeFileId, tabSize, fontSize, fontFamily, touchSelectionEnabled])
 
@@ -366,6 +362,9 @@ export function Editor({
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
             renderWhitespace: 'all',
+            scrollbar: {
+              alwaysConsumeMouseWheel: false,
+            },
             tabSize,
             fontFamily,
             fontSize,
