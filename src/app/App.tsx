@@ -250,6 +250,8 @@ function FullApp() {
                 >
                   github.com/spacestation13/dm-playground
                 </a>
+                <br />
+                Made by alexkar598 & ZeWaka
               </div>
             </div>
           </div>
