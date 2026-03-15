@@ -10,7 +10,7 @@ export interface HighlightingTestToken {
 declare global {
   interface Window {
     __DM_PLAYGROUND_TEST__?: {
-      tokenizeDm: (source: string) => HighlightingTestToken[][]
+      tokenizeDm?: (source: string) => HighlightingTestToken[][]
     }
   }
 }
@@ -49,6 +49,7 @@ function createHighlightingTestTokenizer(
 
 export function installHighlightingTestBridge(monaco: typeof Monaco): void {
   window.__DM_PLAYGROUND_TEST__ = {
+    ...window.__DM_PLAYGROUND_TEST__,
     tokenizeDm: createHighlightingTestTokenizer(monaco),
   }
 }

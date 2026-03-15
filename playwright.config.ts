@@ -17,6 +17,12 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: ['**/touch-selection.spec.ts'],
+    },
+    {
+      name: 'chromium-touch',
+      use: { ...devices['Pixel 7'] },
+      testMatch: ['**/touch-selection.spec.ts'],
     },
   ],
 })

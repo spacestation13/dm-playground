@@ -24,3 +24,26 @@ body {
     var(--dm-editor-context-offset-y, 0px)
   );
 }
+
+.dm-editor-shell-touch .monaco-editor,
+.dm-editor-shell-touch .monaco-editor .overflow-guard,
+.dm-editor-shell-touch .monaco-editor .monaco-scrollable-element,
+.dm-editor-shell-touch .monaco-editor .lines-content,
+.dm-editor-shell-touch .monaco-editor .view-lines,
+.dm-editor-shell-touch .monaco-editor .view-line {
+  touch-action: auto;
+}
+
+.dm-editor-shell-touch .monaco-editor,
+.dm-editor-shell-touch .monaco-editor .lines-content,
+.dm-editor-shell-touch .monaco-editor .view-lines,
+.dm-editor-shell-touch .monaco-editor .view-line {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.dm-editor-shell-touch .monaco-editor .lines-content,
+.dm-editor-shell-touch .monaco-editor .view-lines,
+.dm-editor-shell-touch .monaco-editor .view-line {
+  -webkit-touch-callout: default;
+}

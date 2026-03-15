@@ -6,8 +6,12 @@ import { embedParams, buildShareUrl } from '../embed/embedParams'
 import { createDefaultProject } from '../editorProject/projectState'
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
-import { installHighlightingTestBridge } from '../monaco/highlightingTestBridge'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
+import {
+  detectTouchInput,
+  installTouchSelectionHandler,
+  syncTouchSelectionMode,
+} from '../monaco/touchSelection'
 import { useApplyThemeVariables } from '../hooks/useApplyThemeVariables'
 import useUIStore from '../stores/uiStore'
 import {
@@ -49,9 +53,11 @@ export function Editor({
   const monacoRef = useRef<typeof Monaco | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
   const contextViewSyncCleanupRef = useRef<(() => void) | null>(null)
+  const touchSelectionCleanupRef = useRef<(() => void) | null>(null)
   const [tabSize, setTabSize] = useTabSizeSetting()
   const [fontSize, setFontSize] = useFontSizeSetting()
   const [fontFamily] = useFontFamilySetting()
+  const touchSelectionEnabled = useMemo(() => detectTouchInput(), [])
   const activeFile = useMemo(
     () => files.find((file) => file.id === activeFileId) ?? files[0],
     [activeFileId, files]
@@ -109,6 +115,12 @@ export function Editor({
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
     editorRef.current = editor
+    syncTouchSelectionMode(editor, touchSelectionEnabled)
+    touchSelectionCleanupRef.current?.()
+    touchSelectionCleanupRef.current = installTouchSelectionHandler(
+      editor,
+      touchSelectionEnabled
+    )
     installContextViewOffsetSync(editor)
     ensureDmLanguage(monaco as typeof Monaco)
 
@@ -128,6 +140,8 @@ export function Editor({
     })
 
     if (import.meta.env.DEV) {
+      const { installHighlightingTestBridge } =
+        await import('../monaco/highlightingTestBridge')
       installHighlightingTestBridge(monaco as typeof Monaco)
     }
 
@@ -180,7 +194,10 @@ export function Editor({
       return
     }
 
+    syncTouchSelectionMode(editor, touchSelectionEnabled)
+
     editor.updateOptions({
+      dragAndDrop: !touchSelectionEnabled,
       tabSize,
       insertSpaces: false,
       detectIndentation: false,
@@ -194,12 +211,14 @@ export function Editor({
       indentSize: tabSize,
       trimAutoWhitespace: true,
     })
-  }, [activeFileId, tabSize, fontSize, fontFamily])
+  }, [activeFileId, tabSize, fontSize, fontFamily, touchSelectionEnabled])
 
   useEffect(() => {
     return () => {
       contextViewSyncCleanupRef.current?.()
       contextViewSyncCleanupRef.current = null
+      touchSelectionCleanupRef.current?.()
+      touchSelectionCleanupRef.current = null
     }
   }, [])
 
@@ -210,7 +229,10 @@ export function Editor({
   return (
     <div
       ref={shellRef}
-      className="dm-editor-shell flex h-full min-h-0 flex-col overflow-hidden rounded border border-[var(--editor-border)] bg-[var(--editor-bg)]"
+      className={[
+        'dm-editor-shell flex h-full min-h-0 flex-col overflow-hidden rounded border border-[var(--editor-border)] bg-[var(--editor-bg)]',
+        touchSelectionEnabled ? 'dm-editor-shell-touch' : '',
+      ].join(' ')}
     >
       <div className="flex items-center justify-end border-b border-[var(--editor-border)] bg-[var(--editor-header-bg)] pl-2 pr-1 py-1">
         {embedParams.isEmbed ? (
