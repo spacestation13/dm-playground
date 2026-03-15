@@ -343,7 +343,7 @@ export function Editor({
           options={{
             codeLens: false,
             colorDecorators: true,
-            contextmenu: true,
+            contextmenu: false,
             detectIndentation: false,
             glyphMargin: false,
             insertSpaces: false,
