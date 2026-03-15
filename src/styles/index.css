@@ -31,7 +31,7 @@ body {
 .dm-editor-shell-touch .monaco-editor .lines-content,
 .dm-editor-shell-touch .monaco-editor .view-lines,
 .dm-editor-shell-touch .monaco-editor .view-line {
-  touch-action: auto;
+  touch-action: pan-y;
 }
 
 .dm-editor-shell-touch .monaco-editor,
