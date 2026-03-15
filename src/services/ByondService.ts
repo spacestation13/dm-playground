@@ -1,11 +1,11 @@
 import { commandQueueService } from './CommandQueueService'
+import { byondArchiveStorage } from './ByondArchiveStorage'
 import { emulatorService } from './EmulatorService'
 
 const LATEST_VERSION_URL = 'https://byond-builds.dm-lang.org/version.txt'
 const DOWNLOAD_BASE_URL = 'https://byond-builds.dm-lang.org'
 
 const ACTIVE_VERSION_KEY = 'byondActiveVersion'
-const VERSION_PATTERN = /^\d+\.\d+$/
 
 const HOST_BYOND_PATH = '/mnt/host/byond'
 const ACTIVE_BYOND_PATH = '/var/lib/byond'
@@ -112,29 +112,17 @@ export class ByondService {
   }
 
   async getLocalVersions() {
-    const directory = await this.getByondDirectory()
     const statuses = new Map<string, ByondStatus>()
 
-    const iterable = directory as FileSystemDirectoryHandle & {
-      entries: () => AsyncIterable<[string, FileSystemHandle]>
-    }
-
-    for await (const [, entry] of iterable.entries()) {
-      if (entry.kind === 'directory' && VERSION_PATTERN.test(entry.name)) {
-        statuses.set(entry.name, ByondStatus.Installed)
-        continue
-      }
-
-      if (entry.kind === 'file' && entry.name.endsWith('.zip')) {
-        const version = entry.name.replace(/\.zip$/, '')
-        if (!VERSION_PATTERN.test(version)) {
-          continue
-        }
-        if (!statuses.has(version)) {
-          statuses.set(version, ByondStatus.Fetched)
-        }
-      }
-    }
+    const storedStatuses = await byondArchiveStorage.listVersionStatuses()
+    storedStatuses.forEach((storedStatus, version) => {
+      statuses.set(
+        version,
+        storedStatus === 'installed'
+          ? ByondStatus.Installed
+          : ByondStatus.Fetched
+      )
+    })
 
     for (const [version, currentStatus] of this.versions.entries()) {
       if (
@@ -163,7 +151,6 @@ export class ByondService {
     this.setStatus(version, ByondStatus.Fetching)
     const major = version.split('.')[0]
     const url = `${DOWNLOAD_BASE_URL}/${major}/${version}_byond_linux.zip`
-    let directory: FileSystemDirectoryHandle | null = null
 
     try {
       const response = await fetch(url)
@@ -174,46 +161,12 @@ export class ByondService {
         )
       }
 
-      directory = await this.getByondDirectory()
-      const fileHandle = await directory.getFileHandle(`${version}.zip`, {
-        create: true,
-      })
-      const writable = await fileHandle.createWritable()
+      await byondArchiveStorage.writeArchive(version, response, onProgress)
 
-      if (!response.body) {
-        const buffer = await response.arrayBuffer()
-        await writable.write(buffer)
-        await writable.close()
-        onProgress?.(1)
-        this.setStatus(version, ByondStatus.Fetched)
-        return
-      }
-
-      const reader = response.body.getReader()
-      const contentLength = Number(response.headers.get('content-length') ?? 0)
-      let received = 0
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) {
-          break
-        }
-        if (value) {
-          received += value.length
-          await writable.write(value)
-          if (contentLength > 0) {
-            onProgress?.(received / contentLength)
-          }
-        }
-      }
-
-      await writable.close()
       onProgress?.(1)
       this.setStatus(version, ByondStatus.Fetched)
     } catch (error) {
-      if (directory) {
-        await this.removeDirectoryEntry(directory, `${version}.zip`, false)
-      }
+      await byondArchiveStorage.deleteArchive(version)
       this.clearStatus(version)
       throw error
     }
@@ -282,13 +235,10 @@ export class ByondService {
   async deleteVersion(version: string) {
     await this.ensureRuntimePrepared()
 
-    const directory = await this.getByondDirectory()
     const wasActive = this.activeVersion === version
 
-    await Promise.all([
-      this.removeDirectoryEntry(directory, `${version}.zip`, false),
-      this.removeDirectoryEntry(directory, version, true),
-    ])
+    await byondArchiveStorage.deleteVersionStorage(version)
+
     this.versions.delete(version)
     this.events.dispatchEvent(
       new CustomEvent('status', {
@@ -325,19 +275,20 @@ export class ByondService {
     return this.activeVersion ?? localStorage.getItem(ACTIVE_VERSION_KEY)
   }
 
+  async clearStorage() {
+    await byondArchiveStorage.clear()
+  }
+
   useActive<T>(fn: (path: string | null) => T) {
     return fn(this.getActiveVersion() ? '/var/lib/byond/' : null)
   }
 
   private async getVersion(version: string) {
-    const directory = await this.getByondDirectory()
-    const handle = await directory.getFileHandle(`${version}.zip`, {
-      create: true,
-    })
-    const file = await handle.getFile()
-    if (file.size !== 0) {
-      return file
+    const archive = await byondArchiveStorage.getArchive(version)
+    if (archive.size !== 0) {
+      return archive
     }
+
     throw new Error('Version not downloaded')
   }
 
@@ -355,26 +306,6 @@ export class ByondService {
         detail: { version, status: ByondStatus.Idle },
       })
     )
-  }
-
-  private async removeDirectoryEntry(
-    directory: FileSystemDirectoryHandle,
-    name: string,
-    recursive: boolean
-  ) {
-    try {
-      await directory.removeEntry(name, { recursive })
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'NotFoundError') {
-        return
-      }
-      throw error
-    }
-  }
-
-  private async getByondDirectory() {
-    const root = await navigator.storage.getDirectory()
-    return root.getDirectoryHandle('byond', { create: true })
   }
 
   private ensureRuntimePrepared() {

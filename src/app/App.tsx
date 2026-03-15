@@ -16,6 +16,7 @@ import {
 import { useLayoutManager } from './layout/useLayoutManager'
 import { embedParams } from './embed/embedParams'
 import type { LayoutRoot } from './layout/layoutTypes'
+import { byondService } from '../services/ByondService'
 
 function PlaygroundLayout({
   layout,
@@ -59,8 +60,7 @@ function FullApp() {
     if (!confirmed) return
 
     try {
-      const root = await navigator.storage.getDirectory()
-      await root.removeEntry('byond', { recursive: true })
+      await byondService.clearStorage()
     } catch (error) {
       console.warn('Failed to clear BYOND storage', error)
     }
