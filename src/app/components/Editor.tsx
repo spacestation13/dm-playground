@@ -7,6 +7,7 @@ import { createDefaultProject } from '../editorProject/projectState'
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
+import { useDraftNumberInput } from '../hooks/useDraftNumberInput'
 import {
   detectTouchInput,
   installTouchSelectionHandler,
@@ -57,6 +58,18 @@ export function Editor({
   const [tabSize, setTabSize] = useTabSizeSetting()
   const [fontSize, setFontSize] = useFontSizeSetting()
   const [fontFamily] = useFontFamilySetting()
+  const fontSizeInput = useDraftNumberInput({
+    value: fontSize,
+    min: 8,
+    max: 40,
+    setValue: setFontSize,
+  })
+  const tabSizeInput = useDraftNumberInput({
+    value: tabSize,
+    min: 1,
+    max: 8,
+    setValue: setTabSize,
+  })
   const touchSelectionEnabled = useMemo(() => detectTouchInput(), [])
   const activeFile = useMemo(
     () => files.find((file) => file.id === activeFileId) ?? files[0],
@@ -251,17 +264,16 @@ export function Editor({
             <label className="mr-1 inline-flex items-center gap-0 text-xs text-[var(--editor-text)]">
               <span className="mr-1">Font size</span>
               <input
-                type="number"
-                min={8}
-                max={40}
-                value={fontSize}
+                type="text"
+                inputMode="numeric"
+                enterKeyHint="done"
+                pattern="[0-9]*"
+                value={fontSizeInput.value}
                 onChange={(event) => {
-                  const parsed = Number.parseInt(event.target.value, 10)
-                  if (Number.isNaN(parsed)) {
-                    return
-                  }
-                  setFontSize(parsed)
+                  fontSizeInput.onChange(event.target.value)
                 }}
+                onBlur={fontSizeInput.onBlur}
+                onKeyDown={fontSizeInput.onKeyDown}
                 className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
               />
             </label>
@@ -272,17 +284,16 @@ export function Editor({
             <label className="mr-1 inline-flex items-center gap-0 text-xs text-[var(--editor-text)]">
               <span className="mr-1">Tab size</span>
               <input
-                type="number"
-                min={1}
-                max={8}
-                value={tabSize}
+                type="text"
+                inputMode="numeric"
+                enterKeyHint="done"
+                pattern="[0-9]*"
+                value={tabSizeInput.value}
                 onChange={(event) => {
-                  const parsed = Number.parseInt(event.target.value, 10)
-                  if (Number.isNaN(parsed)) {
-                    return
-                  }
-                  setTabSize(parsed)
+                  tabSizeInput.onChange(event.target.value)
                 }}
+                onBlur={tabSizeInput.onBlur}
+                onKeyDown={tabSizeInput.onKeyDown}
                 className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
               />
             </label>

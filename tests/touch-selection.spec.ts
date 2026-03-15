@@ -55,7 +55,7 @@ test('touch-capable devices enable Monaco text selection affordances', async ({
     ],
   })
 
-  await page.waitForTimeout(240)
+  await page.waitForTimeout(360)
 
   for (let step = 1; step <= 6; step += 1) {
     const progress = step / 6
@@ -88,4 +88,39 @@ test('touch-capable devices enable Monaco text selection affordances', async ({
     .locator('.monaco-editor .selected-text')
     .count()
   expect(selectedTextCount).toBeGreaterThan(0)
+})
+
+test('touch-capable devices allow draft editing of inline numeric settings', async ({
+  browserName,
+  isMobile,
+  page,
+}) => {
+  test.skip(browserName !== 'chromium', 'CDP touch injection is Chromium-only')
+  test.skip(!isMobile, 'This regression only applies to touch-capable projects')
+
+  await page.goto('/')
+
+  const fontSizeInput = page.getByLabel('Font size')
+  const tabSizeInput = page.getByLabel('Tab size')
+
+  await expect(fontSizeInput).toBeVisible()
+  await expect(tabSizeInput).toBeVisible()
+
+  await fontSizeInput.fill('')
+  await expect(fontSizeInput).toHaveValue('')
+  await fontSizeInput.pressSequentially('1')
+  await expect(fontSizeInput).toHaveValue('1')
+  await fontSizeInput.pressSequentially('4')
+  await expect(fontSizeInput).toHaveValue('14')
+  await fontSizeInput.blur()
+  await expect(fontSizeInput).toHaveValue('14')
+
+  await tabSizeInput.fill('8')
+  await expect(tabSizeInput).toHaveValue('8')
+  await tabSizeInput.press('Backspace')
+  await expect(tabSizeInput).toHaveValue('')
+  await tabSizeInput.pressSequentially('4')
+  await expect(tabSizeInput).toHaveValue('4')
+  await tabSizeInput.blur()
+  await expect(tabSizeInput).toHaveValue('4')
 })
