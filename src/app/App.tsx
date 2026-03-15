@@ -178,7 +178,7 @@ function FullApp() {
                       if (Number.isNaN(parsed)) return
                       setFontSize(parsed)
                     }}
-                    className="w-16 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                    className="w-14 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
                   />
                 </label>
                 <label className="flex items-center gap-2">
@@ -195,7 +195,7 @@ function FullApp() {
                       if (Number.isNaN(parsed)) return
                       setTabSize(parsed)
                     }}
-                    className="w-12 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                    className="w-13 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
                   />
                 </label>
               </div>
