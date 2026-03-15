@@ -3,6 +3,9 @@ import type * as Monaco from 'monaco-editor'
 const TOUCH_SELECTION_HOLD_MS = 300
 const TOUCH_SELECTION_MOVE_TOLERANCE_PX = 8
 const SCROLL_EDGE_EPSILON_PX = 1
+const MOMENTUM_MIN_VELOCITY_PX_PER_MS = 0.12
+const MOMENTUM_FRICTION_PER_FRAME = 0.92
+const MOMENTUM_MAX_STEP_PX = 48
 
 function canEditorScrollVertically(
   editor: Monaco.editor.IStandaloneCodeEditor,
@@ -72,6 +75,12 @@ function getScrollHandoffTarget(startElement: HTMLElement, deltaY: number) {
   return null
 }
 
+function scrollElementBy(target: HTMLElement, deltaY: number) {
+  const previousScrollTop = target.scrollTop
+  target.scrollTop += deltaY
+  return target.scrollTop - previousScrollTop
+}
+
 export function installTouchScrollHandoff(
   editor: Monaco.editor.IStandaloneCodeEditor,
   enabled: boolean
@@ -89,6 +98,13 @@ export function installTouchScrollHandoff(
   let touchStartY = 0
   let lastTouchY = 0
   let touchHandoffTarget: HTMLElement | null = null
+  let lastHandoffTarget: HTMLElement | null = null
+  let lastHandoffScrollTop: number | null = null
+  let lastMoveTimestamp = 0
+  let momentumVelocity = 0
+  let momentumFrame: number | null = null
+  let momentumLastFrameTimestamp = 0
+  let momentumStartTimeout: number | null = null
 
   const container = editor.getContainerDomNode()
   const touchEventTarget =
@@ -105,6 +121,80 @@ export function installTouchScrollHandoff(
     holdTimer = null
   }
 
+  const clearMomentumStartTimeout = () => {
+    if (momentumStartTimeout === null) {
+      return
+    }
+
+    window.clearTimeout(momentumStartTimeout)
+    momentumStartTimeout = null
+  }
+
+  const stopMomentum = (resetVelocity = true) => {
+    clearMomentumStartTimeout()
+    if (momentumFrame !== null) {
+      window.cancelAnimationFrame(momentumFrame)
+      momentumFrame = null
+    }
+    momentumLastFrameTimestamp = 0
+    if (resetVelocity) {
+      momentumVelocity = 0
+    }
+  }
+
+  const stepMomentum = (timestamp: number) => {
+    if (!lastHandoffTarget) {
+      stopMomentum()
+      return
+    }
+
+    if (momentumLastFrameTimestamp === 0) {
+      momentumLastFrameTimestamp = timestamp
+    }
+
+    const elapsed = Math.max(1, timestamp - momentumLastFrameTimestamp)
+    momentumLastFrameTimestamp = timestamp
+
+    const frameScale = elapsed / 16
+    const deltaY = Math.max(
+      -MOMENTUM_MAX_STEP_PX,
+      Math.min(MOMENTUM_MAX_STEP_PX, momentumVelocity * elapsed)
+    )
+
+    const consumed = scrollElementBy(lastHandoffTarget, deltaY)
+    momentumVelocity *= Math.pow(MOMENTUM_FRICTION_PER_FRAME, frameScale)
+
+    if (
+      Math.abs(consumed) < SCROLL_EDGE_EPSILON_PX ||
+      Math.abs(momentumVelocity) < MOMENTUM_MIN_VELOCITY_PX_PER_MS
+    ) {
+      stopMomentum()
+      return
+    }
+
+    momentumFrame = window.requestAnimationFrame(stepMomentum)
+  }
+
+  const startMomentum = () => {
+    if (
+      !lastHandoffTarget ||
+      Math.abs(momentumVelocity) < MOMENTUM_MIN_VELOCITY_PX_PER_MS
+    ) {
+      stopMomentum()
+      return
+    }
+
+    stopMomentum(false)
+    momentumFrame = window.requestAnimationFrame(stepMomentum)
+  }
+
+  const applyHandoffScroll = (target: HTMLElement, deltaY: number) => {
+    lastHandoffTarget = target
+    const consumed = scrollElementBy(target, deltaY)
+    lastHandoffScrollTop = target.scrollTop
+    return consumed
+  }
+
   const handlePointerDown = (event: PointerEvent) => {
     if (event.pointerType !== 'touch' || event.isPrimary === false) {
       return
@@ -114,6 +204,7 @@ export function installTouchScrollHandoff(
     selecting = false
     startX = event.clientX
     startY = event.clientY
+    stopMomentum()
     clearHoldTimer()
 
     holdTimer = window.setTimeout(() => {
@@ -130,6 +221,7 @@ export function installTouchScrollHandoff(
     touchStartY = 0
     lastTouchY = 0
     touchHandoffTarget = null
+    lastMoveTimestamp = 0
   }
 
   const resetPointerState = () => {
@@ -149,6 +241,9 @@ export function installTouchScrollHandoff(
     touchStartY = touch.clientY
     lastTouchY = touch.clientY
     touchHandoffTarget = null
+    lastHandoffTarget = null
+    lastHandoffScrollTop = null
+    lastMoveTimestamp = performance.now()
   }
 
   const handleTouchMove = (event: TouchEvent) => {
@@ -157,6 +252,7 @@ export function installTouchScrollHandoff(
     }
 
     const touch = event.touches[0]
+    const timestamp = performance.now()
     const totalDeltaX = touch.clientX - touchStartX
     const totalDeltaY = touch.clientY - touchStartY
     const stepDeltaY = lastTouchY - touch.clientY
@@ -190,16 +286,33 @@ export function installTouchScrollHandoff(
 
     event.preventDefault()
     touchHandoffTarget = nextTarget
+    const consumed = applyHandoffScroll(nextTarget, stepDeltaY)
+    const elapsed = Math.max(1, timestamp - lastMoveTimestamp)
+    lastMoveTimestamp = timestamp
 
-    if (document.scrollingElement === nextTarget) {
-      window.scrollBy(0, stepDeltaY)
-      return
+    if (Math.abs(consumed) >= SCROLL_EDGE_EPSILON_PX) {
+      const instantVelocity = consumed / elapsed
+      momentumVelocity = momentumVelocity * 0.35 + instantVelocity * 0.65
     }
-
-    nextTarget.scrollTop += stepDeltaY
   }
 
   const handleTouchEnd = () => {
+    const momentumTarget = lastHandoffTarget
+    const momentumScrollTop = lastHandoffScrollTop
+    clearMomentumStartTimeout()
+    momentumStartTimeout = window.setTimeout(() => {
+      momentumStartTimeout = null
+
+      if (
+        momentumTarget &&
+        momentumScrollTop !== null &&
+        momentumTarget.scrollTop < momentumScrollTop
+      ) {
+        momentumTarget.scrollTop = momentumScrollTop
+      }
+
+      startMomentum()
+    }, 0)
     resetTouchHandoffState()
   }
 
@@ -252,6 +365,7 @@ export function installTouchScrollHandoff(
   return () => {
     resetTouchHandoffState()
     resetPointerState()
+    stopMomentum()
     container.removeEventListener('pointerdown', handlePointerDown)
     window.removeEventListener('pointermove', handlePointerMove)
     window.removeEventListener('pointerup', handlePointerEnd)

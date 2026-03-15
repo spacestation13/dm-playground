@@ -236,4 +236,15 @@ test('touch drags over Monaco can continue page scroll to lower panels', async (
     type: 'touchEnd',
     touchPoints: [],
   })
+
+  await page.waitForTimeout(180)
+
+  const scrollAfterRelease = await page.evaluate(() => window.scrollY)
+  expect(scrollAfterRelease).toBeGreaterThan(scrollDuringDrag)
+
+  const consoleTopAfterRelease = await page.evaluate(
+    () => document.querySelector('.xterm')?.getBoundingClientRect().top ?? null
+  )
+  expect(consoleTopAfterRelease).not.toBeNull()
+  expect(consoleTopAfterRelease!).toBeLessThan(consoleTopDuringDrag!)
 })
