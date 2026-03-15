@@ -30,7 +30,7 @@ test('touch-capable devices enable Monaco text selection affordances', async ({
         (element) => window.getComputedStyle(element).touchAction
       )
     )
-    .toBe('auto')
+    .toBe('pan-y')
 
   const bounds = await viewLines.boundingBox()
   expect(bounds).not.toBeNull()
