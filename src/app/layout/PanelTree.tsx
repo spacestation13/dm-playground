@@ -8,14 +8,9 @@ import {
 } from 'react-resizable-panels'
 import type { LayoutBranch, LayoutLeaf } from './layoutTypes'
 import { useLayoutContext } from './useLayoutContext'
-import { PanelId } from './layoutTypes'
-import { useIsMobile } from '../hooks/useIsMobile'
 
 export function PanelTree({ node }: { node: LayoutBranch | LayoutLeaf }) {
-  const isMobile = useIsMobile()
-
   if (node.type === 'leaf') {
-    if (isMobile && node.id === PanelId.Byond) return null
     return <Panel id={node.id} showTitlebar={node.showTitlebar} />
   }
 
@@ -27,7 +22,6 @@ interface PanelTreeBranchProps {
 }
 
 function PanelTreeBranch({ node }: PanelTreeBranchProps) {
-  const isMobile = useIsMobile()
   const { updateBranchSizes } = useLayoutContext()
 
   const direction = node.split
@@ -63,20 +57,13 @@ function PanelTreeBranch({ node }: PanelTreeBranchProps) {
     [node.id, panelIds, node.children, updateBranchSizes]
   )
 
-  // Remove Byond panel if isMobile
-  const filteredChildren = isMobile
-    ? node.children.filter(
-        (child) => child.type !== 'leaf' || child.id !== PanelId.Byond
-      )
-    : node.children
-
   return (
     <Group
       orientation={direction}
       className="h-full w-full"
       onLayoutChanged={handleLayoutChanged}
     >
-      {filteredChildren.map((child, index) => (
+      {node.children.map((child, index) => (
         <Fragment key={`${node.id}-${index}`}>
           <ResizablePanel
             id={panelIds[index]}
@@ -86,7 +73,7 @@ function PanelTreeBranch({ node }: PanelTreeBranchProps) {
           >
             <PanelTree node={child} />
           </ResizablePanel>
-          {index < filteredChildren.length - 1 && (
+          {index < node.children.length - 1 && (
             <Separator
               className={
                 isVertical

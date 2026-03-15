@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { EditorThemeId } from '../monaco/themes'
+import { LayoutMode } from '../layout/layoutTypes'
 
 type EditorSettings = {
   fontFamily: string
@@ -11,6 +12,8 @@ type EditorSettings = {
 type LocalSettingsState = {
   themeId: EditorThemeId
   setThemeId: (id: EditorThemeId) => void
+  layoutMode: LayoutMode
+  setLayoutMode: (v: LayoutMode) => void
   editor: EditorSettings
   setFontFamily: (v: string) => void
   setFontSize: (v: number) => void
@@ -38,6 +41,8 @@ export const useLocalSettings = create<LocalSettingsState>()(
     (set) => ({
       themeId: 'vs-dark',
       setThemeId: (id: EditorThemeId) => set({ themeId: id }),
+      layoutMode: LayoutMode.Automatic,
+      setLayoutMode: (v: LayoutMode) => set({ layoutMode: v }),
       editor: defaultEditorSettings,
       setFontFamily: (v: string) =>
         set((state) => ({
@@ -81,6 +86,14 @@ export const useThemeSetting = () => {
   const themeId = useLocalSettings((s: LocalSettingsState) => s.themeId)
   const setThemeId = useLocalSettings((s: LocalSettingsState) => s.setThemeId)
   return [themeId, setThemeId] as const
+}
+
+export const useLayoutModeSetting = () => {
+  const layoutMode = useLocalSettings((s: LocalSettingsState) => s.layoutMode)
+  const setLayoutMode = useLocalSettings(
+    (s: LocalSettingsState) => s.setLayoutMode
+  )
+  return [layoutMode, setLayoutMode] as const
 }
 
 export const useStreamCompilerSetting = () => {

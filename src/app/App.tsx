@@ -5,6 +5,7 @@ import { LayoutProvider } from './layout/LayoutProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 import {
+  useLayoutModeSetting,
   useThemeSetting,
   useFontFamilySetting,
   useFontSizeSetting,
@@ -15,7 +16,7 @@ import {
 } from './settings/localSettings'
 import { useLayoutManager } from './layout/useLayoutManager'
 import { embedParams } from './embed/embedParams'
-import type { LayoutRoot } from './layout/layoutTypes'
+import { LayoutMode, type LayoutRoot } from './layout/layoutTypes'
 import { byondService } from '../services/ByondService'
 
 function PlaygroundLayout({
@@ -40,10 +41,10 @@ function PlaygroundLayout({
 }
 
 function FullApp() {
-  const { layout, handleUpdateBranchSizes, toggleConsolePanel } =
-    useLayoutManager()
+  const { layout, handleUpdateBranchSizes } = useLayoutManager()
   const [showSettings, setShowSettings] = useState(false)
   const [themeId, setThemeId] = useThemeSetting()
+  const [layoutMode, setLayoutMode] = useLayoutModeSetting()
   const [fontFamily, setFontFamily] = useFontFamilySetting()
   const [fontSize, setFontSize] = useFontSizeSetting()
   const [tabSize, setTabSize] = useTabSizeSetting()
@@ -136,6 +137,22 @@ function FullApp() {
             <div className="mt-3 space-y-3 text-sm">
               <label className="flex flex-col gap-1">
                 <span className="text-xs uppercase tracking-wide text-slate-400">
+                  Layout mode
+                </span>
+                <select
+                  className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                  value={layoutMode}
+                  onChange={(event) =>
+                    setLayoutMode(event.target.value as LayoutMode)
+                  }
+                >
+                  <option value={LayoutMode.Automatic}>Automatic</option>
+                  <option value={LayoutMode.Desktop}>Desktop</option>
+                  <option value={LayoutMode.Mobile}>Mobile</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs uppercase tracking-wide text-slate-400">
                   Editor theme
                 </span>
                 <select
@@ -214,9 +231,7 @@ function FullApp() {
                   type="checkbox"
                   checked={showConsolePanel}
                   onChange={(e) => {
-                    const checked = e.target.checked
-                    setShowConsolePanel(checked)
-                    toggleConsolePanel(checked)
+                    setShowConsolePanel(e.target.checked)
                   }}
                 />
                 <span className="text-xs">Show Console panel</span>

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
-import { PanelId } from './layoutTypes'
+import { LayoutMode, PanelId } from './layoutTypes'
 import { PanelRegistry, type PanelHeaderState } from '../panels/PanelRegistry'
-import { useIsMobile } from '../hooks/useIsMobile'
+import { useResolvedLayoutMode } from './useResolvedLayoutMode'
 
 interface PanelProps {
   id: PanelId
@@ -11,7 +11,7 @@ interface PanelProps {
 export function Panel({ id, showTitlebar }: PanelProps) {
   const panel = PanelRegistry[id]
   const [headerState, setHeaderState] = useState<PanelHeaderState>({})
-  const isMobile = useIsMobile()
+  const isMobile = useResolvedLayoutMode() === LayoutMode.Mobile
 
   const registerHeaderState = useCallback((state: PanelHeaderState) => {
     setHeaderState(state)

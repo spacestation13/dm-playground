@@ -7,6 +7,25 @@ export const PanelId = {
 
 export type PanelId = (typeof PanelId)[keyof typeof PanelId]
 
+export enum LayoutMode {
+  Automatic = 'automatic',
+  Desktop = 'desktop',
+  Mobile = 'mobile',
+}
+
+export type PersistedLayoutMode = Exclude<LayoutMode, LayoutMode.Automatic>
+
+export const persistedLayoutModes = [
+  LayoutMode.Desktop,
+  LayoutMode.Mobile,
+] as const satisfies readonly PersistedLayoutMode[]
+
+export const layoutPanelIds = [
+  PanelId.Editor,
+  PanelId.Output,
+  PanelId.Byond,
+] as const satisfies readonly PanelId[]
+
 export type SplitDirection = 'horizontal' | 'vertical'
 
 export interface LayoutLeaf {
@@ -30,7 +49,18 @@ export interface LayoutRoot {
   root: LayoutBranch
 }
 
-export const defaultLayout: LayoutRoot = {
+export function resolveLayoutMode(
+  layoutMode: LayoutMode,
+  isMobileDevice: boolean
+): PersistedLayoutMode {
+  if (layoutMode === LayoutMode.Automatic) {
+    return isMobileDevice ? LayoutMode.Mobile : LayoutMode.Desktop
+  }
+
+  return layoutMode
+}
+
+export const defaultDesktopLayout: LayoutRoot = {
   version: 3,
   nextBranchId: 2,
   root: {
@@ -64,6 +94,34 @@ export const defaultLayout: LayoutRoot = {
       },
     ],
   },
+}
+
+export const defaultMobileLayout: LayoutRoot = {
+  version: 3,
+  nextBranchId: 1,
+  root: {
+    type: 'branch',
+    id: 0,
+    split: 'vertical',
+    children: [
+      {
+        type: 'leaf',
+        id: PanelId.Editor,
+        size: 60,
+        showTitlebar: false,
+      },
+      {
+        type: 'leaf',
+        id: PanelId.Output,
+        size: 40,
+      },
+    ],
+  },
+}
+
+export const defaultLayouts: Record<PersistedLayoutMode, LayoutRoot> = {
+  [LayoutMode.Desktop]: defaultDesktopLayout,
+  [LayoutMode.Mobile]: defaultMobileLayout,
 }
 
 export const embedLayout: LayoutRoot = {

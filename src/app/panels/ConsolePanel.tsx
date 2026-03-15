@@ -7,7 +7,8 @@ import { green, red } from '../../utils/terminalColors'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { decodeController, decodeSent } from './console/controllerCodec'
 import { useSplitResize } from './console/useSplitResize'
-import { useIsMobile } from '../hooks/useIsMobile'
+import { LayoutMode } from '../layout/layoutTypes'
+import { useResolvedLayoutMode } from '../layout/useResolvedLayoutMode'
 
 const LazyTerminal = lazy(async () => {
   const module = await import('../components/Terminal')
@@ -23,7 +24,7 @@ export function ConsolePanel() {
   const [persistTerminal, setPersistTerminal] = useState(true)
   const { splitContainerRef, splitPercent, handleSplitDragStart } =
     useSplitResize(35)
-  const isMobile = useIsMobile()
+  const isMobile = useResolvedLayoutMode() === LayoutMode.Mobile
 
   useEffect(() => {
     if (!consoleTerminal) {

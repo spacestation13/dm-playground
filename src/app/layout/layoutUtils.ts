@@ -31,16 +31,3 @@ export function updateBranchSizes(
     }),
   }
 }
-
-export function swapSplitDirections(node: LayoutBranch): LayoutBranch {
-  return {
-    ...node,
-    split: node.split === 'horizontal' ? 'vertical' : 'horizontal',
-    children: node.children.map((child) => {
-      if (child.type === 'branch') {
-        return swapSplitDirections(child)
-      }
-      return child
-    }),
-  }
-}
