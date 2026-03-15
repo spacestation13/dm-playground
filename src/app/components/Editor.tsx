@@ -312,9 +312,18 @@ export function Editor({
           type="button"
           onClick={onRun}
           disabled={runDisabled}
-          className="rounded-md whitespace-nowrap border border-[var(--editor-button-border)] bg-[var(--editor-button-bg)] px-3 py-1 text-xs font-semibold text-[var(--editor-button-text)] hover:border-[var(--editor-button-border-hover)] hover:bg-[var(--editor-button-bg-hover)] hover:text-[var(--editor-button-text-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md whitespace-nowrap border border-[var(--editor-button-border)] bg-[var(--editor-button-bg)] pl-2 py-1 text-xs font-semibold text-[var(--editor-button-text)] hover:border-[var(--editor-button-border-hover)] hover:bg-[var(--editor-button-bg-hover)] hover:text-[var(--editor-button-text-hover)] disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center gap-2"
         >
           Run Code
+          <svg
+            className="h-4 w-4"
+            viewBox="8 2 18 20"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M8 5v14l11-7z" fill="var(--editor-button-border)" />
+          </svg>
         </button>
       </div>
       {showFileTabs && (
