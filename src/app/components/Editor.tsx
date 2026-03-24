@@ -371,7 +371,7 @@ export function Editor({
             contextmenu: false,
             detectIndentation: false,
             glyphMargin: false,
-            insertSpaces: false,
+            insertSpaces: true,
             // lightbulb: { enabled: Monaco.editor.ShowLightbulbIconMode.Off },
             lineNumbers: 'on',
             lineNumbersMinChars: 2,

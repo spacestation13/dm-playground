@@ -97,7 +97,7 @@ test.describe('DM highlighting fixtures', () => {
     expect(findToken(procLine, 'main').type).toBe('entity.name.function.dm')
 
     const varLine =
-      tokens[findLineIndex(lines, '\tvar/list/blocking_procs_list = list()')] ??
+      tokens[findLineIndex(lines, '  var/list/blocking_procs_list = list()')] ??
       []
     expect(findToken(varLine, 'var').type).toBe('storage.type.dm')
     expect(findToken(varLine, 'list').type).toBe('support.type.dm')
@@ -106,10 +106,10 @@ test.describe('DM highlighting fixtures', () => {
     expect(findToken(varLine, 'list', 2).type).toBe('support.function.dm')
 
     const worldLine =
-      tokens[findLineIndex(lines, '\tworld.log << "meow"')] ?? []
+      tokens[findLineIndex(lines, '  world.log << "meow"')] ?? []
     expect(findToken(worldLine, 'world').type).toBe('variable.language.dm')
 
-    const plainIdentifierLine = tokens[findLineIndex(lines, '\tf = 1')] ?? []
+    const plainIdentifierLine = tokens[findLineIndex(lines, '  f = 1')] ?? []
     expect(findToken(plainIdentifierLine, 'f').type).toBe('identifier.dm')
 
     const verbLine = tokens[findLineIndex(lines, '/verb/sample_verb()')] ?? []
@@ -124,13 +124,13 @@ test.describe('DM highlighting fixtures', () => {
   }) => {
     const { lines, tokens } = await tokenizeFixture(page, 'calls.dm')
 
-    const simpleCallLine = tokens[findLineIndex(lines, '\tmain()')] ?? []
+    const simpleCallLine = tokens[findLineIndex(lines, '  main()')] ?? []
     expect(findToken(simpleCallLine, 'main').type).toBe(
       'entity.name.function.dm'
     )
 
     const memberCallLine =
-      tokens[findLineIndex(lines, '\tblocking_procs_list.Join(", ")')] ?? []
+      tokens[findLineIndex(lines, '  blocking_procs_list.Join(", ")')] ?? []
     expect(findToken(memberCallLine, 'blocking_procs_list').type).toBe(
       'identifier.dm'
     )
@@ -140,7 +140,7 @@ test.describe('DM highlighting fixtures', () => {
     )
 
     const pathCallLine =
-      tokens[findLineIndex(lines, '\tcall(/proc/main)()')] ?? []
+      tokens[findLineIndex(lines, '  call(/proc/main)()')] ?? []
     expect(findToken(pathCallLine, 'call').type).toBe('support.function.dm')
     expect(findToken(pathCallLine, 'proc').type).toBe('storage.type.dm')
     expect(findToken(pathCallLine, 'main').type).toBe('entity.name.function.dm')
@@ -201,7 +201,7 @@ test.describe('DM highlighting fixtures', () => {
       { text: ')', type: 'delimiter.parenthesis.dm' },
     ])
 
-    const returnLine = tokens[findLineIndex(lines, '\treturn foo + bar')] ?? []
+    const returnLine = tokens[findLineIndex(lines, '  return foo + bar')] ?? []
     expect(returnLine.map((t) => ({ text: t.text, type: t.type }))).toEqual([
       { text: 'return', type: 'keyword.control.dm' },
       { text: 'foo', type: 'identifier.dm' },

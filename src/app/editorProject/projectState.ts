@@ -36,8 +36,8 @@ export const PROJECT_FILE_DEFINITIONS: ProjectFileDefinition[] = [
   },
 ]
 
-const DEFAULT_MAIN_FILE = `/proc/main()\n\tworld.log << "meow"\n`
-const DEFAULT_BOOTSTRAP_FILE = `/world/New()\n\t..()\n\tmain()\n\teval("")\n\tshutdown()\n`
+const DEFAULT_MAIN_FILE = `/proc/main()\n  world.log << "meow"\n`
+const DEFAULT_BOOTSTRAP_FILE = `/world/New()\n  ..()\n  main()\n  eval("")\n  shutdown()\n`
 
 export function createDefaultProject(): PlaygroundProject {
   return {
