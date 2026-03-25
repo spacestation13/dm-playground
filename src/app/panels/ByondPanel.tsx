@@ -37,6 +37,7 @@ export function ByondTitle() {
         onClick={() => void refresh()}
         className="ml-auto rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
         title="Refresh versions"
+        style={{ backgroundColor: 'var(--editor-input-bg)' }}
       >
         Refresh
       </button>
@@ -280,7 +281,7 @@ export function ByondPanel() {
               ? 'Version already available or in progress'
               : undefined
           }
-          className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-50"
+          className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 bg-[var(--editor-input-bg)] hover:border-slate-500 disabled:opacity-50"
         >
           Fetch
         </button>
@@ -313,10 +314,10 @@ export function ByondPanel() {
 
               return (
                 <tr key={version} className="border-t border-slate-800">
-                  <td className="px-3 py-2 font-mono text-slate-200">
+                  <td className="px-3 py-2 font-mono text-[var(--editor-input-text)]">
                     {version}
                     {isActive && (
-                      <span className="ml-2 rounded bg-emerald-900/40 px-2 py-0.5 text-[10px]">
+                      <span className="ml-2 rounded bg-[var(--editor-button-bg)] px-2 py-0.5 text-[10px]">
                         active
                       </span>
                     )}
@@ -328,7 +329,7 @@ export function ByondPanel() {
                         <button
                           type="button"
                           onClick={() => void handleDownload(version)}
-                          className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-500"
+                          className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-slate-200 hover:border-slate-500"
                         >
                           Download
                         </button>
@@ -338,7 +339,7 @@ export function ByondPanel() {
                           type="button"
                           onClick={() => handleSetActive(version)}
                           disabled={isLoading || isActive}
-                          className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-slate-200 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
                           title={
                             isActive
                               ? 'Already active'

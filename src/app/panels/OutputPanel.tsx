@@ -28,7 +28,7 @@ export function OutputPanelHeader({
         {isMobile && openByondModal && (
           <button
             type="button"
-            className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
+            className="rounded border border-slate-700 bg-[var(--editor-tab-bar-bg)] px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
             onClick={openByondModal}
           >
             BYOND Version
@@ -104,7 +104,7 @@ export function OutputPanel({
       <div className="h-full relative">
         <div
           ref={outputRef}
-          className="h-full overflow-auto whitespace-pre-wrap rounded bg-slate-950/60 p-3 text-xs text-slate-200"
+          className="h-full overflow-auto whitespace-pre-wrap rounded p-3 bg-[var(--editor-input-bg)] text-xs text-slate-200"
           style={{ fontFamily }}
         >
           {output.map((item, i) => (

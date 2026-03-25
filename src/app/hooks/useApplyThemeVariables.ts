@@ -43,7 +43,7 @@ export function useApplyThemeVariables() {
     )
     root.setProperty(
       '--editor-tab-active-bg',
-      colors['tab.activeBackground'] ||
+      colors['sideBar.background'] ||
         colors['editor.background'] ||
         (isLight ? '#ffffff' : '#1e1e1e')
     )
