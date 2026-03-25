@@ -154,11 +154,11 @@ export function ConsolePanel() {
           style={{ userSelect: 'none' }}
           onMouseDown={dragStart}
         >
-          <div className="text-sm font-semibold text-slate-200 select-none">
+          <div className="text-sm font-semibold text-[var(--editor-text)] select-none">
             Console
           </div>
           <label
-            className="flex items-center gap-1.5 rounded-sm border border-slate-700 px-1 py-0.5 text-xs text-slate-300"
+            className="flex items-center gap-1.5 rounded-sm border border-slate-700 px-1 py-0.5 text-xs text-[var(--editor-text)]"
             onMouseDown={(event) => event.stopPropagation()}
             title="Keep terminal output between runs"
           >

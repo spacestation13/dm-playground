@@ -28,7 +28,7 @@ export function OutputPanelHeader({
         {isMobile && openByondModal && (
           <button
             type="button"
-            className="rounded border border-slate-700 bg-[var(--editor-tab-bar-bg)] px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
+            className="rounded border border-slate-700 bg-[var(--editor-tab-bar-bg)] px-2 py-1 text-xs text-[var(--editor-text)] hover:border-slate-500"
             onClick={openByondModal}
           >
             BYOND Version
@@ -37,7 +37,7 @@ export function OutputPanelHeader({
         {stopFunction && (
           <button
             type="button"
-            className="rounded border border-red-700/70 bg-red-950/40 px-2 py-1 text-xs text-red-200 hover:border-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded border border-red-700/70 bg-red-950/40 px-2 py-1 text-xs text-[var(--editor-input-text)] hover:border-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={stopFunction}
             disabled={!isLoading}
           >
@@ -104,7 +104,7 @@ export function OutputPanel({
       <div className="h-full relative">
         <div
           ref={outputRef}
-          className="h-full overflow-auto whitespace-pre-wrap rounded p-3 bg-[var(--editor-input-bg)] text-xs text-slate-200"
+          className="h-full overflow-auto whitespace-pre-wrap rounded p-3 bg-[var(--editor-input-bg)] text-xs text-[var(--editor-text)]"
           style={{ fontFamily }}
         >
           {output.map((item, i) => (
@@ -120,7 +120,7 @@ export function OutputPanel({
           onClick={handleCloseByondModal}
         >
           <div
-            className="w-100 rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-200 shadow-lg"
+            className="w-100 rounded-lg border border-slate-800 bg-slate-900 p-4 text-[var(--editor-text)] shadow-lg"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -131,7 +131,7 @@ export function OutputPanel({
               <button
                 type="button"
                 onClick={handleCloseByondModal}
-                className="text-xs text-slate-400 hover:text-slate-200"
+                className="text-xs text-[var(--editor-text)] hover:text-[var(--editor-text)]"
               >
                 Close
               </button>

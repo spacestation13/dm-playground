@@ -35,7 +35,7 @@ export function ByondTitle() {
       <button
         type="button"
         onClick={() => void refresh()}
-        className="ml-auto rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
+        className="ml-auto rounded border border-slate-700 px-2 py-1 text-xs color-[var(--editor-text)] hover:border-slate-500"
         title="Refresh versions"
         style={{ backgroundColor: 'var(--editor-input-bg)' }}
       >
@@ -249,15 +249,15 @@ export function ByondPanel() {
     customStatus === ByondStatus.Installed
 
   return (
-    <div className="flex h-full flex-col gap-3 text-sm text-slate-300">
+    <div className="flex h-full flex-col gap-3 text-sm text-[var(--editor-text)]">
       <div className="flex items-center gap-2">
-        <label className="text-xs text-slate-400">Version:</label>
+        <label className="text-xs text-[var(--editor-text)]">Version:</label>
         <input
           type="number"
           min={0}
           value={customMajor}
           onChange={(e) => setCustomMajor(e.target.value)}
-          className="w-16 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-slate-200"
+          className="w-16 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-[var(--editor-text)]"
           placeholder="major"
         />
         <input
@@ -265,7 +265,7 @@ export function ByondPanel() {
           min={0}
           value={customMinor}
           onChange={(e) => setCustomMinor(e.target.value)}
-          className="w-18 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-slate-200"
+          className="w-18 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-[var(--editor-text)]"
           placeholder="minor"
         />
         <button
@@ -281,7 +281,7 @@ export function ByondPanel() {
               ? 'Version already available or in progress'
               : undefined
           }
-          className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 bg-[var(--editor-input-bg)] hover:border-slate-500 disabled:opacity-50"
+          className="rounded border border-slate-700 px-2 py-1 text-xs text-[var(--editor-text)] bg-[var(--editor-input-bg)] hover:border-slate-500 disabled:opacity-50"
         >
           Fetch
         </button>
@@ -291,7 +291,7 @@ export function ByondPanel() {
 
       <div className="flex-1 min-h-0 overflow-auto rounded border border-slate-800">
         <table className="w-full text-left text-xs">
-          <thead className="sticky top-0 bg-slate-950/90 text-slate-400">
+          <thead className="sticky top-0 bg-[var(--editor-tab-bar-bg)] text-[var(--editor-text)] border-b-2 border-slate-800">
             <tr>
               <th className="px-3 py-2">Version</th>
               <th className="px-3 py-2">Status</th>
@@ -322,14 +322,16 @@ export function ByondPanel() {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">{versionStatus}</td>
+                  <td className="px-3 py-2 text-[var(--editor-text)]">
+                    {versionStatus}
+                  </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-2">
                       {canDownload && (
                         <button
                           type="button"
                           onClick={() => void handleDownload(version)}
-                          className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-slate-200 hover:border-slate-500"
+                          className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-[var(--editor-text)] hover:border-slate-500"
                         >
                           Download
                         </button>
@@ -339,7 +341,7 @@ export function ByondPanel() {
                           type="button"
                           onClick={() => handleSetActive(version)}
                           disabled={isLoading || isActive}
-                          className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-slate-200 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-[var(--editor-text)] hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
                           title={
                             isActive
                               ? 'Already active'

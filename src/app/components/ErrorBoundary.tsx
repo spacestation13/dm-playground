@@ -22,12 +22,12 @@ export class ErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex h-full items-center justify-center rounded border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
+        <div className="flex h-full items-center justify-center rounded border border-slate-800 bg-slate-900 p-6 text-sm text-[var(--editor-text)]">
           <div>
-            <div className="text-base font-semibold text-slate-100">
+            <div className="text-base font-semibold text-[var(--editor-text)]">
               Something went wrong.
             </div>
-            <div className="mt-2 text-xs text-slate-400">
+            <div className="mt-2 text-xs text-[var(--editor-text)]">
               {this.state.message ?? 'Unknown error'}
             </div>
           </div>
