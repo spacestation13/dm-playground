@@ -1,10 +1,12 @@
 import type * as Monaco from 'monaco-editor'
 import { builtinThemeColors } from './builtinThemeColors'
 import oneDarkTheme from './themeData/OneDark.json'
+import gruvboxTheme from './themeData/Gruvbox.json'
+import gruvboxLightTheme from './themeData/GruvboxLight.json'
 
 export type BuiltinThemeId = 'vs-dark' | 'vs-light' | 'hc-black' | 'hc-light'
 
-export type LocalThemeId = 'one-dark'
+export type LocalThemeId = 'one-dark' | 'gruvbox-dark' | 'gruvbox-light'
 
 export type RemoteThemeId =
   | 'monokai'
@@ -29,6 +31,8 @@ export const editorThemeOptions: EditorThemeOption[] = [
   { id: 'vs-light', label: 'VS Light', isLocal: true, isLight: true },
   { id: 'monokai', label: 'Monokai' },
   { id: 'one-dark', label: 'One Dark', isLocal: true },
+  { id: 'gruvbox-dark', label: 'Gruvbox Dark', isLocal: true },
+  { id: 'gruvbox-light', label: 'Gruvbox Light', isLocal: true, isLight: true },
   { id: 'dracula', label: 'Dracula' },
   { id: 'nord', label: 'Nord' },
   { id: 'solarized-dark', label: 'Solarized Dark' },
@@ -63,6 +67,8 @@ const localThemeLoaders: Partial<
   Record<LocalThemeId, () => Promise<{ default: unknown }>>
 > = {
   'one-dark': async () => ({ default: oneDarkTheme }),
+  'gruvbox-dark': async () => ({ default: gruvboxTheme }),
+  'gruvbox-light': async () => ({ default: gruvboxLightTheme }),
 }
 
 const remoteThemeUrls: Record<RemoteThemeId, string> = {
