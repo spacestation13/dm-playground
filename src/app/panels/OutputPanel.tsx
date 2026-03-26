@@ -120,14 +120,16 @@ export function OutputPanel({
           onClick={handleCloseByondModal}
         >
           <div
-            className="w-100 rounded-lg border border-slate-800 bg-slate-900 p-4 text-[var(--editor-text)] shadow-lg"
+            className="w-100 rounded-lg border border-[var(--editor-border)] bg-[var(--editor-tab-bar-bg)] p-4 text-[var(--editor-text)] shadow-lg"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="BYOND Version"
           >
             <div className="mb-2 flex justify-between">
-              <h2 className="text-sm font-semibold">BYOND Version</h2>
+              <h2 className="text-sm font-semibold text-[var(--editor-text)]">
+                BYOND Version
+              </h2>
               <button
                 type="button"
                 onClick={handleCloseByondModal}
