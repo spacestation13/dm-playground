@@ -289,9 +289,9 @@ export function ByondPanel() {
 
       {error && <p className="text-xs text-red-400">{error}</p>}
 
-      <div className="flex-1 min-h-0 overflow-auto rounded border border-slate-800">
+      <div className="flex-1 min-h-0 overflow-auto rounded border border-[var(--editor-border)]">
         <table className="w-full text-left text-xs">
-          <thead className="sticky top-0 bg-[var(--editor-tab-bar-bg)] text-[var(--editor-text)] border-b-2 border-slate-800">
+          <thead className="sticky top-0 bg-[var(--editor-tab-active-bg)] text-[var(--editor-text)] border-b-2 border-[var(--editor-border)] z-10">
             <tr>
               <th className="px-3 py-2">Version</th>
               <th className="px-3 py-2">Status</th>
@@ -313,7 +313,10 @@ export function ByondPanel() {
                 versionStatus === ByondStatus.Error
 
               return (
-                <tr key={version} className="border-t border-slate-800">
+                <tr
+                  key={version}
+                  className="border-t border-[var(--editor-border)]"
+                >
                   <td className="px-3 py-2 font-mono text-[var(--editor-input-text)]">
                     {version}
                     {isActive && (
