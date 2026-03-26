@@ -290,7 +290,7 @@ export function Editor({
                 }}
                 onBlur={fontSizeInput.onBlur}
                 onKeyDown={fontSizeInput.onKeyDown}
-                className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
+                className="w-6 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
               />
             </label>
             <span
@@ -310,7 +310,7 @@ export function Editor({
                 }}
                 onBlur={tabSizeInput.onBlur}
                 onKeyDown={tabSizeInput.onKeyDown}
-                className="w-14 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
+                className="w-5 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
               />
             </label>
             <span
