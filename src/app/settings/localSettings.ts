@@ -39,7 +39,7 @@ const defaultEditorSettings: EditorSettings = {
 export const useLocalSettings = create<LocalSettingsState>()(
   persist(
     (set) => ({
-      themeId: 'vs-dark',
+      themeId: 'one-dark',
       setThemeId: (id: EditorThemeId) => set({ themeId: id }),
       layoutMode: LayoutMode.Automatic,
       setLayoutMode: (v: LayoutMode) => set({ layoutMode: v }),
