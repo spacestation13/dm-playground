@@ -2,18 +2,19 @@ import MonacoEditor, { type OnMount } from '@monaco-editor/react'
 import type * as Monaco from 'monaco-editor'
 import { useEffect, useMemo, useRef } from 'react'
 import type { MouseEvent } from 'react'
+import { MobileEditorClipboardButtons } from './MobileEditorClipboardButtons'
 import { embedParams, buildShareUrl } from '../embed/embedParams'
 import { createDefaultProject } from '../editorProject/projectState'
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { dmCompletionKeywords, ensureDmLanguage } from '../monaco/dmLanguage'
 import { ensureMonacoTheme, type EditorThemeId } from '../monaco/themes'
+import { useMobileEditorClipboardActions } from '../hooks/useMobileEditorClipboardActions'
 import { useDraftNumberInput } from '../hooks/useDraftNumberInput'
 import {
   detectTouchInput,
   installTouchSelectionHandler,
   syncTouchSelectionMode,
 } from '../monaco/touchSelection'
-import { createTouchNativeSelectionBridge } from '../monaco/touchNativeSelectionMenu'
 import { installTouchScrollHandoff } from '../monaco/touchScrollHandoff'
 import { useApplyThemeVariables } from '../hooks/useApplyThemeVariables'
 import useUIStore from '../stores/uiStore'
@@ -57,7 +58,6 @@ export function Editor({
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
   const contextViewSyncCleanupRef = useRef<(() => void) | null>(null)
   const touchSelectionCleanupRef = useRef<(() => void) | null>(null)
-  const touchNativeSelectionCleanupRef = useRef<(() => void) | null>(null)
   const touchScrollCleanupRef = useRef<(() => void) | null>(null)
   const [tabSize, setTabSize] = useTabSizeSetting()
   const [fontSize, setFontSize] = useFontSizeSetting()
@@ -75,6 +75,15 @@ export function Editor({
     setValue: setTabSize,
   })
   const touchSelectionEnabled = useMemo(() => detectTouchInput(), [])
+  const {
+    bindEditor,
+    canCopy,
+    canPaste,
+    copySelection,
+    copySupported,
+    pasteClipboard,
+    pasteSupported,
+  } = useMobileEditorClipboardActions(touchSelectionEnabled)
   const activeFile = useMemo(
     () => files.find((file) => file.id === activeFileId) ?? files[0],
     [activeFileId, files]
@@ -132,19 +141,13 @@ export function Editor({
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
     editorRef.current = editor
+    bindEditor(editor)
     syncTouchSelectionMode(editor, touchSelectionEnabled)
     touchSelectionCleanupRef.current?.()
-    touchNativeSelectionCleanupRef.current?.()
     touchScrollCleanupRef.current?.()
-    const nativeTouchSelectionBridge = createTouchNativeSelectionBridge(
-      editor,
-      touchSelectionEnabled
-    )
-    touchNativeSelectionCleanupRef.current = nativeTouchSelectionBridge.dispose
     touchSelectionCleanupRef.current = installTouchSelectionHandler(
       editor,
-      touchSelectionEnabled,
-      nativeTouchSelectionBridge.callbacks
+      touchSelectionEnabled
     )
     touchScrollCleanupRef.current = installTouchScrollHandoff(
       editor,
@@ -224,6 +227,7 @@ export function Editor({
     }
 
     syncTouchSelectionMode(editor, touchSelectionEnabled)
+    bindEditor(editor)
 
     editor.updateOptions({
       dragAndDrop: !touchSelectionEnabled,
@@ -236,7 +240,14 @@ export function Editor({
       tabSize,
       indentSize: tabSize,
     })
-  }, [activeFileId, tabSize, fontSize, fontFamily, touchSelectionEnabled])
+  }, [
+    activeFileId,
+    tabSize,
+    fontSize,
+    fontFamily,
+    bindEditor,
+    touchSelectionEnabled,
+  ])
 
   useEffect(() => {
     return () => {
@@ -244,12 +255,11 @@ export function Editor({
       contextViewSyncCleanupRef.current = null
       touchSelectionCleanupRef.current?.()
       touchSelectionCleanupRef.current = null
-      touchNativeSelectionCleanupRef.current?.()
-      touchNativeSelectionCleanupRef.current = null
+      bindEditor(null)
       touchScrollCleanupRef.current?.()
       touchScrollCleanupRef.current = null
     }
-  }, [])
+  }, [bindEditor])
 
   if (!activeFile) {
     return null
@@ -263,7 +273,19 @@ export function Editor({
         touchSelectionEnabled ? 'dm-editor-shell-touch' : '',
       ].join(' ')}
     >
-      <div className="flex items-center justify-end border-b border-[var(--editor-border)] bg-[var(--editor-header-bg)] pl-2 pr-1 py-1">
+      <div className="flex items-center border-b border-[var(--editor-border)] bg-[var(--editor-header-bg)] pl-2 pr-1 py-1">
+        {touchSelectionEnabled && (copySupported || pasteSupported) && (
+          <MobileEditorClipboardButtons
+            canCopy={canCopy}
+            canPaste={canPaste}
+            onCopy={() => {
+              void copySelection()
+            }}
+            onPaste={() => {
+              void pasteClipboard()
+            }}
+          />
+        )}
         {embedParams.isEmbed ? (
           <a
             href="#"

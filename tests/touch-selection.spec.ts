@@ -1,8 +1,5 @@
 import { expect, test } from '@playwright/test'
 
-const NATIVE_TOUCH_SELECTION_SELECTOR =
-  '[data-dm-native-touch-selection="true"]'
-
 const localSettingsWithConsole = {
   state: {
     themeId: 'vs-dark',
@@ -26,15 +23,22 @@ test('touch-capable devices enable Monaco text selection affordances', async ({
   test.skip(browserName !== 'chromium', 'CDP touch injection is Chromium-only')
   test.skip(!isMobile, 'This regression only applies to touch-capable projects')
 
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+
   await page.goto('/')
 
   const editor = page.locator('.monaco-editor').first()
   const shell = page.locator('.dm-editor-shell').first()
   const viewLines = page.locator('.monaco-editor .view-lines').first()
+  const copyButton = page.getByRole('button', { name: 'Copy selection' })
+  const pasteButton = page.getByRole('button', { name: 'Paste clipboard' })
 
   await expect(editor).toBeVisible()
   await expect(shell).toHaveClass(/dm-editor-shell-touch/)
   await expect(viewLines).toBeVisible()
+  await expect(copyButton).toBeVisible()
+  await expect(pasteButton).toBeVisible()
+  await expect(copyButton).toBeDisabled()
   await expect
     .poll(() =>
       viewLines.evaluate(
@@ -101,21 +105,12 @@ test('touch-capable devices enable Monaco text selection affordances', async ({
   await expect(
     page.locator('.monaco-editor .selected-text').first()
   ).toBeVisible()
-  await expect(page.locator(NATIVE_TOUCH_SELECTION_SELECTOR)).toBeVisible()
+  await expect(copyButton).toBeEnabled()
 
+  await copyButton.click()
   await expect
-    .poll(() =>
-      page.evaluate((selector) => {
-        const mirror = document.querySelector(selector)
-        const selection = window.getSelection()
-        if (!(mirror instanceof HTMLElement) || !selection?.anchorNode) {
-          return false
-        }
-
-        return mirror.contains(selection.anchorNode)
-      }, NATIVE_TOUCH_SELECTION_SELECTOR)
-    )
-    .toBe(true)
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .not.toBe('')
 
   const selectedTextCount = await page
     .locator('.monaco-editor .selected-text')
