@@ -57,13 +57,20 @@ export function useApplyThemeVariables() {
       '--editor-text',
       colors['editor.foreground'] || (isLight ? '#111827' : '#cbd5e1')
     )
+
     root.setProperty(
       '--editor-input-bg',
-      colors['input.background'] || (isLight ? '#f9fafb' : '#0f172a')
+      colors['input.background'] ||
+        colors['panel.background'] ||
+        colors['editor.background'] ||
+        (isLight ? '#f9fafb' : '#0f172a')
     )
     root.setProperty(
       '--editor-input-border',
-      colors['input.border'] || (isLight ? '#d1d5db' : '#374151')
+      colors['input.border'] ||
+        colors['panel.border'] ||
+        colors['editor.lineHighlightBackground'] ||
+        (isLight ? '#d1d5db' : '#374151')
     )
 
     if (isHighContrast) {

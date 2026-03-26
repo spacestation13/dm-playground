@@ -35,7 +35,7 @@ export function ByondTitle() {
       <button
         type="button"
         onClick={() => void refresh()}
-        className="ml-auto rounded border border-slate-700 px-2 py-1 text-xs color-[var(--editor-text)] hover:border-slate-500"
+        className="ml-auto rounded border border-[var(--editor-input-border)] px-2 py-1 text-xs text-[var(--editor-text)] hover:border-[var(--editor-input-border)]"
         title="Refresh versions"
         style={{ backgroundColor: 'var(--editor-input-bg)' }}
       >
@@ -257,7 +257,7 @@ export function ByondPanel() {
           min={0}
           value={customMajor}
           onChange={(e) => setCustomMajor(e.target.value)}
-          className="w-16 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-[var(--editor-text)]"
+          className="w-16 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-2 py-1 text-xs text-[var(--editor-text)]"
           placeholder="major"
         />
         <input
@@ -265,7 +265,7 @@ export function ByondPanel() {
           min={0}
           value={customMinor}
           onChange={(e) => setCustomMinor(e.target.value)}
-          className="w-18 rounded border border-slate-700 bg-transparent px-2 py-1 text-xs text-[var(--editor-text)]"
+          className="w-18 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-2 py-1 text-xs text-[var(--editor-text)]"
           placeholder="minor"
         />
         <button
@@ -289,9 +289,9 @@ export function ByondPanel() {
 
       {error && <p className="text-xs text-red-400">{error}</p>}
 
-      <div className="flex-1 min-h-0 overflow-auto rounded border border-[var(--editor-border)]">
+      <div className="flex-1 min-h-0 overflow-auto rounded border border-[var(--editor-input-border)]">
         <table className="w-full text-left text-xs">
-          <thead className="sticky top-0 bg-[var(--editor-tab-active-bg)] text-[var(--editor-text)] border-b-2 border-[var(--editor-border)] z-10">
+          <thead className="sticky top-0 bg-[var(--editor-tab-active-bg)] text-[var(--editor-text)] border-b-2 border-[var(--editor-input-border)] z-10">
             <tr>
               <th className="px-3 py-2">Version</th>
               <th className="px-3 py-2">Status</th>
