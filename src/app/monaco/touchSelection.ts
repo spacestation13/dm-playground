@@ -3,6 +3,18 @@ import type * as Monaco from 'monaco-editor'
 const TOUCH_SELECTION_HOLD_MS = 300
 const TOUCH_SELECTION_MOVE_TOLERANCE_PX = 8
 
+export interface TouchSelectionSnapshot {
+  selection: Monaco.Selection | null
+  clientX: number
+  clientY: number
+}
+
+export interface TouchSelectionLifecycleCallbacks {
+  onSelectionChange?: (snapshot: TouchSelectionSnapshot) => void
+  onSelectionComplete?: (snapshot: TouchSelectionSnapshot) => void
+  onSelectionReset?: () => void
+}
+
 export function detectTouchInput() {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return false
@@ -40,7 +52,8 @@ export function syncTouchSelectionMode(
 
 export function installTouchSelectionHandler(
   editor: Monaco.editor.IStandaloneCodeEditor,
-  enabled: boolean
+  enabled: boolean,
+  callbacks: TouchSelectionLifecycleCallbacks = {}
 ) {
   if (!enabled || typeof window === 'undefined') {
     return () => {}
@@ -54,6 +67,18 @@ export function installTouchSelectionHandler(
   let holdTimer: number | null = null
 
   const container = editor.getContainerDomNode()
+
+  const getSelectionSnapshot = (
+    clientX: number,
+    clientY: number
+  ): TouchSelectionSnapshot => {
+    const selection = editor.getSelection()
+    return {
+      selection: selection && !selection.isEmpty() ? selection : null,
+      clientX,
+      clientY,
+    }
+  }
 
   const clearHoldTimer = () => {
     if (holdTimer === null) {
@@ -76,12 +101,12 @@ export function installTouchSelectionHandler(
 
   const updateSelection = (clientX: number, clientY: number) => {
     if (!anchor) {
-      return
+      return null
     }
 
     const position = getPositionAtPoint(clientX, clientY)
     if (!position) {
-      return
+      return null
     }
 
     editor.setSelection(
@@ -94,6 +119,10 @@ export function installTouchSelectionHandler(
       'touch-selection'
     )
     editor.revealPositionInCenterIfOutsideViewport(position)
+
+    const snapshot = getSelectionSnapshot(clientX, clientY)
+    callbacks.onSelectionChange?.(snapshot)
+    return snapshot
   }
 
   const handlePointerDown = (event: PointerEvent) => {
@@ -101,6 +130,7 @@ export function installTouchSelectionHandler(
       return
     }
 
+    callbacks.onSelectionReset?.()
     pointerId = event.pointerId
     anchor = getPositionAtPoint(event.clientX, event.clientY)
     selecting = false
@@ -129,6 +159,7 @@ export function installTouchSelectionHandler(
       if (moved > TOUCH_SELECTION_MOVE_TOLERANCE_PX) {
         clearHoldTimer()
         anchor = null
+        callbacks.onSelectionReset?.()
       }
       return
     }
@@ -142,9 +173,14 @@ export function installTouchSelectionHandler(
       return
     }
 
-    if (selecting) {
+    if (selecting && event.type !== 'pointercancel') {
       event.preventDefault()
-      updateSelection(event.clientX, event.clientY)
+      const snapshot = updateSelection(event.clientX, event.clientY)
+      callbacks.onSelectionComplete?.(
+        snapshot ?? getSelectionSnapshot(event.clientX, event.clientY)
+      )
+    } else {
+      callbacks.onSelectionReset?.()
     }
 
     resetState()

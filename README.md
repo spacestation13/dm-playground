@@ -74,7 +74,6 @@ npm run format # Format code with Prettier
 npm run test   # Run playwright tests
 ```
 
-
 ## License
 
 [MIT](./LICENSE)

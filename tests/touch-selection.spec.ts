@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test'
 
+const NATIVE_TOUCH_SELECTION_SELECTOR =
+  '[data-dm-native-touch-selection="true"]'
+
 const localSettingsWithConsole = {
   state: {
     themeId: 'vs-dark',
@@ -98,6 +101,21 @@ test('touch-capable devices enable Monaco text selection affordances', async ({
   await expect(
     page.locator('.monaco-editor .selected-text').first()
   ).toBeVisible()
+  await expect(page.locator(NATIVE_TOUCH_SELECTION_SELECTOR)).toBeVisible()
+
+  await expect
+    .poll(() =>
+      page.evaluate((selector) => {
+        const mirror = document.querySelector(selector)
+        const selection = window.getSelection()
+        if (!(mirror instanceof HTMLElement) || !selection?.anchorNode) {
+          return false
+        }
+
+        return mirror.contains(selection.anchorNode)
+      }, NATIVE_TOUCH_SELECTION_SELECTOR)
+    )
+    .toBe(true)
 
   const selectedTextCount = await page
     .locator('.monaco-editor .selected-text')
