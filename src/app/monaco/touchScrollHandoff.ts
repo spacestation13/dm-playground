@@ -99,7 +99,6 @@ export function installTouchScrollHandoff(
   let lastTouchY = 0
   let touchHandoffTarget: HTMLElement | null = null
   let lastHandoffTarget: HTMLElement | null = null
-  let lastHandoffScrollTop: number | null = null
   let lastMoveTimestamp = 0
   let momentumVelocity = 0
   let momentumFrame: number | null = null
@@ -191,7 +190,6 @@ export function installTouchScrollHandoff(
   const applyHandoffScroll = (target: HTMLElement, deltaY: number) => {
     lastHandoffTarget = target
     const consumed = scrollElementBy(target, deltaY)
-    lastHandoffScrollTop = target.scrollTop
     return consumed
   }
 
@@ -242,7 +240,6 @@ export function installTouchScrollHandoff(
     lastTouchY = touch.clientY
     touchHandoffTarget = null
     lastHandoffTarget = null
-    lastHandoffScrollTop = null
     lastMoveTimestamp = performance.now()
   }
 
@@ -297,22 +294,14 @@ export function installTouchScrollHandoff(
   }
 
   const handleTouchEnd = () => {
-    const momentumTarget = lastHandoffTarget
-    const momentumScrollTop = lastHandoffScrollTop
     clearMomentumStartTimeout()
+    // Slightly delay starting momentum to avoid fighting the browser's
+    // native scroll state; do NOT forcibly reset `scrollTop` here which
+    // can cause the scrollbar thumb to jump.
     momentumStartTimeout = window.setTimeout(() => {
       momentumStartTimeout = null
-
-      if (
-        momentumTarget &&
-        momentumScrollTop !== null &&
-        momentumTarget.scrollTop < momentumScrollTop
-      ) {
-        momentumTarget.scrollTop = momentumScrollTop
-      }
-
       startMomentum()
-    }, 0)
+    }, 16)
     resetTouchHandoffState()
   }
 
