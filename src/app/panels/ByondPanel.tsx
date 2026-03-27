@@ -35,9 +35,8 @@ export function ByondTitle() {
       <button
         type="button"
         onClick={() => void refresh()}
-        className="ml-auto rounded border border-[var(--editor-input-border)] px-2 py-1 text-xs text-[var(--editor-text)] hover:border-[var(--editor-input-border)]"
+        className="ml-auto rounded border border-[var(--editor-input-border)] px-2 py-1 text-xs text-[var(--editor-text)] bg-[var(--editor-input-bg)] hover:border-slate-500"
         title="Refresh versions"
-        style={{ backgroundColor: 'var(--editor-input-bg)' }}
       >
         Refresh
       </button>
