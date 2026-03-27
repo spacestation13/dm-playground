@@ -255,7 +255,27 @@ function FullApp() {
                   Delete all site data
                 </button>
               </div>
-              <div>Version {__APP_VERSION__}</div>
+              <div>
+                {(() => {
+                  const version = __APP_VERSION__
+                  const isSha = /^[0-9a-f]{7,40}$/.test(version)
+                  const repoBase =
+                    'https://github.com/spacestation13/dm-playground'
+                  const href = isSha
+                    ? `${repoBase}/commit/${version}`
+                    : repoBase
+                  return (
+                    <a
+                      className="text-sky-300 hover:text-sky-200"
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Version {version}
+                    </a>
+                  )
+                })()}
+              </div>
               <div>
                 <a
                   className="text-sky-300 hover:text-sky-200"
