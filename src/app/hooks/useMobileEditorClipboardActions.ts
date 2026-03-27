@@ -162,19 +162,11 @@ export function useMobileEditorClipboardActions(
   }, [enabled, pasteSupported])
 
   useEffect(() => {
-    if (!enabled) {
-      selectionListenerRef.current?.dispose()
-      selectionListenerRef.current = null
-      editorRef.current = null
-      setHasEditor(false)
-      setHasSelection(false)
-    }
-
     return () => {
       selectionListenerRef.current?.dispose()
       selectionListenerRef.current = null
     }
-  }, [enabled])
+  }, [])
 
   return useMemo(
     () => ({
