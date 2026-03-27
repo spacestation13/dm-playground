@@ -265,14 +265,17 @@ function FullApp() {
                     ? `${repoBase}/commit/${version}`
                     : repoBase
                   return (
-                    <a
-                      className="text-sky-300 hover:text-sky-200"
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Version {version}
-                    </a>
+                    <>
+                      Version{' '}
+                      <a
+                        className="text-sky-300 hover:text-sky-200"
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {version}
+                      </a>
+                    </>
                   )
                 })()}
               </div>
