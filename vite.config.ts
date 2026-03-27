@@ -3,12 +3,25 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { monaco } from '@bithero/monaco-editor-vite-plugin'
 import packageJson from './package.json'
+import { execSync } from 'child_process'
+
+const getAppVersion = () => {
+  try {
+    const rev = execSync('git rev-parse --short HEAD', {
+      encoding: 'utf8',
+    }).trim()
+    if (rev) return rev
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return packageJson.version
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
   define: {
-    __APP_VERSION__: JSON.stringify(packageJson.version),
+    __APP_VERSION__: JSON.stringify(getAppVersion()),
   },
   plugins: [
     react(),
