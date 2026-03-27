@@ -14,10 +14,7 @@ function CopyIcon() {
       aria-hidden="true"
       focusable="false"
     >
-      <path
-        d="M9 9h9v11H9zM6 4h9v2H8v9H6z"
-        fill="currentColor"
-      />
+      <path d="M9 9h9v11H9zM6 4h9v2H8v9H6z" fill="currentColor" />
     </svg>
   )
 }
