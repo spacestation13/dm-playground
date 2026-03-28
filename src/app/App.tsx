@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PanelTree } from './layout/PanelTree'
 import { ConsolePanel } from './panels/ConsolePanel'
 import { LayoutProvider } from './layout/LayoutProvider'
@@ -319,5 +319,13 @@ function EmbedApp() {
 }
 
 export function App() {
+  const [, setThemeId] = useThemeSetting()
+
+  useEffect(() => {
+    if (embedParams.isEmbed && embedParams.theme) {
+      setThemeId(embedParams.theme)
+    }
+  }, [setThemeId])
+
   return embedParams.isEmbed ? <EmbedApp /> : <FullApp />
 }
