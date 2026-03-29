@@ -104,7 +104,7 @@ export function OutputPanel({
       <div className="h-full relative">
         <div
           ref={outputRef}
-          className="h-full overflow-auto whitespace-pre-wrap rounded p-3 bg-[var(--editor-input-bg)] text-xs text-[var(--editor-text)]"
+          className="h-full overflow-auto whitespace-pre-wrap rounded p-3 bg-[var(--editor-header-bg)] text-xs text-[var(--editor-text)]"
           style={{ fontFamily }}
         >
           {output.map((item, i) => (
