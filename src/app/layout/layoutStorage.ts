@@ -30,44 +30,92 @@ function getDefaultLayouts(): StoredLayouts {
   }
 }
 
-const sanitizeNode = (
-  node: LayoutBranch | LayoutLeaf
-): LayoutBranch | LayoutLeaf | null => {
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function collectPersistedLayoutState(
+  node: LayoutBranch | LayoutLeaf,
+  branchSizes: Map<number, number>,
+  leafSizes: Map<PanelId, number>,
+  leafTitlebars: Map<PanelId, boolean>
+): void {
   if (node.type === 'leaf') {
-    return VALID_LAYOUT_PANELS.has(node.id) ? node : null
+    if (!VALID_LAYOUT_PANELS.has(node.id)) {
+      return
+    }
+
+    if (isFiniteNumber(node.size)) {
+      leafSizes.set(node.id, node.size)
+    }
+
+    if (typeof node.showTitlebar === 'boolean') {
+      leafTitlebars.set(node.id, node.showTitlebar)
+    }
+
+    return
   }
 
-  const children = node.children
-    .map((child) => sanitizeNode(child))
-    .filter((child): child is LayoutBranch | LayoutLeaf => child !== null)
-
-  if (children.length === 0) {
-    return null
+  if (isFiniteNumber(node.size)) {
+    branchSizes.set(node.id, node.size)
   }
 
-  if (children.length === 1) {
-    return children[0]
+  node.children.forEach((child) => {
+    collectPersistedLayoutState(child, branchSizes, leafSizes, leafTitlebars)
+  })
+}
+
+function applyPersistedLayoutState(
+  node: LayoutBranch | LayoutLeaf,
+  branchSizes: Map<number, number>,
+  leafSizes: Map<PanelId, number>,
+  leafTitlebars: Map<PanelId, boolean>
+): LayoutBranch | LayoutLeaf {
+  if (node.type === 'leaf') {
+    return {
+      ...node,
+      size: leafSizes.get(node.id) ?? node.size,
+      showTitlebar: leafTitlebars.get(node.id) ?? node.showTitlebar,
+    }
   }
 
   return {
     ...node,
-    children,
+    size: branchSizes.get(node.id) ?? node.size,
+    children: node.children.map((child) =>
+      applyPersistedLayoutState(child, branchSizes, leafSizes, leafTitlebars)
+    ),
   }
 }
 
-function sanitizeLayout(layout: LayoutRoot, fallback: LayoutRoot): LayoutRoot {
+function mergeLayout(layout: LayoutRoot, fallback: LayoutRoot): LayoutRoot {
   if (!layout || layout.version < MIN_LAYOUT_VERSION) {
     return fallback
   }
 
-  const sanitizedRoot = sanitizeNode(layout.root)
-  if (!sanitizedRoot || sanitizedRoot.type !== 'branch') {
+  if (layout.root.type !== 'branch') {
     return fallback
   }
 
+  const branchSizes = new Map<number, number>()
+  const leafSizes = new Map<PanelId, number>()
+  const leafTitlebars = new Map<PanelId, boolean>()
+
+  collectPersistedLayoutState(
+    layout.root,
+    branchSizes,
+    leafSizes,
+    leafTitlebars
+  )
+
   return {
-    ...layout,
-    root: sanitizedRoot,
+    ...fallback,
+    root: applyPersistedLayoutState(
+      fallback.root,
+      branchSizes,
+      leafSizes,
+      leafTitlebars
+    ) as LayoutBranch,
   }
 }
 
@@ -99,11 +147,11 @@ function normalizeLayouts(value: unknown): StoredLayouts {
 
   if (isLayoutStoragePayload(value)) {
     return {
-      [LayoutMode.Desktop]: sanitizeLayout(
+      [LayoutMode.Desktop]: mergeLayout(
         value.layouts[LayoutMode.Desktop],
         defaults[LayoutMode.Desktop]
       ),
-      [LayoutMode.Mobile]: sanitizeLayout(
+      [LayoutMode.Mobile]: mergeLayout(
         value.layouts[LayoutMode.Mobile],
         defaults[LayoutMode.Mobile]
       ),
@@ -114,9 +162,21 @@ function normalizeLayouts(value: unknown): StoredLayouts {
 }
 
 export async function saveLayouts(layouts: StoredLayouts): Promise<void> {
+  const defaults = getDefaultLayouts()
+  const normalizedLayouts: StoredLayouts = {
+    [LayoutMode.Desktop]: mergeLayout(
+      layouts[LayoutMode.Desktop],
+      defaults[LayoutMode.Desktop]
+    ),
+    [LayoutMode.Mobile]: mergeLayout(
+      layouts[LayoutMode.Mobile],
+      defaults[LayoutMode.Mobile]
+    ),
+  }
+
   const compressed = await CompressionService.encode({
     version: STORAGE_VERSION,
-    layouts,
+    layouts: normalizedLayouts,
   } satisfies LayoutStoragePayload)
   localStorage.setItem(LAYOUT_STORAGE_KEY, compressed)
 }
