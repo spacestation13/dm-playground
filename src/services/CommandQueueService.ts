@@ -102,9 +102,10 @@ export class Process extends EventTarget {
       this.signal(15)
         .then((res) => {
           if (res.status === 'ERR') return reject(res.error)
-          this.addEventListener('exit', () =>
+          const handleExit = () => {
             resolve({ status: 'OK', result: null })
-          )
+          }
+          this.addEventListener('exit', handleExit, { once: true })
           setTimeout(() => {
             if (!this.killed) {
               this.signal(9)
@@ -418,10 +419,9 @@ export class CommandQueueService {
   private waitForExit(process: Process): Promise<ProcessExit> {
     return new Promise((resolve) => {
       const handler = (event: Event) => {
-        process.removeEventListener('exit', handler)
         resolve((event as CustomEvent<ProcessExit>).detail)
       }
-      process.addEventListener('exit', handler)
+      process.addEventListener('exit', handler, { once: true })
     })
   }
 

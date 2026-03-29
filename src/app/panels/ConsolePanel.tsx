@@ -21,7 +21,7 @@ export function ConsolePanel() {
   )
   const [controllerTerminal, setControllerTerminal] =
     useState<TerminalApi | null>(null)
-  const [persistTerminal, setPersistTerminal] = useState(true)
+  const [persistTerminal, setPersistTerminal] = useState(false)
   const { splitContainerRef, splitPercent, handleSplitDragStart } =
     useSplitResize(35)
   const isMobile = useResolvedLayoutMode() === LayoutMode.Mobile
@@ -84,13 +84,21 @@ export function ConsolePanel() {
       controllerTerminal.write(`\n${green('> ')}${decodeSent(detail)}\n`)
     }
 
+    const handleReset = () => {
+      if (!persistTerminal) {
+        controllerTerminal.clear()
+      }
+    }
+
     emulatorService.addEventListener('receivedOutput', handleOutput)
+    emulatorService.addEventListener('resetOutputConsole', handleReset)
     commandQueueService.addEventListener('sent', handleSent)
     return () => {
       emulatorService.removeEventListener('receivedOutput', handleOutput)
+      emulatorService.removeEventListener('resetOutputConsole', handleReset)
       commandQueueService.removeEventListener('sent', handleSent)
     }
-  }, [controllerTerminal])
+  }, [controllerTerminal, persistTerminal])
 
   // Draggable modal state
   const [modalPos, setModalPos] = useState<{ x: number; y: number }>({

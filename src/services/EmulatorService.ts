@@ -111,6 +111,14 @@ export class EmulatorService {
     if (!this.worker) {
       return
     }
+    if (message.type === 'sendFile' && message.data instanceof Uint8Array) {
+      try {
+        this.worker.postMessage(message, [message.data.buffer])
+        return
+      } catch {
+        // Fall back to a regular postMessage if transfer fails.
+      }
+    }
     this.worker.postMessage(message)
   }
 }

@@ -66,28 +66,31 @@ const initEmulator = async () => {
 
   const bzImageUrl = `${vmRemoteUrl}bzImage`
   const rootfsUrl = `${vmRemoteUrl}rootfs.cpio.lz4`
-  const [bzImageBuffer, rootfsBuffer] = await Promise.all([
+  const [bzImageBufferRaw, rootfsBufferRaw] = await Promise.all([
     fetchBinary(bzImageUrl),
     fetchBinary(rootfsUrl),
   ])
 
+  let bzImageBuffer: ArrayBuffer | null = bzImageBufferRaw
+  let rootfsBuffer: ArrayBuffer | null = rootfsBufferRaw
+
   post({
     type: 'receivedOutput',
     port: 'console',
-    data: `Loaded bzImage (${bzImageBuffer.byteLength} bytes)\n`,
+    data: `Loaded bzImage (${bzImageBuffer!.byteLength} bytes)\n`,
   })
   post({
     type: 'receivedOutput',
     port: 'console',
-    data: `Loaded rootfs (${rootfsBuffer.byteLength} bytes)\n`,
+    data: `Loaded rootfs (${rootfsBuffer!.byteLength} bytes)\n`,
   })
 
   emulator = new V86({
     wasm_path: `${vmLocalUrl}v86.wasm`,
     acpi: false,
     log_level: 0,
-    memory_size: 96 * 1024 * 1024,
-    vga_memory_size: 2 * 1024 * 1024,
+    memory_size: 75 * 1024 * 1024,
+    vga_memory_size: 256 * 1024,
     boot_order: 0x213,
     fastboot: true,
     uart1: false,
@@ -100,7 +103,7 @@ const initEmulator = async () => {
     disable_keyboard: true,
     disable_mouse: true,
     screen_container: null,
-    screen_dummy: false,
+    screen_dummy: true,
     serial_container: null,
     serial_container_xtermjs: null,
     disable_speaker: true,
@@ -118,10 +121,10 @@ const initEmulator = async () => {
     initial_state: null,
     multiboot: null,
     bzimage: {
-      buffer: bzImageBuffer,
+      buffer: bzImageBuffer!,
     },
     initrd: {
-      buffer: rootfsBuffer,
+      buffer: rootfsBuffer!,
     },
     filesystem: {},
     bzimage_initrd_from_filesystem: false,
@@ -144,6 +147,10 @@ const initEmulator = async () => {
       })
     })
   }
+
+  // Drop our references to the large asset buffers so the browser can reclaim them.
+  bzImageBuffer = null
+  rootfsBuffer = null
 
   return emulator
 }
@@ -221,8 +228,9 @@ self.addEventListener(
       }
       case 'sendFile': {
         void ensureEmulator().then(
-          (instance) =>
-            instance.create_file(data.name, data.data).then(
+          (instance) => {
+            let fileData: Uint8Array | null = data.data
+            return instance.create_file(data.name, fileData!).then(
               () => {
                 post({
                   type: 'receivedOutput',
@@ -233,6 +241,8 @@ self.addEventListener(
                   type: 'asyncResponse',
                   commandId: data.commandId,
                 })
+                // Drop our reference so the GC can reclaim transferred/detached buffers
+                fileData = null
               },
               (error) => {
                 post({
@@ -240,8 +250,10 @@ self.addEventListener(
                   commandId: data.commandId,
                   error: String(error),
                 })
+                fileData = null
               }
-            ),
+            )
+          },
           (error) => {
             post({
               type: 'asyncResponse',

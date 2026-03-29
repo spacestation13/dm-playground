@@ -26,8 +26,7 @@ export class CompressionService {
 
   private static async compress(input: Uint8Array) {
     const stream = new CompressionStream('gzip')
-    const arrayBuffer = Uint8Array.from(input).buffer
-    const blob = new Blob([arrayBuffer])
+    const blob = new Blob([input as unknown as BlobPart])
     const compressedStream = blob.stream().pipeThrough(stream)
     const compressedBuffer = await new Response(compressedStream).arrayBuffer()
     return compressedBuffer
@@ -35,8 +34,7 @@ export class CompressionService {
 
   private static async decompress(input: Uint8Array) {
     const stream = new DecompressionStream('gzip')
-    const arrayBuffer = Uint8Array.from(input).buffer
-    const blob = new Blob([arrayBuffer])
+    const blob = new Blob([input as unknown as BlobPart])
     const decompressedStream = blob.stream().pipeThrough(stream)
     const decompressedBuffer = await new Response(
       decompressedStream

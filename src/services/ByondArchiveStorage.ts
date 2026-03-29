@@ -268,7 +268,7 @@ export class ByondArchiveStorage {
 
     const reader = response.body.getReader()
     const contentLength = Number(response.headers.get('content-length') ?? 0)
-    const chunks: ArrayBuffer[] = []
+    const chunks: BlobPart[] = []
     let received = 0
 
     while (true) {
@@ -281,7 +281,10 @@ export class ByondArchiveStorage {
       }
 
       received += value.length
-      chunks.push(value.slice().buffer as ArrayBuffer)
+      // Use a Uint8Array view (subarray) to avoid copying the underlying buffer.
+      // `value.slice()` would allocate a new ArrayBuffer; `subarray()` shares the
+      // same buffer and avoids temporary large allocations.
+      chunks.push(value.subarray(0) as unknown as BlobPart)
       if (contentLength > 0) {
         onProgress?.(received / contentLength)
       }

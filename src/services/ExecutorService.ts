@@ -113,7 +113,7 @@ export class ExecutorService {
       if (streamCompilerOutput) {
         this.attachProcess(dmProcess, { suppressIdleOnExit: true })
 
-        dmProcess.addEventListener('exit', async (event) => {
+        const handleDmExit = async (event: Event) => {
           const detail = (event as CustomEvent<ProcessExit>).detail
           const code = detail.cause === 'exit' ? detail.code : null
           if (code === 0) {
@@ -125,13 +125,17 @@ export class ExecutorService {
                 env
               )
               this.attachProcess(ddProcess)
-              ddProcess.addEventListener('exit', () => {
-                commandQueueService
-                  .runProcess('/bin/rm', cleanupArgs)
-                  .catch((error) => {
-                    this.appendOutput(`Cleanup failed: ${String(error)}\n`)
-                  })
-              })
+              ddProcess.addEventListener(
+                'exit',
+                () => {
+                  commandQueueService
+                    .runProcess('/bin/rm', cleanupArgs)
+                    .catch((error) => {
+                      this.appendOutput(`Cleanup failed: ${String(error)}\n`)
+                    })
+                },
+                { once: true }
+              )
             } catch (error) {
               this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
               this.setStatus('idle')
@@ -145,7 +149,9 @@ export class ExecutorService {
             }
             this.setStatus('idle')
           }
-        })
+        }
+
+        dmProcess.addEventListener('exit', handleDmExit, { once: true })
       } else {
         // Buffer compiler output: suppress piping and only show on failure
         this.attachProcess(dmProcess, {
@@ -154,16 +160,22 @@ export class ExecutorService {
         })
 
         const dmOutputBuf: string[] = []
-        dmProcess.addEventListener('stdout', (event) => {
+        const handleDmStdout = (event: Event) => {
           const detail = (event as CustomEvent<string>).detail
           dmOutputBuf.push(detail)
-        })
-        dmProcess.addEventListener('stderr', (event) => {
+        }
+        const handleDmStderr = (event: Event) => {
           const detail = (event as CustomEvent<string>).detail
           dmOutputBuf.push(detail)
-        })
+        }
 
-        dmProcess.addEventListener('exit', async (event) => {
+        dmProcess.addEventListener('stdout', handleDmStdout)
+        dmProcess.addEventListener('stderr', handleDmStderr)
+
+        const handleDmExit = async (event: Event) => {
+          dmProcess.removeEventListener('stdout', handleDmStdout)
+          dmProcess.removeEventListener('stderr', handleDmStderr)
+
           const detail = (event as CustomEvent<ProcessExit>).detail
           const code = detail.cause === 'exit' ? detail.code : null
 
@@ -176,13 +188,17 @@ export class ExecutorService {
                 env
               )
               this.attachProcess(ddProcess, { suppressDaemonBanner: true })
-              ddProcess.addEventListener('exit', () => {
-                commandQueueService
-                  .runProcess('/bin/rm', cleanupArgs)
-                  .catch((error) => {
-                    this.appendOutput(`Cleanup failed: ${String(error)}\n`)
-                  })
-              })
+              ddProcess.addEventListener(
+                'exit',
+                () => {
+                  commandQueueService
+                    .runProcess('/bin/rm', cleanupArgs)
+                    .catch((error) => {
+                      this.appendOutput(`Cleanup failed: ${String(error)}\n`)
+                    })
+                },
+                { once: true }
+              )
             } catch (error) {
               this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
               this.setStatus('idle')
@@ -199,7 +215,9 @@ export class ExecutorService {
             }
             this.setStatus('idle')
           }
-        })
+        }
+
+        dmProcess.addEventListener('exit', handleDmExit, { once: true })
       }
     } catch (error) {
       this.appendOutput(`Execution failed: ${String(error)}\n`)
@@ -255,29 +273,52 @@ export class ExecutorService {
     }
 
     if (opts.pipeOutput !== false) {
-      process.addEventListener('stdout', (event) => {
+      const handleStdout = (event: Event) => {
         if (this.cancelled) return
         const detail = (event as CustomEvent<string>).detail
         const output = dropInitialDaemonBannerLines(detail)
         if (output) {
           this.appendOutput(output)
         }
-      })
-      process.addEventListener('stderr', (event) => {
-        if (this.cancelled) return
-        const detail = (event as CustomEvent<string>).detail
-        const output = dropInitialDaemonBannerLines(detail)
-        if (output) {
-          this.appendOutput(output)
-        }
-      })
-    }
-    process.addEventListener('exit', () => {
-      this.activePids.delete(process.pid)
-      if (this.activePids.size === 0 && !opts.suppressIdleOnExit) {
-        this.setStatus('idle')
       }
-    })
+      const handleStderr = (event: Event) => {
+        if (this.cancelled) return
+        const detail = (event as CustomEvent<string>).detail
+        const output = dropInitialDaemonBannerLines(detail)
+        if (output) {
+          this.appendOutput(output)
+        }
+      }
+
+      process.addEventListener('stdout', handleStdout)
+      process.addEventListener('stderr', handleStderr)
+
+      process.addEventListener(
+        'exit',
+        () => {
+          process.removeEventListener('stdout', handleStdout)
+          process.removeEventListener('stderr', handleStderr)
+          this.activePids.delete(process.pid)
+          if (this.activePids.size === 0 && !opts.suppressIdleOnExit) {
+            this.setStatus('idle')
+          }
+        },
+        { once: true }
+      )
+
+      return
+    }
+
+    process.addEventListener(
+      'exit',
+      () => {
+        this.activePids.delete(process.pid)
+        if (this.activePids.size === 0 && !opts.suppressIdleOnExit) {
+          this.setStatus('idle')
+        }
+      },
+      { once: true }
+    )
   }
 }
 
