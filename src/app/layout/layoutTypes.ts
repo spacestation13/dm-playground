@@ -71,14 +71,14 @@ export const defaultDesktopLayout: LayoutRoot = {
       {
         type: 'leaf',
         id: PanelId.Editor,
-        size: 65,
+        size: 75,
         showTitlebar: false,
       },
       {
         type: 'branch',
         id: 1,
         split: 'vertical',
-        size: 35,
+        size: 25,
         children: [
           {
             type: 'leaf',
