@@ -25,8 +25,8 @@ Supported URL parameters:
 - `embed`: enables the minimized embedded layout.
 - `autorun`: runs the snippet automatically after the runtime is ready.
 - `theme=<themeId>`: sets the editor theme for the embed. Example values: `vs-light`, `one-dark`, `dracula`.
-- `code=<base64>`: seeds the main editor with base64 text.
-- `#<msgpack-gzip-b64>`: seeds the editor with a [compressed share string](#share-payload-helpers). Format: `{v: 1, f: {main: string}}`.
+- `code=<base64>`: seeds the editor with base64 text.
+- `#<msgpack-gzip-b64>`: the anchor seeds the editor with a [compressed share string](#share-payload-helpers). Format: `{v: 1, f: {main: string}}`.
 
 Embed requirements:
 
@@ -39,8 +39,8 @@ Payloads use MessagePack binary format + gzip compression for efficient serializ
 You can use the Share Code button in the playground, or use the following scripts:
 
 ```bash
-npm run share:encode -- "/proc/main()\n\tworld.log << \"hello\"\n"
-npm run share:encode:json -- "{\"v\":1,\"f\":{\"main\":\"/proc/main()\\n\",\"bootstrap\":\"/world/New()\\n\t..()\\n\tcall(/proc/main)()\\n\teval(\"\")\\n\tshutdown()\\n\"}}"
+npm run share:encode -- "/proc/main()\n  world.log << \"hello\"\n"
+npm run share:encode:json -- "{\"v\":1,\"f\":{\"main\":\"/proc/main()\\n\",\"bootstrap\":\"/world/New()\\n  ..()\\n  call(/proc/main)()\\n  eval(\"\")\\n  shutdown()\\n\"}}"
 npm run share:decode -- "<msgpack-gzip-b64>"
 ```
 

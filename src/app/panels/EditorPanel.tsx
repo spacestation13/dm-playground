@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { Editor } from '../components/Editor'
 import { executorService } from '../../services/ExecutorService'
 import { useThemeSetting } from '../settings/localSettings'
-import { buildShareUrl, embedParams } from '../embed/embedParams'
+import { embedParams } from '../embed/embedParams'
 import useExecutorStore from '../stores/executorStore'
 import type { ExecutorState } from '../stores/executorStore'
 import { useRuntimeBootstrap } from '../hooks/useRuntimeBootstrap'
@@ -62,26 +62,6 @@ export function EditorPanel() {
     hasAutoran.current = true
     handleRun()
   }, [canRun, handleRun])
-
-  useEffect(() => {
-    const handleRequestShare = async () => {
-      const url = await buildShareUrl(project)
-      console.log('Share payload', project)
-      try {
-        await navigator.clipboard.writeText(url)
-        window.alert('Share link copied to clipboard')
-      } catch {
-        window.prompt('Copy this link', url)
-      }
-    }
-
-    window.addEventListener('requestShare', handleRequestShare as EventListener)
-    return () =>
-      window.removeEventListener(
-        'requestShare',
-        handleRequestShare as EventListener
-      )
-  }, [project])
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">

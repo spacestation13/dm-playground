@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { PanelTree } from './layout/PanelTree'
 import { ConsolePanel } from './panels/ConsolePanel'
 import { LayoutProvider } from './layout/LayoutProvider'
@@ -15,7 +15,8 @@ import {
   useShowConsoleSetting,
 } from './settings/localSettings'
 import { useLayoutManager } from './layout/useLayoutManager'
-import { embedParams } from './embed/embedParams'
+import { embedParams, buildShareUrl } from './embed/embedParams'
+import useProjectStore from './stores/projectStore'
 import { LayoutMode, type LayoutRoot } from './layout/layoutTypes'
 import { byondService } from '../services/ByondService'
 
@@ -54,6 +55,40 @@ function FullApp() {
   const [showAdvancedEditorTabs, setShowAdvancedEditorTabs] =
     useShowAdvancedEditorTabsSetting()
 
+  const project = useProjectStore((s) => s.project)
+  const [shareLabel, setShareLabel] = useState('🔗 Share Code')
+  const shareTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(
+    null
+  )
+
+  useEffect(() => {
+    return () => {
+      if (shareTimeoutRef.current) {
+        window.clearTimeout(shareTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleShareClick = async () => {
+    try {
+      const url = await buildShareUrl(project)
+      try {
+        await navigator.clipboard.writeText(url)
+        setShareLabel('Link copied!')
+        if (shareTimeoutRef.current) {
+          window.clearTimeout(shareTimeoutRef.current)
+        }
+        shareTimeoutRef.current = window.setTimeout(() => {
+          setShareLabel('🔗 Share Code')
+        }, 3000)
+      } catch {
+        window.prompt('Copy this link', url)
+      }
+    } catch (err) {
+      console.warn('Failed to build share url', err)
+    }
+  }
+
   const handleDeleteSiteData = async () => {
     const confirmed = window.confirm(
       'Delete all site data? This will clear settings, layout, and BYOND downloads.'
@@ -90,12 +125,10 @@ function FullApp() {
           <button
             type="button"
             aria-label="Share"
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent('requestShare'))
-            }
+            onClick={() => void handleShareClick()}
             className="rounded-md border border-slate-700 bg-slate-900/80 px-2 py-1 text-sm font-semibold text-slate-200 hover:border-slate-500"
           >
-            🔗 Share Code
+            {shareLabel}
           </button>
           <button
             type="button"
