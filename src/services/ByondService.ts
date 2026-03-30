@@ -97,14 +97,6 @@ export class ByondService {
     await this.load(latestVersion, true)
   }
 
-  async prefetchLatestVersion() {
-    try {
-      await this.getLatestVersion()
-    } catch {
-      // not critical
-    }
-  }
-
   async getLatestVersion() {
     const response = await fetch(LATEST_VERSION_URL)
     if (!response.ok) {
