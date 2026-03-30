@@ -292,9 +292,9 @@ export function ByondPanel() {
         <table className="w-full text-left text-xs">
           <thead className="sticky top-0 bg-[var(--editor-tab-active-bg)] text-[var(--editor-text)] border-b-2 border-[var(--editor-input-border)] z-10">
             <tr>
-              <th className="px-3 py-2">Version</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Actions</th>
+              <th className="px-2 py-2">Version</th>
+              <th className="px-2 py-2">Status</th>
+              <th className="px-2 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -316,7 +316,7 @@ export function ByondPanel() {
                   key={version}
                   className="border-t border-[var(--editor-border)]"
                 >
-                  <td className="px-3 py-2 font-mono text-[var(--editor-input-text)]">
+                  <td className="px-2 py-2 font-mono text-[var(--editor-input-text)]">
                     {version}
                     {isActive && (
                       <span className="ml-2 rounded bg-[var(--editor-button-bg)] px-2 py-0.5 text-[10px]">
@@ -324,10 +324,10 @@ export function ByondPanel() {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-[var(--editor-text)]">
+                  <td className="px-2 py-2 text-[var(--editor-text)]">
                     {versionStatus}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     <div className="flex flex-wrap gap-2">
                       {canDownload && (
                         <button
