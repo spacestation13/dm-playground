@@ -16,7 +16,7 @@ export function useApplyThemeVariables() {
     )
     const isLight = themeOption?.isLight || false
     const isHighContrast =
-      currentThemeId === 'hc-dark' || currentThemeId === 'hc-light'
+      currentThemeId === 'hc-black' || currentThemeId === 'hc-light'
     const root = document.documentElement.style
 
     root.setProperty(

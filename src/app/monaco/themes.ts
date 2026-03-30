@@ -4,7 +4,7 @@ import oneDarkTheme from './themeData/OneDark.json'
 import gruvboxTheme from './themeData/Gruvbox.json'
 import gruvboxLightTheme from './themeData/GruvboxLight.json'
 
-export type BuiltinThemeId = 'vs-dark' | 'vs-light' | 'hc-dark' | 'hc-light'
+export type BuiltinThemeId = 'vs-dark' | 'vs-light' | 'hc-black' | 'hc-light'
 
 export type LocalThemeId = 'one-dark' | 'gruvbox-dark' | 'gruvbox-light'
 
@@ -39,7 +39,7 @@ export const editorThemeOptions: EditorThemeOption[] = [
   { id: 'solarized-light', label: 'Solarized Light', isLight: true },
   { id: 'github-dark', label: 'GitHub Dark' },
   { id: 'github-light', label: 'GitHub Light', isLight: true },
-  { id: 'hc-dark', label: 'High Contrast Dark', isLocal: true },
+  { id: 'hc-black', label: 'High Contrast Dark', isLocal: true },
   {
     id: 'hc-light',
     label: 'High Contrast Light',
@@ -59,7 +59,7 @@ export function isEditorThemeId(value: string): value is EditorThemeId {
 const hardcodedThemes: Set<BuiltinThemeId> = new Set([
   'vs-dark',
   'vs-light',
-  'hc-dark',
+  'hc-black',
   'hc-light',
 ])
 

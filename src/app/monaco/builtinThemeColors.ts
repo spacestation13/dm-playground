@@ -28,7 +28,7 @@ export const builtinThemeColors: Record<
     'input.border': '#d4d4d4',
     'panel.border': '#d4d4d4',
   },
-  'hc-dark': {
+  'hc-black': {
     'editor.background': '#000000',
     'editor.foreground': '#ffffff',
     'activityBar.background': '#000000',
