@@ -3,6 +3,8 @@ import { access, readFile } from 'node:fs/promises'
 import { stdin as input, stdout as output } from 'node:process'
 import { brotliCompressSync, brotliDecompressSync } from 'node:zlib'
 
+const SHARE_VERSION = 1
+
 const [, , command, arg] = process.argv
 
 function toBase64Url(value) {
@@ -111,9 +113,7 @@ async function main() {
     const payload =
       command === 'encode-json' ? parseJsonInput(value) : value.trim()
 
-    const encoded = toBase64Url(
-      brotliCompressSync(Buffer.from(JSON.stringify(payload)))
-    )
+    const encoded = `${SHARE_VERSION}:${toBase64Url(brotliCompressSync(Buffer.from(JSON.stringify(payload))))}`
     console.log(encoded)
     return
   }
@@ -122,9 +122,9 @@ async function main() {
     const rawValue = await resolveValue('Value to decode: ')
     const value = requireInput(rawValue).trim()
 
-    const decoded = JSON.parse(
-      brotliDecompressSync(fromBase64Url(value)).toString('utf8')
-    )
+    const colonIdx = value.indexOf(':')
+    const payload = colonIdx === -1 ? value : value.slice(colonIdx + 1)
+    const decoded = JSON.parse(brotliDecompressSync(fromBase64Url(payload)).toString('utf8'))
     if (typeof decoded === 'string') {
       console.log(decoded)
       return
