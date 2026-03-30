@@ -72,6 +72,10 @@ export const embedParams = {
 export async function buildShareUrl(project: PlaygroundProject) {
   const url = new URL(window.location.href)
   url.search = ''
-  url.hash = await CompressionService.encode(serializeProject(project), true)
+  const serialized = serializeProject(project)
+  // For simple single-file projects, encode just the main code string.
+  // For projects with a custom bootstrap, encode the full project.
+  const payload = serialized.f.bootstrap ? serialized : serialized.f.main
+  url.hash = await CompressionService.encode(payload, true)
   return url.toString()
 }

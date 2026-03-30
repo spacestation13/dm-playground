@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { gzipSync } from 'node:zlib'
-import { pack } from 'msgpackr'
+import { brotliCompressSync } from 'node:zlib'
 
 const toBase64Url = (value: Buffer) =>
   value
@@ -40,7 +39,9 @@ test('embed mode Run Code works with the real worker', async ({ page }) => {
   const params = new URLSearchParams({
     embed: '1',
   })
-  const hashPayload = toBase64Url(gzipSync(Buffer.from(pack(project))))
+  const hashPayload = toBase64Url(
+    brotliCompressSync(Buffer.from(JSON.stringify(project)))
+  )
 
   const pageErrors: string[] = []
   page.on('pageerror', (error) => {
