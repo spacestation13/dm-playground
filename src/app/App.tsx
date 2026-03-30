@@ -360,5 +360,9 @@ export function App() {
     }
   }, [setThemeId])
 
+  useEffect(() => {
+    byondService.prefetchLatestVersion()
+  }, [])
+
   return embedParams.isEmbed ? <EmbedApp /> : <FullApp />
 }
