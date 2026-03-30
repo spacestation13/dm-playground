@@ -24,12 +24,12 @@ export function ByondTitle() {
 
   return (
     <div className="flex flex-1 items-center gap-2">
-      BYOND Versions
+      BYOND Version
       {isLoading && (
         <span
           className="h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-transparent"
-          aria-label="Loading BYOND version"
-          title="Loading BYOND version"
+          aria-label="Loading BYOND versions"
+          title="Loading BYOND versions..."
         />
       )}
       <button
