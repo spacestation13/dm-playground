@@ -1,4 +1,14 @@
-export type RuntimeAsset = 'bzimage' | 'rootfs' | 'v86wasm'
+import {
+  cacheRuntimeAsset,
+  getCachedRuntimeAsset,
+} from '../services/runtimeAssetCache'
+
+export type RuntimeAsset =
+  | 'bzimage'
+  | 'rootfs'
+  | 'v86wasm'
+  | 'seabios'
+  | 'vgabios'
 
 export type AssetDownloadProgressMessage = {
   type: 'assetDownloadProgress'
@@ -82,10 +92,24 @@ export async function fetchBinary(
   asset: RuntimeAsset,
   postProgress: (message: AssetDownloadProgressMessage) => void
 ) {
+  const cachedResponse = await getCachedRuntimeAsset(urlValue)
+  if (cachedResponse) {
+    const buffer = await cachedResponse.arrayBuffer()
+    postProgress({
+      type: 'assetDownloadProgress',
+      asset,
+      loaded: buffer.byteLength,
+      total: buffer.byteLength,
+    })
+    return buffer
+  }
+
   const response = await fetch(urlValue)
   if (!response.ok) {
     throw new Error(`Failed to fetch ${urlValue}: ${response.status}`)
   }
+
+  const cacheWritePromise = cacheRuntimeAsset(urlValue, response.clone())
 
   const totalHeader = response.headers.get('content-length')
   const total = totalHeader ? Number.parseInt(totalHeader, 10) : Number.NaN
@@ -116,5 +140,6 @@ export async function fetchBinary(
   }
 
   reportProgress(loaded, true)
+  await cacheWritePromise
   return buffer.buffer
 }

@@ -5,7 +5,7 @@ import { commandQueueService } from './CommandQueueService'
 export type EmulatorOutboundMessage =
   | { type: 'sendPort'; port: EmulatorPort; data: string }
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
-  | { type: 'start'; assetBaseUrl: string }
+  | { type: 'start' }
   | { type: 'pause' }
   | {
       type: 'sendFile'
@@ -19,7 +19,7 @@ export type EmulatorInboundMessage =
   | { type: 'resetOutputConsole' }
   | {
       type: 'assetDownloadProgress'
-      asset: 'bzimage' | 'rootfs' | 'v86wasm'
+      asset: 'bzimage' | 'rootfs' | 'v86wasm' | 'seabios' | 'vgabios'
       loaded: number
       total: number | null
     }
@@ -29,7 +29,7 @@ export class EmulatorService {
   private worker: Worker | null = null
   private events = new EventTarget()
   private assetDownloadProgress = new Map<
-    'bzimage' | 'rootfs' | 'v86wasm',
+    'bzimage' | 'rootfs' | 'v86wasm' | 'seabios' | 'vgabios',
     { loaded: number; total: number | null }
   >()
   private pendingResponses = new Map<
@@ -96,10 +96,7 @@ export class EmulatorService {
         )
       }
     )
-    this.post({
-      type: 'start',
-      assetBaseUrl: new URL('lib/', window.location.href).toString(),
-    })
+    this.post({ type: 'start' })
   }
 
   pause() {

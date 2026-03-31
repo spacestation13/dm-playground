@@ -19,6 +19,7 @@ import { embedParams, buildShareUrl } from './embed/embedParams'
 import useProjectStore from './stores/projectStore'
 import { LayoutMode, type LayoutRoot } from './layout/layoutTypes'
 import { byondService } from '../services/ByondService'
+import { clearRuntimeAssetCaches } from '../services/runtimeAssetCache'
 
 function PlaygroundLayout({
   layout,
@@ -91,7 +92,7 @@ function FullApp() {
 
   const handleDeleteSiteData = async () => {
     const confirmed = window.confirm(
-      'Delete all site data? This will clear settings, layout, and BYOND downloads.'
+      'Delete all site data? This will clear settings, layout, cached assets, and BYOND downloads.'
     )
     if (!confirmed) return
 
@@ -99,6 +100,12 @@ function FullApp() {
       await byondService.clearStorage()
     } catch (error) {
       console.warn('Failed to clear BYOND storage', error)
+    }
+
+    try {
+      await clearRuntimeAssetCaches()
+    } catch (error) {
+      console.warn('Failed to clear runtime asset cache', error)
     }
 
     localStorage.removeItem('local-settings')

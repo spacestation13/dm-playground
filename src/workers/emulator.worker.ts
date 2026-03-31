@@ -1,4 +1,6 @@
 /// <reference lib="webworker" />
+import V86 from 'v86'
+import v86WasmUrl from 'v86/build/v86.wasm?url'
 import {
   fetchBinary,
   type AssetDownloadProgressMessage,
@@ -6,19 +8,10 @@ import {
 
 type EmulatorPort = 'console' | 'screen' | 'controller'
 
-declare function importScripts(...urls: string[]): void
-declare const V86: new (config: Record<string, unknown>) => {
-  bus: { send: (event: string, data: number[] | Uint8Array) => void }
-  add_listener: (event: string, handler: (bytes: Uint8Array) => void) => void
-  create_file: (name: string, data: Uint8Array) => Promise<void>
-  run: () => Promise<void>
-  stop: () => Promise<void>
-}
-
 type EmulatorInboundMessage =
   | { type: 'sendPort'; port: EmulatorPort; data: string }
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
-  | { type: 'start'; assetBaseUrl: string }
+  | { type: 'start' }
   | { type: 'pause' }
   | {
       type: 'sendFile'
@@ -48,32 +41,37 @@ const post = (message: EmulatorOutboundMessage) => {
 
 let emulator: InstanceType<typeof V86> | null = null
 let emulatorPromise: Promise<InstanceType<typeof V86>> | null = null
-let vmLocalUrl: string | null = null
 
 const initEmulator = async () => {
   if (emulator) {
     return emulator
   }
 
-  if (!vmLocalUrl) {
-    throw new Error('VM asset base URL was not provided')
-  }
-
-  importScripts(`${vmLocalUrl}libv86.js`)
-
   const bzImageUrl = `${vmRemoteUrl}bzImage`
   const rootfsUrl = `${vmRemoteUrl}rootfs.cpio.lz4`
-  const v86WasmUrl = `${vmLocalUrl}v86.wasm`
-  const [bzImageBufferRaw, rootfsBufferRaw, v86WasmBufferRaw] =
-    await Promise.all([
-      fetchBinary(bzImageUrl, 'bzimage', post),
-      fetchBinary(rootfsUrl, 'rootfs', post),
-      fetchBinary(v86WasmUrl, 'v86wasm', post),
-    ])
+  const seaBiosUrl =
+    'https://raw.githubusercontent.com/copy/v86/master/bios/seabios.bin'
+  const vgaBiosUrl =
+    'https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin'
+  const [
+    bzImageBufferRaw,
+    rootfsBufferRaw,
+    v86WasmBufferRaw,
+    seaBiosBufferRaw,
+    vgaBiosBufferRaw,
+  ] = await Promise.all([
+    fetchBinary(bzImageUrl, 'bzimage', post),
+    fetchBinary(rootfsUrl, 'rootfs', post),
+    fetchBinary(v86WasmUrl, 'v86wasm', post),
+    fetchBinary(seaBiosUrl, 'seabios', post),
+    fetchBinary(vgaBiosUrl, 'vgabios', post),
+  ])
 
   let bzImageBuffer: ArrayBuffer | null = bzImageBufferRaw
   let rootfsBuffer: ArrayBuffer | null = rootfsBufferRaw
   let v86WasmBuffer: ArrayBuffer | null = v86WasmBufferRaw
+  let seaBiosBuffer: ArrayBuffer | null = seaBiosBufferRaw
+  let vgaBiosBuffer: ArrayBuffer | null = vgaBiosBufferRaw
 
   post({
     type: 'receivedOutput',
@@ -118,10 +116,10 @@ const initEmulator = async () => {
     serial_container_xtermjs: null,
     disable_speaker: true,
     bios: {
-      url: 'https://raw.githubusercontent.com/copy/v86/master/bios/seabios.bin',
+      buffer: seaBiosBuffer!,
     },
     vga_bios: {
-      url: 'https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin',
+      buffer: vgaBiosBuffer!,
     },
     cdrom: null,
     hda: null,
@@ -162,6 +160,8 @@ const initEmulator = async () => {
   bzImageBuffer = null
   rootfsBuffer = null
   v86WasmBuffer = null
+  seaBiosBuffer = null
+  vgaBiosBuffer = null
 
   return emulator
 }
@@ -180,7 +180,6 @@ self.addEventListener(
 
     switch (data.type) {
       case 'start': {
-        vmLocalUrl = data.assetBaseUrl
         post({ type: 'resetOutputConsole' })
         post({
           type: 'receivedOutput',
@@ -192,7 +191,7 @@ self.addEventListener(
             post({
               type: 'receivedOutput',
               port: 'console',
-              data: 'Loaded libv86.js\n',
+              data: 'Loaded v86\n',
             })
           },
           (error) => {

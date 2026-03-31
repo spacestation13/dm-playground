@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { emulatorService } from '../../services/EmulatorService'
 import { byondService } from '../../services/ByondService'
 
-type RuntimeAsset = 'bzimage' | 'rootfs' | 'v86wasm'
+type RuntimeAsset = 'bzimage' | 'rootfs' | 'v86wasm' | 'seabios' | 'vgabios'
 
 type RuntimeAssetProgress = {
   loaded: number

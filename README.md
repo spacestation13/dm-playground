@@ -71,6 +71,8 @@ The serial controller is found here: https://github.com/spacestation13/dm-playgr
 
 The buildroot linux image code is found here: https://github.com/spacestation13/dm-playground-linux
 
+If you change the emulator runtime files or BIOS/runtime URLs, bump `RUNTIME_ASSET_CACHE_VERSION` so existing local Cache Storage entries are invalidated.
+
 ### Build the UI
 
 ```bash
