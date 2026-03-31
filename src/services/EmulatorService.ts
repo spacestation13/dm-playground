@@ -17,11 +17,21 @@ export type EmulatorOutboundMessage =
 export type EmulatorInboundMessage =
   | { type: 'receivedOutput'; port: EmulatorPort; data: string }
   | { type: 'resetOutputConsole' }
+  | {
+      type: 'assetDownloadProgress'
+      asset: 'bzimage' | 'rootfs' | 'v86wasm'
+      loaded: number
+      total: number | null
+    }
   | { type: 'asyncResponse'; commandId: string; error?: string }
 
 export class EmulatorService {
   private worker: Worker | null = null
   private events = new EventTarget()
+  private assetDownloadProgress = new Map<
+    'bzimage' | 'rootfs' | 'v86wasm',
+    { loaded: number; total: number | null }
+  >()
   private pendingResponses = new Map<
     string,
     {
@@ -45,6 +55,10 @@ export class EmulatorService {
     this.events.removeEventListener(type, listener)
   }
 
+  getAssetDownloadProgress() {
+    return new Map(this.assetDownloadProgress)
+  }
+
   start() {
     if (this.worker) {
       return
@@ -57,6 +71,13 @@ export class EmulatorService {
       'message',
       (event: MessageEvent<EmulatorInboundMessage>) => {
         const payload = event.data
+
+        if (payload.type === 'assetDownloadProgress') {
+          this.assetDownloadProgress.set(payload.asset, {
+            loaded: payload.loaded,
+            total: payload.total,
+          })
+        }
 
         if (payload.type === 'asyncResponse') {
           const pending = this.pendingResponses.get(payload.commandId)

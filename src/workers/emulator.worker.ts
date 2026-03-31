@@ -1,4 +1,9 @@
 /// <reference lib="webworker" />
+import {
+  fetchBinary,
+  type AssetDownloadProgressMessage,
+} from './runtimeAssetDownload'
+
 type EmulatorPort = 'console' | 'screen' | 'controller'
 
 declare function importScripts(...urls: string[]): void
@@ -25,6 +30,7 @@ type EmulatorInboundMessage =
 type EmulatorOutboundMessage =
   | { type: 'receivedOutput'; port: EmulatorPort; data: string }
   | { type: 'resetOutputConsole' }
+  | AssetDownloadProgressMessage
   | { type: 'asyncResponse'; commandId: string; error?: string }
 
 const vmRemoteUrl = 'https://spacestation13.github.io/dm-playground-linux/'
@@ -44,15 +50,6 @@ let emulator: InstanceType<typeof V86> | null = null
 let emulatorPromise: Promise<InstanceType<typeof V86>> | null = null
 let vmLocalUrl: string | null = null
 
-const fetchBinary = async (urlValue: string) => {
-  const response = await fetch(urlValue)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${urlValue}: ${response.status}`)
-  }
-  const buffer = await response.arrayBuffer()
-  return buffer
-}
-
 const initEmulator = async () => {
   if (emulator) {
     return emulator
@@ -66,13 +63,17 @@ const initEmulator = async () => {
 
   const bzImageUrl = `${vmRemoteUrl}bzImage`
   const rootfsUrl = `${vmRemoteUrl}rootfs.cpio.lz4`
-  const [bzImageBufferRaw, rootfsBufferRaw] = await Promise.all([
-    fetchBinary(bzImageUrl),
-    fetchBinary(rootfsUrl),
-  ])
+  const v86WasmUrl = `${vmLocalUrl}v86.wasm`
+  const [bzImageBufferRaw, rootfsBufferRaw, v86WasmBufferRaw] =
+    await Promise.all([
+      fetchBinary(bzImageUrl, 'bzimage', post),
+      fetchBinary(rootfsUrl, 'rootfs', post),
+      fetchBinary(v86WasmUrl, 'v86wasm', post),
+    ])
 
   let bzImageBuffer: ArrayBuffer | null = bzImageBufferRaw
   let rootfsBuffer: ArrayBuffer | null = rootfsBufferRaw
+  let v86WasmBuffer: ArrayBuffer | null = v86WasmBufferRaw
 
   post({
     type: 'receivedOutput',
@@ -86,7 +87,16 @@ const initEmulator = async () => {
   })
 
   emulator = new V86({
-    wasm_path: `${vmLocalUrl}v86.wasm`,
+    wasm_fn: async (imports: WebAssembly.Imports) => {
+      const source = v86WasmBuffer
+      if (!source) {
+        throw new Error('v86.wasm buffer was not available')
+      }
+
+      const { instance } = await WebAssembly.instantiate(source, imports)
+      v86WasmBuffer = null
+      return instance.exports as Record<string, unknown>
+    },
     acpi: false,
     log_level: 0,
     memory_size: 70 * 1024 * 1024,
@@ -151,6 +161,7 @@ const initEmulator = async () => {
   // Drop our references to the large asset buffers so the browser can reclaim them.
   bzImageBuffer = null
   rootfsBuffer = null
+  v86WasmBuffer = null
 
   return emulator
 }

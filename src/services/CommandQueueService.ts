@@ -131,7 +131,7 @@ export class CommandQueueService {
   private isBusy = false
   private initialized = false
   private trackedProcesses = new Map<number, Process>()
-  private idlePollDelay = 50
+  private idlePollDelay = 75
   private events = new EventTarget()
 
   setSender(sender: (value: string) => void) {
