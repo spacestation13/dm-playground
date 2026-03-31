@@ -20,6 +20,7 @@ import useProjectStore from './stores/projectStore'
 import { LayoutMode, type LayoutRoot } from './layout/layoutTypes'
 import { byondService } from '../services/ByondService'
 import { clearRuntimeAssetCaches } from '../services/runtimeAssetCache'
+import { clearOfflineCaches } from '../services/offlineServiceWorker'
 
 function PlaygroundLayout({
   layout,
@@ -106,6 +107,12 @@ function FullApp() {
       await clearRuntimeAssetCaches()
     } catch (error) {
       console.warn('Failed to clear runtime asset cache', error)
+    }
+
+    try {
+      await clearOfflineCaches()
+    } catch (error) {
+      console.warn('Failed to clear offline cache', error)
     }
 
     localStorage.removeItem('local-settings')
