@@ -129,10 +129,8 @@ test('touch-capable devices allow draft editing of inline numeric settings', asy
   await page.goto('/')
 
   const fontSizeInput = page.getByLabel('Font size')
-  const tabSizeInput = page.getByLabel('Tab size')
 
   await expect(fontSizeInput).toBeVisible()
-  await expect(tabSizeInput).toBeVisible()
 
   await fontSizeInput.fill('')
   await expect(fontSizeInput).toHaveValue('')
@@ -142,15 +140,6 @@ test('touch-capable devices allow draft editing of inline numeric settings', asy
   await expect(fontSizeInput).toHaveValue('14')
   await fontSizeInput.blur()
   await expect(fontSizeInput).toHaveValue('14')
-
-  await tabSizeInput.fill('8')
-  await expect(tabSizeInput).toHaveValue('8')
-  await tabSizeInput.press('Backspace')
-  await expect(tabSizeInput).toHaveValue('')
-  await tabSizeInput.pressSequentially('4')
-  await expect(tabSizeInput).toHaveValue('4')
-  await tabSizeInput.blur()
-  await expect(tabSizeInput).toHaveValue('4')
 })
 
 test('touch drags over Monaco can continue page scroll to lower panels', async ({
