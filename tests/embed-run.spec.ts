@@ -32,8 +32,8 @@ test('embed mode Run Code works with the real worker', async ({ page }) => {
   const project = {
     v: 1,
     f: {
-      main: `/proc/main()\n\tworld.log << "playwright-ok"\n`,
-      bootstrap: `/world/New()\n\t..()\n\tcall(/proc/main)()\n\teval("")\n\tshutdown()\n`,
+      main: `/proc/main()\n  world.log << "playwright-ok"\n`,
+      bootstrap: `/world/New()\n  ..()\n  call(/proc/main)()\n  eval("")\n  shutdown()\n`,
     },
   }
   const params = new URLSearchParams({
@@ -54,12 +54,13 @@ test('embed mode Run Code works with the real worker', async ({ page }) => {
   await expect(runButton).toBeVisible()
   await runButton.click()
 
-  await expect(runButton).toBeEnabled({ timeout: 30000 })
-  await expect(
-    page.locator('div.whitespace-pre-wrap').getByText('playwright-ok')
-  ).toBeVisible({
-    timeout: 30000,
-  })
+  await expect(runButton).toBeEnabled({ timeout: 15000 })
+  await expect(page.locator('div.whitespace-pre-wrap')).toContainText(
+    'playwright-ok',
+    {
+      timeout: 15000,
+    }
+  )
 
   expect(pageErrors).toEqual([])
 })
