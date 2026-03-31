@@ -319,26 +319,30 @@ export function Editor({
               className="mr-1 h-4 w-px bg-[var(--editor-border)]"
               aria-hidden="true"
             />
-            <label className="mr-1 inline-flex items-center gap-0 text-xs text-[var(--editor-text)]">
-              <span className="mr-1">Tab size</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                enterKeyHint="done"
-                pattern="[0-9]*"
-                value={tabSizeInput.value}
-                onChange={(event) => {
-                  tabSizeInput.onChange(event.target.value)
-                }}
-                onBlur={tabSizeInput.onBlur}
-                onKeyDown={tabSizeInput.onKeyDown}
-                className="w-5 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
-              />
-            </label>
-            <span
-              className="mr-1 h-4 w-px bg-[var(--editor-border)]"
-              aria-hidden="true"
-            />
+            {!touchSelectionEnabled && (
+              <>
+                <label className="mr-1 inline-flex items-center gap-0 text-xs text-[var(--editor-text)]">
+                  <span className="mr-1">Tab size</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    enterKeyHint="done"
+                    pattern="[0-9]*"
+                    value={tabSizeInput.value}
+                    onChange={(event) => {
+                      tabSizeInput.onChange(event.target.value)
+                    }}
+                    onBlur={tabSizeInput.onBlur}
+                    onKeyDown={tabSizeInput.onKeyDown}
+                    className="w-5 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
+                  />
+                </label>
+                <span
+                  className="mr-1 h-4 w-px bg-[var(--editor-border)]"
+                  aria-hidden="true"
+                />
+              </>
+            )}
           </>
         )}
         <button
