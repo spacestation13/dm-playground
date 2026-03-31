@@ -1,7 +1,7 @@
 import { createInterface } from 'node:readline/promises'
 import { access, readFile } from 'node:fs/promises'
+import { strFromU8, strToU8, unzlibSync, zlibSync } from 'fflate'
 import { stdin as input, stdout as output } from 'node:process'
-import { brotliCompressSync, brotliDecompressSync } from 'node:zlib'
 
 const SHARE_VERSION = 1
 
@@ -113,7 +113,7 @@ async function main() {
     const payload =
       command === 'encode-json' ? parseJsonInput(value) : value.trim()
 
-    const encoded = `${SHARE_VERSION}:${toBase64Url(brotliCompressSync(Buffer.from(JSON.stringify(payload))))}`
+    const encoded = `${SHARE_VERSION}:${toBase64Url(Buffer.from(zlibSync(strToU8(JSON.stringify(payload)), { level: 4 })))}`
     console.log(encoded)
     return
   }
@@ -124,7 +124,7 @@ async function main() {
 
     const colonIdx = value.indexOf(':')
     const payload = colonIdx === -1 ? value : value.slice(colonIdx + 1)
-    const decoded = JSON.parse(brotliDecompressSync(fromBase64Url(payload)).toString('utf8'))
+    const decoded = JSON.parse(strFromU8(unzlibSync(fromBase64Url(payload))))
     if (typeof decoded === 'string') {
       console.log(decoded)
       return

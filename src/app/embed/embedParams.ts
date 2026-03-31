@@ -1,4 +1,3 @@
-import { Base64 } from 'js-base64'
 import { CompressionService } from '../../services/CompressionService'
 import {
   createProjectFromMainCode,
@@ -9,48 +8,24 @@ import {
 import { isEditorThemeId, type EditorThemeId } from '../monaco/themes'
 
 const searchParams = new URLSearchParams(window.location.search)
-const hashPayload = window.location.hash.startsWith('#')
-  ? window.location.hash.slice(1)
-  : window.location.hash
 
-const decodeBase64Code = (value: string) => {
+const resolveProject = (): PlaygroundProject | null => {
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash
+  if (!hash) {
+    return null
+  }
+
   try {
-    return Base64.decode(value)
+    const decoded = CompressionService.decode<unknown>(hash)
+    return (
+      deserializeProject(decoded) ||
+      (typeof decoded === 'string' ? createProjectFromMainCode(decoded) : null)
+    )
   } catch {
     return null
   }
-}
-
-const decodeCompressedCode = async (value: string) => {
-  try {
-    return await CompressionService.decode<unknown>(value)
-  } catch {
-    return null
-  }
-}
-
-const resolveProject = async (): Promise<PlaygroundProject | null> => {
-  if (hashPayload) {
-    const decoded = await decodeCompressedCode(hashPayload)
-    const project = deserializeProject(decoded)
-    if (project) {
-      return project
-    }
-
-    if (typeof decoded === 'string') {
-      return createProjectFromMainCode(decoded)
-    }
-  }
-
-  const encodedCode = searchParams.get('code')
-  if (encodedCode) {
-    const decoded = decodeBase64Code(encodedCode)
-    if (decoded !== null) {
-      return createProjectFromMainCode(decoded)
-    }
-  }
-
-  return null
 }
 
 const resolveTheme = (): EditorThemeId | null => {
@@ -65,17 +40,17 @@ const resolveTheme = (): EditorThemeId | null => {
 export const embedParams = {
   isEmbed: searchParams.has('embed'),
   autorun: searchParams.has('autorun'),
-  project: await resolveProject(),
+  project: resolveProject(),
   theme: resolveTheme(),
 }
 
-export async function buildShareUrl(project: PlaygroundProject) {
+export function buildShareUrl(project: PlaygroundProject) {
   const url = new URL(window.location.href)
   url.search = ''
   const serialized = serializeProject(project)
   // For simple single-file projects, encode just the main code string.
   // For projects with a custom bootstrap, encode the full project.
   const payload = serialized.f.bootstrap ? serialized : serialized.f.main
-  url.hash = await CompressionService.encode(payload, true)
+  url.hash = CompressionService.encode(payload, true)
   return url.toString()
 }

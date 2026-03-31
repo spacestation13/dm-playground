@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { brotliCompressSync } from 'node:zlib'
+import { strToU8, zlibSync } from 'fflate'
 
 const toBase64Url = (value: Buffer) =>
   value
@@ -40,7 +40,7 @@ test('embed mode Run Code works with the real worker', async ({ page }) => {
     embed: '1',
   })
   const hashPayload = toBase64Url(
-    brotliCompressSync(Buffer.from(JSON.stringify(project)))
+    Buffer.from(zlibSync(strToU8(JSON.stringify(project)), { level: 4 }))
   )
 
   const pageErrors: string[] = []

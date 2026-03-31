@@ -71,7 +71,7 @@ function FullApp() {
 
   const handleShareClick = async () => {
     try {
-      const url = await buildShareUrl(project)
+      const url = buildShareUrl(project)
       try {
         await navigator.clipboard.writeText(url)
         setShareLabel('Link copied!')

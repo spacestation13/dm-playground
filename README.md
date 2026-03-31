@@ -14,7 +14,7 @@ Use the playground in an iframe with `?embed` to show an editor/output-only layo
 
 ```html
 <iframe
-  src="https://play.dm-lang.org/?embed#<brotli-b64>"
+  src="https://play.dm-lang.org/?embed#<share-b64>"
   width="800"
   height="500"
 ></iframe>
@@ -26,7 +26,7 @@ Supported URL parameters:
 - `autorun`: runs the snippet automatically after the runtime is ready.
 - `theme=<themeId>`: sets the editor theme for the embed. Example values: `vs-light`, `one-dark`, `dracula`.
 - `code=<base64>`: seeds the editor with base64 text.
-- `#<brotli-b64>`: the anchor seeds the editor in the [compressed share string](#share-payload-helpers) format.
+- `#<share-b64>`: the anchor seeds the editor in the [compressed share string](#share-payload-helpers) format.
 
 Embed requirements:
 
@@ -34,7 +34,7 @@ Embed requirements:
 
 ### Share payload helpers
 
-Compressed share payloads use Brotli compression for efficient serialization.
+Compressed share payloads use zlib compression for efficient serialization.
 
 You can use the `Share Code` button in the playground, or use the following scripts:
 
@@ -49,7 +49,7 @@ cat payload.json | npm run share:encode:json
 # From stdin (PowerShell)
 Get-Content .\payload.json -Raw | npm run share:encode:json
 
-npm run share:decode -- "<brotli-b64>"
+npm run share:decode -- "<share-b64>"
 ```
 
 If you omit the argument, the script reads from stdin when piped or prompts interactively otherwise.

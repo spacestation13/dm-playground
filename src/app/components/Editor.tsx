@@ -99,7 +99,7 @@ export function Editor({
       createDefaultProject().files.bootstrap
 
     try {
-      const url = await buildShareUrl({ files: { main, bootstrap } })
+      const url = buildShareUrl({ files: { main, bootstrap } })
       window.open(url, '_blank', 'noopener')
     } catch {
       window.open('https://play.dm-lang.org', '_blank', 'noopener')
