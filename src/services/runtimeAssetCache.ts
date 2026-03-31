@@ -1,6 +1,5 @@
 const RUNTIME_ASSET_CACHE_PREFIX = 'runtime-assets'
-const RUNTIME_ASSET_CACHE_VERSION = 'v1'
-const RUNTIME_ASSET_CACHE_NAME = `${RUNTIME_ASSET_CACHE_PREFIX}-${RUNTIME_ASSET_CACHE_VERSION}`
+const RUNTIME_ASSET_CACHE = `${RUNTIME_ASSET_CACHE_PREFIX}-v1`
 
 let runtimeAssetCachePromise: Promise<Cache | null> | null = null
 
@@ -15,7 +14,7 @@ async function pruneOldRuntimeAssetCaches(storage: CacheStorage) {
       .filter(
         (cacheName) =>
           cacheName.startsWith(RUNTIME_ASSET_CACHE_PREFIX) &&
-          cacheName !== RUNTIME_ASSET_CACHE_NAME
+          cacheName !== RUNTIME_ASSET_CACHE
       )
       .map((cacheName) => storage.delete(cacheName))
   )
@@ -30,7 +29,7 @@ export async function openRuntimeAssetCache() {
   if (!runtimeAssetCachePromise) {
     runtimeAssetCachePromise = (async () => {
       await pruneOldRuntimeAssetCaches(storage)
-      return storage.open(RUNTIME_ASSET_CACHE_NAME)
+      return storage.open(RUNTIME_ASSET_CACHE)
     })().catch(() => null)
   }
 

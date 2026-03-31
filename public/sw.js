@@ -3,208 +3,208 @@ const REMOTE_DEP_CACHE_PREFIX = 'remote-deps'
 const APP_SHELL_CACHE = `${APP_SHELL_CACHE_PREFIX}-v1`
 const REMOTE_DEP_CACHE = `${REMOTE_DEP_CACHE_PREFIX}-v1`
 const REMOTE_CACHE_ORIGINS = new Set([
-    'https://cdn.jsdelivr.net',
-    'https://unpkg.com',
+  'https://cdn.jsdelivr.net',
+  'https://unpkg.com',
 ])
 
 const appRootUrl = new URL('./', self.location.href).toString()
 const appIndexUrl = new URL('./index.html', self.location.href).toString()
 
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches
-            .open(APP_SHELL_CACHE)
-            .then((cache) =>
-                cache.addAll([
-                    new Request(appRootUrl, { cache: 'reload' }),
-                    new Request(appIndexUrl, { cache: 'reload' }),
-                ])
-            )
-            .catch(() => undefined)
-    )
+  event.waitUntil(
+    caches
+      .open(APP_SHELL_CACHE)
+      .then((cache) =>
+        cache.addAll([
+          new Request(appRootUrl, { cache: 'reload' }),
+          new Request(appIndexUrl, { cache: 'reload' }),
+        ])
+      )
+      .catch(() => undefined)
+  )
 
-    self.skipWaiting()
+  self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        (async () => {
-            const cacheKeys = await caches.keys()
-            await Promise.all(
-                cacheKeys
-                    .filter(
-                        (cacheName) =>
-                            (cacheName.startsWith(APP_SHELL_CACHE_PREFIX) &&
-                                cacheName !== APP_SHELL_CACHE) ||
-                            (cacheName.startsWith(REMOTE_DEP_CACHE_PREFIX) &&
-                                cacheName !== REMOTE_DEP_CACHE)
-                    )
-                    .map((cacheName) => caches.delete(cacheName))
-            )
+  event.waitUntil(
+    (async () => {
+      const cacheKeys = await caches.keys()
+      await Promise.all(
+        cacheKeys
+          .filter(
+            (cacheName) =>
+              (cacheName.startsWith(APP_SHELL_CACHE_PREFIX) &&
+                cacheName !== APP_SHELL_CACHE) ||
+              (cacheName.startsWith(REMOTE_DEP_CACHE_PREFIX) &&
+                cacheName !== REMOTE_DEP_CACHE)
+          )
+          .map((cacheName) => caches.delete(cacheName))
+      )
 
-            await self.clients.claim()
-        })()
-    )
+      await self.clients.claim()
+    })()
+  )
 })
 
 self.addEventListener('message', (event) => {
-    const data = event.data
-    if (!data || data.type !== 'CACHE_URLS' || !Array.isArray(data.urls)) {
-        return
-    }
+  const data = event.data
+  if (!data || data.type !== 'CACHE_URLS' || !Array.isArray(data.urls)) {
+    return
+  }
 
-    event.waitUntil(warmCaches(data.urls))
+  event.waitUntil(warmCaches(data.urls))
 })
 
 self.addEventListener('fetch', (event) => {
-    const { request } = event
-    if (request.method !== 'GET') {
-        return
-    }
+  const { request } = event
+  if (request.method !== 'GET') {
+    return
+  }
 
-    const url = new URL(request.url)
+  const url = new URL(request.url)
 
-    if (REMOTE_CACHE_ORIGINS.has(url.origin)) {
-        event.respondWith(cacheFirst(request, REMOTE_DEP_CACHE))
-        return
-    }
+  if (REMOTE_CACHE_ORIGINS.has(url.origin)) {
+    event.respondWith(cacheFirst(request, REMOTE_DEP_CACHE))
+    return
+  }
 
-    if (url.origin !== self.location.origin) {
-        return
-    }
+  if (url.origin !== self.location.origin) {
+    return
+  }
 
-    if (request.mode === 'navigate') {
-        event.respondWith(networkFirst(request, APP_SHELL_CACHE, appIndexUrl))
-        return
-    }
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirst(request, APP_SHELL_CACHE, appIndexUrl))
+    return
+  }
 
-    if (isSameOriginAssetRequest(request, url)) {
-        event.respondWith(staleWhileRevalidate(request, APP_SHELL_CACHE))
-    }
+  if (isSameOriginAssetRequest(request, url)) {
+    event.respondWith(staleWhileRevalidate(request, APP_SHELL_CACHE))
+  }
 })
 
 function isSameOriginAssetRequest(request, url) {
-    if (url.pathname.startsWith('/assets/')) {
-        return true
-    }
+  if (url.pathname.startsWith('/assets/')) {
+    return true
+  }
 
-    switch (request.destination) {
-        case 'script':
-        case 'style':
-        case 'worker':
-        case 'font':
-        case 'image':
-            return true
-        default:
-            return false
-    }
+  switch (request.destination) {
+    case 'script':
+    case 'style':
+    case 'worker':
+    case 'font':
+    case 'image':
+      return true
+    default:
+      return false
+  }
 }
 
 async function warmCaches(urls) {
-    const appShellCache = await caches.open(APP_SHELL_CACHE)
-    const remoteDepCache = await caches.open(REMOTE_DEP_CACHE)
-    const uniqueUrls = Array.from(new Set(urls))
+  const appShellCache = await caches.open(APP_SHELL_CACHE)
+  const remoteDepCache = await caches.open(REMOTE_DEP_CACHE)
+  const uniqueUrls = Array.from(new Set(urls))
 
-    await Promise.all(
-        uniqueUrls.map(async (urlValue) => {
-            const url = new URL(urlValue, self.location.href)
-            url.hash = ''
+  await Promise.all(
+    uniqueUrls.map(async (urlValue) => {
+      const url = new URL(urlValue, self.location.href)
+      url.hash = ''
 
-            if (REMOTE_CACHE_ORIGINS.has(url.origin)) {
-                const request = new Request(url.toString())
-                const cachedResponse = await remoteDepCache.match(request)
-                if (cachedResponse) {
-                    return
-                }
+      if (REMOTE_CACHE_ORIGINS.has(url.origin)) {
+        const request = new Request(url.toString())
+        const cachedResponse = await remoteDepCache.match(request)
+        if (cachedResponse) {
+          return
+        }
 
-                const response = await fetch(request)
-                if (isCacheableResponse(response)) {
-                    await remoteDepCache.put(request, response.clone())
-                }
-                return
-            }
+        const response = await fetch(request)
+        if (isCacheableResponse(response)) {
+          await remoteDepCache.put(request, response.clone())
+        }
+        return
+      }
 
-            if (url.origin !== self.location.origin) {
-                return
-            }
+      if (url.origin !== self.location.origin) {
+        return
+      }
 
-            const request = new Request(url.toString())
-            const cachedResponse = await appShellCache.match(request)
-            if (cachedResponse) {
-                return
-            }
+      const request = new Request(url.toString())
+      const cachedResponse = await appShellCache.match(request)
+      if (cachedResponse) {
+        return
+      }
 
-            const response = await fetch(request)
-            if (isCacheableResponse(response)) {
-                await appShellCache.put(request, response.clone())
-            }
-        })
-    )
+      const response = await fetch(request)
+      if (isCacheableResponse(response)) {
+        await appShellCache.put(request, response.clone())
+      }
+    })
+  )
 }
 
 async function cacheFirst(request, cacheName) {
-    const cache = await caches.open(cacheName)
-    const cachedResponse = await cache.match(request)
-    if (cachedResponse) {
-        return cachedResponse
-    }
+  const cache = await caches.open(cacheName)
+  const cachedResponse = await cache.match(request)
+  if (cachedResponse) {
+    return cachedResponse
+  }
 
-    const response = await fetch(request)
-    if (isCacheableResponse(response)) {
-        await cache.put(request, response.clone())
-    }
-    return response
+  const response = await fetch(request)
+  if (isCacheableResponse(response)) {
+    await cache.put(request, response.clone())
+  }
+  return response
 }
 
 async function networkFirst(request, cacheName, fallbackUrl) {
-    const cache = await caches.open(cacheName)
+  const cache = await caches.open(cacheName)
 
-    try {
-        const response = await fetch(request)
-        if (isCacheableResponse(response)) {
-            await cache.put(request, response.clone())
-        }
-        return response
-    } catch {
-        const cachedResponse = await cache.match(request)
-        if (cachedResponse) {
-            return cachedResponse
-        }
-
-        const fallbackResponse = await cache.match(fallbackUrl)
-        if (fallbackResponse) {
-            return fallbackResponse
-        }
-
-        throw new Error(`No cached response available for ${request.url}`)
+  try {
+    const response = await fetch(request)
+    if (isCacheableResponse(response)) {
+      await cache.put(request, response.clone())
     }
-}
-
-async function staleWhileRevalidate(request, cacheName) {
-    const cache = await caches.open(cacheName)
+    return response
+  } catch {
     const cachedResponse = await cache.match(request)
-    const networkResponsePromise = fetch(request)
-        .then(async (response) => {
-            if (isCacheableResponse(response)) {
-                await cache.put(request, response.clone())
-            }
-            return response
-        })
-        .catch(() => null)
-
     if (cachedResponse) {
-        void networkResponsePromise
-        return cachedResponse
+      return cachedResponse
     }
 
-    const networkResponse = await networkResponsePromise
-    if (networkResponse) {
-        return networkResponse
+    const fallbackResponse = await cache.match(fallbackUrl)
+    if (fallbackResponse) {
+      return fallbackResponse
     }
 
     throw new Error(`No cached response available for ${request.url}`)
+  }
+}
+
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName)
+  const cachedResponse = await cache.match(request)
+  const networkResponsePromise = fetch(request)
+    .then(async (response) => {
+      if (isCacheableResponse(response)) {
+        await cache.put(request, response.clone())
+      }
+      return response
+    })
+    .catch(() => null)
+
+  if (cachedResponse) {
+    void networkResponsePromise
+    return cachedResponse
+  }
+
+  const networkResponse = await networkResponsePromise
+  if (networkResponse) {
+    return networkResponse
+  }
+
+  throw new Error(`No cached response available for ${request.url}`)
 }
 
 function isCacheableResponse(response) {
-    return response.ok || response.type === 'opaque'
+  return response.ok || response.type === 'opaque'
 }
