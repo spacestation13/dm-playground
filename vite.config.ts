@@ -4,6 +4,17 @@ import tailwindcss from '@tailwindcss/vite'
 import { monaco } from '@bithero/monaco-editor-vite-plugin'
 import packageJson from './package.json'
 import { execSync } from 'child_process'
+import { fileURLToPath } from 'node:url'
+
+const nodeCryptoStubPath = fileURLToPath(
+  new URL('./src/utils/nodeCryptoStub.ts', import.meta.url)
+)
+const nodeFsPromisesStubPath = fileURLToPath(
+  new URL('./src/utils/nodeFsPromisesStub.ts', import.meta.url)
+)
+const perfHooksStubPath = fileURLToPath(
+  new URL('./src/utils/perfHooksStub.ts', import.meta.url)
+)
 
 const getAppVersion = () => {
   try {
@@ -25,10 +36,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      crypto: '/src/utils/nodeCryptoStub.ts',
-      'node:crypto': '/src/utils/nodeCryptoStub.ts',
-      'node:fs/promises': '/src/utils/nodeFsPromisesStub.ts',
-      perf_hooks: '/src/utils/perfHooksStub.ts',
+      crypto: nodeCryptoStubPath,
+      'node:crypto': nodeCryptoStubPath,
+      'node:fs/promises': nodeFsPromisesStubPath,
+      perf_hooks: perfHooksStubPath,
     },
   },
   plugins: [

@@ -65,7 +65,8 @@ export class EmulatorService {
     }
 
     this.worker = new Worker(
-      new URL('../workers/emulator.worker.ts?worker', import.meta.url)
+      new URL('../workers/emulator.worker.ts', import.meta.url),
+      { type: 'module' }
     )
     this.worker.addEventListener(
       'message',
