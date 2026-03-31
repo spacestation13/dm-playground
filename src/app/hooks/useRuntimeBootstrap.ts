@@ -73,13 +73,20 @@ export function useRuntimeBootstrap() {
       'Normalizing quaternions…',
       'Lecturing late subsystems…',
       'Ascending…',
+      'Downloading more RAM…',
+      'Summoning effort…',
+      'Aiming smokes…',
+      'Synchronizing…',
+      'Dividing by zero…',
+      'Installing dependencies…',
+      'Formatting…',
     ]
     let intervalId: number | undefined
     let shuffled: string[] = []
     let firstMessageShown = false
     const showNextMessage = () => {
       if (!firstMessageShown) {
-        executorService.appendOutput('Loading…\n')
+        executorService.appendOutput('First time setup…\n')
         firstMessageShown = true
         return
       }
@@ -95,7 +102,7 @@ export function useRuntimeBootstrap() {
       setIsRuntimeBootstrapping(true)
 
       showNextMessage()
-      intervalId = window.setInterval(showNextMessage, 1_500)
+      intervalId = window.setInterval(showNextMessage, 2_500)
 
       try {
         await ensureRuntime()

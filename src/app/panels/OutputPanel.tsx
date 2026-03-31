@@ -4,6 +4,8 @@ import type { ExecutorState } from '../stores/executorStore'
 import { executorService } from '../../services/ExecutorService'
 import { useFontFamilySetting } from '../settings/localSettings'
 import { ByondPanel } from './ByondPanel'
+import { ProgressBar } from '../components/ProgressBar'
+import { byondService } from '../../services/ByondService'
 import type { PanelHeaderProps, PanelRenderProps } from './PanelRegistry'
 
 export function OutputPanelHeader({
@@ -12,6 +14,19 @@ export function OutputPanelHeader({
   stopFunction,
   isLoading = false,
 }: PanelHeaderProps) {
+  const [downloadValue, setDownloadValue] = useState<number | null>(null)
+
+  useEffect(() => {
+    const handleProgress = (event: Event) => {
+      const detail = (event as CustomEvent<{ version: string; value: number }>)
+        .detail
+      const value = typeof detail?.value === 'number' ? detail.value : null
+      setDownloadValue(value !== null && value < 1 ? value : null)
+    }
+
+    byondService.addProgressListener(handleProgress)
+    return () => byondService.removeProgressListener(handleProgress)
+  }, [])
   return (
     <div className="flex w-full min-w-0 items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
@@ -26,13 +41,24 @@ export function OutputPanelHeader({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {isMobile && openByondModal && (
-          <button
-            type="button"
-            className="rounded border border-slate-700 bg-[var(--editor-tab-bar-bg)] px-2 py-1 text-xs text-[var(--editor-text)] hover:border-slate-500"
-            onClick={openByondModal}
-          >
-            BYOND Version
-          </button>
+          <>
+            {downloadValue != null && (
+              <div className="mr-2 flex items-center">
+                <ProgressBar
+                  value={downloadValue}
+                  className="w-20 h-4"
+                  label="BYOND download progress"
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              className="rounded border border-slate-700 bg-[var(--editor-tab-bar-bg)] px-2 py-1 text-xs text-[var(--editor-text)] hover:border-slate-500"
+              onClick={openByondModal}
+            >
+              BYOND Version
+            </button>
+          </>
         )}
         {stopFunction && (
           <button

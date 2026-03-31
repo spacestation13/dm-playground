@@ -22,6 +22,7 @@ export enum ByondStatus {
 export enum ByondEvent {
   Active = 'active',
   Loading = 'loading',
+  Progress = 'progress',
 }
 
 export class ByondService {
@@ -58,6 +59,14 @@ export class ByondService {
 
   removeStatusListener(listener: EventListenerOrEventListenerObject) {
     this.events.removeEventListener('status', listener)
+  }
+
+  addProgressListener(listener: EventListenerOrEventListenerObject) {
+    this.events.addEventListener(ByondEvent.Progress, listener)
+  }
+
+  removeProgressListener(listener: EventListenerOrEventListenerObject) {
+    this.events.removeEventListener(ByondEvent.Progress, listener)
   }
 
   async initialize() {
@@ -161,9 +170,18 @@ export class ByondService {
         )
       }
 
-      await byondArchiveStorage.writeArchive(version, response, onProgress)
+      const progressHandler = (v: number) => {
+        onProgress?.(v)
+        this.events.dispatchEvent(
+          new CustomEvent(ByondEvent.Progress, {
+            detail: { version, value: v },
+          })
+        )
+      }
 
-      onProgress?.(1)
+      await byondArchiveStorage.writeArchive(version, response, progressHandler)
+
+      progressHandler(1)
       this.setStatus(version, ByondStatus.Fetched)
     } catch (error) {
       await byondArchiveStorage.deleteArchive(version)

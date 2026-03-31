@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ByondEvent, ByondStatus } from '../../services/ByondService'
 import { byondService } from '../../services/ByondService'
+import { ProgressBar } from '../components/ProgressBar'
 
 type StatusMap = Record<string, ByondStatus>
 
@@ -53,6 +54,10 @@ export function ByondPanel() {
   const [customMajor, setCustomMajor] = useState('')
   const [customMinor, setCustomMinor] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  // Track download progress per version (0-1)
+  const [downloadProgress, setDownloadProgress] = useState<
+    Record<string, number>
+  >({})
 
   const displayVersions = useMemo(() => {
     const list = [...local]
@@ -179,11 +184,36 @@ export function ByondPanel() {
       byondService.removeEventListener(ByondEvent.Loading, handleLoading)
   }, [])
 
+  useEffect(() => {
+    const handleProgress = (event: Event) => {
+      const detail = (event as CustomEvent<{ version: string; value: number }>)
+        .detail
+      setDownloadProgress((prev) => ({
+        ...prev,
+        [detail.version]: detail.value,
+      }))
+      if (detail.value >= 1) {
+        setTimeout(() => {
+          setDownloadProgress((prev) => {
+            const next = { ...prev }
+            delete next[detail.version]
+            return next
+          })
+        }, 200)
+      }
+    }
+
+    byondService.addProgressListener(handleProgress)
+    return () => byondService.removeProgressListener(handleProgress)
+  }, [])
+
   const handleDownload = async (version: string) => {
     setStatus((prev) => ({ ...prev, [version]: ByondStatus.Fetching }))
     setError(null)
+    setDownloadProgress((prev) => ({ ...prev, [version]: 0 }))
     try {
       await byondService.downloadVersion(version, (value) => {
+        setDownloadProgress((prev) => ({ ...prev, [version]: value }))
         if (value >= 1) {
           setStatus((prev) => ({ ...prev, [version]: ByondStatus.Fetched }))
         }
@@ -191,8 +221,18 @@ export function ByondPanel() {
       // Ensure local state reflects the newly downloaded version immediately
       setLocal((prev) => (prev.includes(version) ? prev : [version, ...prev]))
       setStatus((prev) => ({ ...prev, [version]: ByondStatus.Fetched }))
+      setDownloadProgress((prev) => {
+        const next = { ...prev }
+        delete next[version]
+        return next
+      })
     } catch (downloadError) {
       setStatus((prev) => {
+        const next = { ...prev }
+        delete next[version]
+        return next
+      })
+      setDownloadProgress((prev) => {
         const next = { ...prev }
         delete next[version]
         return next
@@ -311,6 +351,8 @@ export function ByondPanel() {
                 versionStatus === ByondStatus.Idle ||
                 versionStatus === ByondStatus.Error
 
+              // Download progress for this version (0-1)
+              const progress = downloadProgress[version]
               return (
                 <tr
                   key={version}
@@ -325,7 +367,18 @@ export function ByondPanel() {
                     )}
                   </td>
                   <td className="px-2 py-2 text-[var(--editor-text)]">
-                    {versionStatus}
+                    {versionStatus === ByondStatus.Fetching &&
+                    typeof progress === 'number' ? (
+                      <div className="flex items-center gap-2">
+                        <ProgressBar
+                          value={progress}
+                          className="w-14 h-3"
+                          label={`Downloading BYOND ${version}`}
+                        />
+                      </div>
+                    ) : (
+                      versionStatus
+                    )}
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex flex-wrap gap-2">
@@ -334,6 +387,7 @@ export function ByondPanel() {
                           type="button"
                           onClick={() => void handleDownload(version)}
                           className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-[var(--editor-text)] hover:border-slate-500"
+                          disabled={typeof progress === 'number'}
                         >
                           Download
                         </button>
