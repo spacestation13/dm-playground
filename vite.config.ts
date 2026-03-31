@@ -23,6 +23,14 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(getAppVersion()),
   },
+  resolve: {
+    alias: {
+      crypto: '/src/utils/nodeCryptoStub.ts',
+      'node:crypto': '/src/utils/nodeCryptoStub.ts',
+      'node:fs/promises': '/src/utils/nodeFsPromisesStub.ts',
+      perf_hooks: '/src/utils/perfHooksStub.ts',
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
