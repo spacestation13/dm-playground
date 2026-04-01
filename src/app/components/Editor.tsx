@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import type { MouseEvent } from 'react'
 import { MobileEditorClipboardButtons } from './MobileEditorClipboardButtons'
 import { SmallInput } from './SmallInput'
+import { SmallButton } from './SmallButton'
 import { embedParams, buildShareUrl } from '../embed/embedParams'
 import { createDefaultProject } from '../editorProject/projectState'
 import type { EditableProjectFileName } from '../editorProject/projectState'
@@ -346,11 +347,12 @@ export function Editor({
             )}
           </>
         )}
-        <button
-          type="button"
+        <SmallButton
           onClick={onRun}
           disabled={runDisabled}
-          className="rounded-md whitespace-nowrap border border-[var(--editor-button-border)] bg-[var(--editor-button-bg)] pl-2 py-1 text-xs font-semibold text-[var(--editor-button-text)] hover:border-[var(--editor-button-border-hover)] hover:bg-[var(--editor-button-bg-hover)] hover:text-[var(--editor-button-text-hover)] disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center gap-2"
+          variant="primary"
+          size="sm"
+          className="rounded-md whitespace-nowrap"
         >
           Run Code
           <svg
@@ -362,7 +364,7 @@ export function Editor({
           >
             <path d="M8 5v14l11-7z" fill="var(--editor-button-border)" />
           </svg>
-        </button>
+        </SmallButton>
       </div>
       {showFileTabs && (
         <div className="flex items-end gap-px border-b border-[var(--editor-border)] bg-[var(--editor-tab-bar-bg)] px-2 pt-1">

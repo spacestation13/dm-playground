@@ -3,6 +3,7 @@ import { PanelTree } from './layout/PanelTree'
 import { ConsolePanel } from './panels/ConsolePanel'
 import { LayoutProvider } from './layout/LayoutProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { SmallButton } from './components/SmallButton'
 import { editorThemeOptions, type EditorThemeId } from './monaco/themes'
 import {
   useLayoutModeSetting,
@@ -136,22 +137,20 @@ function FullApp() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <SmallButton
             aria-label="Share"
             onClick={() => void handleShareClick()}
-            className="rounded-md border border-slate-700 bg-slate-900/80 px-2 py-1 text-sm font-semibold text-slate-200 hover:border-slate-500"
+            size="md"
           >
             {shareLabel}
-          </button>
-          <button
-            type="button"
+          </SmallButton>
+          <SmallButton
             aria-label="Settings"
             onClick={() => setShowSettings(true)}
-            className="rounded-md border border-slate-700 bg-slate-900/80 px-2 py-1 text-sm font-semibold text-slate-200 hover:border-slate-500"
+            size="md"
           >
             ⚙️
-          </button>
+          </SmallButton>
         </div>
       </header>
       <PlaygroundLayout
