@@ -50,7 +50,7 @@ export function buildShareUrl(project: PlaygroundProject) {
   const serialized = serializeProject(project)
   // For simple single-file projects, encode just the main code string.
   // For projects with a custom bootstrap, encode the full project.
-  const payload = serialized.f.bootstrap ? serialized : serialized.f.main
+  const payload = serialized.f.boot ? serialized : serialized.f.main
   url.hash = CompressionService.encode(payload, true)
   return url.toString()
 }

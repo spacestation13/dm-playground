@@ -352,7 +352,7 @@ export function Editor({
           disabled={runDisabled}
           variant="primary"
           size="sm"
-          className="rounded-md whitespace-nowrap"
+          className="rounded-md whitespace-nowrap pl-2 pr-0"
         >
           Run Code
           <svg

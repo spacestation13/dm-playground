@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ByondEvent, ByondStatus } from '../../services/ByondService'
 import { byondService } from '../../services/ByondService'
 import { ProgressBar } from '../components/ProgressBar'
+import { SmallButton } from '../components/SmallButton'
 
 type StatusMap = Record<string, ByondStatus>
 
@@ -33,14 +34,16 @@ export function ByondTitle() {
           title="Loading BYOND versions..."
         />
       )}
-      <button
+      <SmallButton
         type="button"
         onClick={() => void refresh()}
-        className="ml-auto rounded border border-[var(--editor-input-border)] px-2 py-1 text-xs text-[var(--editor-text)] bg-[var(--editor-input-bg)] hover:border-slate-500"
+        className="ml-auto"
+        variant="muted"
+        size="sm"
         title="Refresh versions"
       >
         Refresh
-      </button>
+      </SmallButton>
     </div>
   )
 }
@@ -307,7 +310,7 @@ export function ByondPanel() {
           className="w-18 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-2 py-1 text-xs text-[var(--editor-text)]"
           placeholder="minor"
         />
-        <button
+        <SmallButton
           type="button"
           onClick={() => {
             if (!customMajor || !customMinor) return
@@ -320,10 +323,11 @@ export function ByondPanel() {
               ? 'Version already available or in progress'
               : undefined
           }
-          className="rounded border border-slate-700 px-2 py-1 text-xs text-[var(--editor-text)] bg-[var(--editor-input-bg)] hover:border-slate-500 disabled:opacity-50"
+          variant="muted"
+          size="sm"
         >
           Fetch
-        </button>
+        </SmallButton>
       </div>
 
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -383,21 +387,25 @@ export function ByondPanel() {
                   <td className="px-2 py-2">
                     <div className="flex flex-wrap gap-2">
                       {canDownload && (
-                        <button
+                        <SmallButton
                           type="button"
                           onClick={() => void handleDownload(version)}
-                          className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-[var(--editor-text)] hover:border-slate-500"
+                          variant="muted"
+                          size="sm"
+                          className="text-[11px]"
                           disabled={typeof progress === 'number'}
                         >
                           Download
-                        </button>
+                        </SmallButton>
                       )}
                       {isAvailable && (
-                        <button
+                        <SmallButton
                           type="button"
                           onClick={() => handleSetActive(version)}
                           disabled={isLoading || isActive}
-                          className="rounded border border-slate-700 px-2 py-1 bg-[var(--editor-input-bg)] text-[11px] text-[var(--editor-text)] hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          variant="muted"
+                          size="sm"
+                          className="text-[11px]"
                           title={
                             isActive
                               ? 'Already active'
@@ -407,10 +415,10 @@ export function ByondPanel() {
                           }
                         >
                           Set active
-                        </button>
+                        </SmallButton>
                       )}
                       {isAvailable && (
-                        <button
+                        <SmallButton
                           type="button"
                           onClick={() => void handleDelete(version)}
                           disabled={isLatest || isActive}
@@ -422,10 +430,12 @@ export function ByondPanel() {
                                 : 'Remove version'
                           }
                           aria-label={`Remove version ${version}`}
-                          className="rounded border border-red-700/70 bg-red-950/40 px-2 py-1 text-[11px] hover:border-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          variant="danger"
+                          size="sm"
+                          className="text-[11px]"
                         >
                           Delete
-                        </button>
+                        </SmallButton>
                       )}
                     </div>
                   </td>
