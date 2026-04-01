@@ -80,6 +80,8 @@ export function useApplyThemeVariables() {
       root.setProperty('--editor-button-bg-hover', '#41a6d9')
       root.setProperty('--editor-button-border-hover', '#41a6d9')
       root.setProperty('--editor-button-text-hover', '#000')
+      root.setProperty('--editor-error-text', '#b91c1c')
+      root.setProperty('--editor-warning-text', '#b2601e')
       return
     }
 
@@ -90,6 +92,8 @@ export function useApplyThemeVariables() {
       root.setProperty('--editor-button-bg-hover', '#bbf7d0')
       root.setProperty('--editor-button-border-hover', '#059669')
       root.setProperty('--editor-button-text-hover', '#065f36')
+      root.setProperty('--editor-error-text', '#b91c1c')
+      root.setProperty('--editor-warning-text', '#92400e')
       return
     }
 
@@ -99,6 +103,8 @@ export function useApplyThemeVariables() {
     root.setProperty('--editor-button-bg-hover', '#065f46')
     root.setProperty('--editor-button-border-hover', '#30d090')
     root.setProperty('--editor-button-text-hover', '#d1eae5')
+    root.setProperty('--editor-error-text', '#ff6b6b')
+    root.setProperty('--editor-warning-text', '#f59e0b')
   }
 
   return applyThemeVariables

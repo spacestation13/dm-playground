@@ -180,19 +180,16 @@ export function generateProjectDme(
   return `${includes.join('\n')}\n`
 }
 
-export function buildProjectExecutionFiles(
-  project: PlaygroundProject,
-  prefix: string
-) {
+export function buildProjectExecutionFiles(project: PlaygroundProject) {
   const normalized = cloneProject(project)
   const fileNames: Record<EditableProjectFileName, string> = {
-    [MAIN_FILE_NAME]: `${prefix}-${MAIN_FILE_NAME}.dm`,
-    [BOOTSTRAP_FILE_NAME]: `${prefix}-${BOOTSTRAP_FILE_NAME}.dm`,
+    [MAIN_FILE_NAME]: `${MAIN_FILE_NAME}.dm`,
+    [BOOTSTRAP_FILE_NAME]: `${BOOTSTRAP_FILE_NAME}.dm`,
   }
 
   return {
-    dmeName: `${prefix}-${GENERATED_DME_FILE_NAME}`,
-    dmbName: `${prefix}-${GENERATED_DME_FILE_NAME.replace(/\.dme$/, '.dmb')}`,
+    dmeName: GENERATED_DME_FILE_NAME,
+    dmbName: GENERATED_DME_FILE_NAME.replace(/\.dme$/, '.dmb'),
     files: getEditableProjectFiles(normalized).map((file) => ({
       name: fileNames[file.name],
       value: file.value,

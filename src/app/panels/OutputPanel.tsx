@@ -118,11 +118,16 @@ export function OutputPanel({
           className="h-full overflow-auto whitespace-pre-wrap rounded p-3 bg-[var(--editor-header-bg)] text-xs text-[var(--editor-text)]"
           style={{ fontFamily }}
         >
-          {output.map((item, i) => (
-            <span key={i} style={item.color ? { color: item.color } : {}}>
-              {item.text}
-            </span>
-          ))}
+          {output.map((item, i) => {
+            const style: Record<string, string | number> = {}
+            if (item.color) style.color = item.color
+            if (item.bold) style.fontWeight = 600
+            return (
+              <span key={i} style={style}>
+                {item.text}
+              </span>
+            )
+          })}
         </div>
       </div>
       {isMobile && showByondModal && (

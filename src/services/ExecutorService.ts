@@ -11,6 +11,10 @@ import {
 import { byondService } from './ByondService'
 import useLocalSettings from '../app/settings/localSettings'
 import { ensureRuntime } from './runtimeBootstrap'
+import {
+  parseCompilerErrorLine,
+  type OutputSegment,
+} from '../utils/compilerOutputParser'
 
 export type ExecutorEventType = 'reset' | 'output' | 'status'
 const DREAM_DAEMON_STARTUP_BANNER_LINES = 3
@@ -40,10 +44,13 @@ export class ExecutorService {
     this.events.dispatchEvent(new CustomEvent('reset'))
   }
 
-  appendOutput(value: string, color?: string) {
-    this.events.dispatchEvent(
-      new CustomEvent('output', { detail: { text: value, color } })
-    )
+  appendOutput(
+    value: string | { text: string; color?: string; bold?: boolean },
+    color?: string
+  ) {
+    const item = typeof value === 'string' ? { text: value, color } : value
+
+    this.events.dispatchEvent(new CustomEvent('output', { detail: item }))
   }
 
   getStatus() {
@@ -74,8 +81,7 @@ export class ExecutorService {
     }
 
     try {
-      const filename = Date.now().toString().slice(-6)
-      const executionFiles = buildProjectExecutionFiles(project, filename)
+      const executionFiles = buildProjectExecutionFiles(project)
       const hostDme = `/mnt/host/${executionFiles.dmeName}`
       const hostDmb = `/mnt/host/${executionFiles.dmbName}`
       const hostCleanupTargets = [
@@ -117,7 +123,10 @@ export class ExecutorService {
           const detail = (event as CustomEvent<ProcessExit>).detail
           const code = detail.cause === 'exit' ? detail.code : null
           if (code === 0) {
-            this.appendOutput('-- DreamDaemon --\n', 'rgb(0, 160, 90)')
+            this.appendOutput(
+              '-- DreamDaemon --\n',
+              'var(--editor-button-border-hover)'
+            )
             try {
               const ddProcess = await commandQueueService.runProcess(
                 `${byondPath}DreamDaemon`,
@@ -180,8 +189,49 @@ export class ExecutorService {
           const code = detail.cause === 'exit' ? detail.code : null
 
           if (code === 0) {
-            // successful compile: don't show compiler text, proceed to start DreamDaemon
+            // successful compile: show any warnings from the buffered compiler output,
+            // then proceed to start DreamDaemon
             try {
+              if (dmOutputBuf.length > 0) {
+                const buf = dmOutputBuf.join('')
+                const lines = buf.split(/\r?\n/)
+
+                const warnItems: OutputSegment[] = []
+
+                for (const line of lines) {
+                  if (!line || !line.trim()) continue
+
+                  const parsed = parseCompilerErrorLine(line)
+                  if (!parsed) continue
+                  if (parsed.errtype !== 'warning') continue
+
+                  const baseFile = parsed.file.includes('/')
+                    ? parsed.file.split('/').pop() || parsed.file
+                    : parsed.file
+                  const isMain = /(^|[-_])main\.dm$/i.test(baseFile)
+
+                  if (!isMain) {
+                    warnItems.push({ text: `${baseFile}: ` })
+                  }
+
+                  warnItems.push({
+                    text: `warning`,
+                    color: 'var(--editor-warning-text)',
+                    bold: true,
+                  })
+                  warnItems.push({
+                    text: ` (line ${parsed.line})`,
+                    color: 'var(--editor-warning-text)',
+                  })
+                  warnItems.push({
+                    text: `: ${parsed.issue}\n`,
+                  })
+                }
+
+                if (warnItems.length > 0) {
+                  for (const it of warnItems) this.appendOutput(it)
+                }
+              }
               const ddProcess = await commandQueueService.runProcess(
                 `${byondPath}DreamDaemon`,
                 `${hostDmb}\0-trusted\0-invisible`,
@@ -204,9 +254,64 @@ export class ExecutorService {
               this.setStatus('idle')
             }
           } else {
-            // compile failed: show buffered compiler output and cleanup
+            // compile failed: parse buffered compiler output and show only parsed errors
             if (dmOutputBuf.length > 0) {
-              this.appendOutput(dmOutputBuf.join(''))
+              const buf = dmOutputBuf.join('')
+              const lines = buf.split(/\r?\n/)
+
+              const items: OutputSegment[] = []
+
+              for (const line of lines) {
+                if (!line || !line.trim()) continue
+
+                const parsed = parseCompilerErrorLine(line)
+                if (!parsed) continue
+
+                const file = parsed.file
+                const lineNum = parsed.line
+                const errtype = parsed.errtype
+                const issue = parsed.issue
+
+                const baseFile = file.includes('/')
+                  ? file.split('/').pop() || file
+                  : file
+                const isMain = /(^|[-_])main\.dm$/i.test(baseFile)
+
+                const notMainText = isMain ? '' : `${baseFile} `
+
+                if (errtype === 'error') {
+                  items.push({
+                    text: 'error',
+                    color: 'var(--editor-error-text)',
+                    bold: true,
+                  })
+                  items.push({
+                    text: ` (${notMainText}line ${lineNum})`,
+                    color: 'var(--editor-error-text)',
+                  })
+                  items.push({ text: `: ${issue}\n` })
+                } else {
+                  items.push({
+                    text: 'warning',
+                    color: 'var(--editor-warning-text)',
+                    bold: true,
+                  })
+                  items.push({
+                    text: ` (${notMainText}line ${lineNum})`,
+                    color: 'var(--editor-warning-text)',
+                  })
+                  items.push({ text: `: ${issue}\n` })
+                }
+              }
+
+              if (items.length > 0) {
+                for (const it of items) {
+                  this.appendOutput(it)
+                }
+              } else {
+                // Fallback: nothing parsed, show full buffer
+                this.appendOutput(buf)
+              }
             }
             try {
               await commandQueueService.runProcess('/bin/rm', cleanupArgs)
@@ -231,7 +336,7 @@ export class ExecutorService {
       commandQueueService.signal(pid, 15)
     }
     this.activePids.clear()
-    this.appendOutput('// Execution cancelled\n', 'rgb(204, 0, 0)')
+    this.appendOutput('// Execution cancelled\n', 'var(--editor-error-text)')
     this.setStatus('idle')
   }
 
