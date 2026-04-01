@@ -124,7 +124,7 @@ export function deserializeProject(value: unknown): PlaygroundProject | null {
     return null
   }
 
-  const bootstrap = typeof f.bootstrap === 'string' ? f.bootstrap : undefined
+  const bootstrap = typeof f.boot === 'string' ? f.boot : undefined
 
   return normalizeProject({
     files: {
