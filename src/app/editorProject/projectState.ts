@@ -1,6 +1,6 @@
 export const MAIN_FILE_NAME = 'main'
-export const BOOTSTRAP_FILE_NAME = 'bootstrap'
-export const GENERATED_DME_FILE_NAME = 'playground.dme'
+export const BOOTSTRAP_FILE_NAME = 'boot'
+export const GENERATED_DME_FILE_NAME = 'play.dme'
 
 export type EditableProjectFileName =
   | typeof MAIN_FILE_NAME
@@ -98,7 +98,7 @@ export function serializeProject(
   }
 
   if (!isDefaultBootstrapFile(normalized.files[BOOTSTRAP_FILE_NAME])) {
-    f.bootstrap = normalized.files[BOOTSTRAP_FILE_NAME]
+    f.boot = normalized.files[BOOTSTRAP_FILE_NAME]
   }
 
   return {

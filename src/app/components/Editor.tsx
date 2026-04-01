@@ -96,12 +96,12 @@ export function Editor({
   const handleOpenPlayground = async (ev: MouseEvent<HTMLAnchorElement>) => {
     ev.preventDefault()
     const main = files.find((f) => f.id === 'main')?.value ?? activeFile.value
-    const bootstrap =
-      files.find((f) => f.id === 'bootstrap')?.value ??
-      createDefaultProject().files.bootstrap
+    const boot =
+      files.find((f) => f.id === 'boot')?.value ??
+      createDefaultProject().files.boot
 
     try {
-      const url = buildShareUrl({ files: { main, bootstrap } })
+      const url = buildShareUrl({ files: { main, boot } })
       window.open(url, '_blank', 'noopener')
     } catch {
       window.open('https://play.dm-lang.org', '_blank', 'noopener')
