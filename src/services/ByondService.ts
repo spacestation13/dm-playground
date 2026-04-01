@@ -1,6 +1,7 @@
 import { commandQueueService } from './CommandQueueService'
 import { byondArchiveStorage } from './ByondArchiveStorage'
 import { emulatorService } from './EmulatorService'
+import { ensurePersistentStorage } from './storagePersistence'
 
 const LATEST_VERSION_URL = 'https://byond-builds.dm-lang.org/version.txt'
 const DOWNLOAD_BASE_URL = 'https://byond-builds.dm-lang.org'
@@ -182,6 +183,7 @@ export class ByondService {
       await byondArchiveStorage.writeArchive(version, response, progressHandler)
 
       progressHandler(1)
+      void ensurePersistentStorage()
       this.setStatus(version, ByondStatus.Fetched)
     } catch (error) {
       await byondArchiveStorage.deleteArchive(version)
