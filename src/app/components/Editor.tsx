@@ -3,6 +3,7 @@ import type * as Monaco from 'monaco-editor'
 import { useEffect, useMemo, useRef } from 'react'
 import type { MouseEvent } from 'react'
 import { MobileEditorClipboardButtons } from './MobileEditorClipboardButtons'
+import { SmallInput } from './SmallInput'
 import { embedParams, buildShareUrl } from '../embed/embedParams'
 import { createDefaultProject } from '../editorProject/projectState'
 import type { EditableProjectFileName } from '../editorProject/projectState'
@@ -301,7 +302,7 @@ export function Editor({
           <>
             <label className="mr-1 inline-flex items-center gap-0 text-xs text-[var(--editor-text)]">
               <span className="mr-1">Font size</span>
-              <input
+              <SmallInput
                 type="text"
                 inputMode="numeric"
                 enterKeyHint="done"
@@ -312,7 +313,7 @@ export function Editor({
                 }}
                 onBlur={fontSizeInput.onBlur}
                 onKeyDown={fontSizeInput.onKeyDown}
-                className="w-6 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
+                className="w-6"
               />
             </label>
             <span
@@ -323,7 +324,7 @@ export function Editor({
               <>
                 <label className="mr-1 inline-flex items-center gap-0 text-xs text-[var(--editor-text)]">
                   <span className="mr-1">Tab size</span>
-                  <input
+                  <SmallInput
                     type="text"
                     inputMode="numeric"
                     enterKeyHint="done"
@@ -334,7 +335,7 @@ export function Editor({
                     }}
                     onBlur={tabSizeInput.onBlur}
                     onKeyDown={tabSizeInput.onKeyDown}
-                    className="w-5 rounded border border-[var(--editor-input-border)] bg-[var(--editor-input-bg)] px-1 py-0.5 text-xs text-[var(--editor-text)]"
+                    className="w-5"
                   />
                 </label>
                 <span
