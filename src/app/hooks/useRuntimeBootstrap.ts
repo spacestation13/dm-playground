@@ -85,6 +85,13 @@ export function useRuntimeBootstrap() {
     let shuffled: string[] = []
     let firstMessageShown = false
     const showNextMessage = () => {
+      if (executorService.getStatus() !== 'running') {
+        if (intervalId !== undefined) {
+          clearInterval(intervalId)
+          intervalId = undefined
+        }
+        return
+      }
       if (!firstMessageShown) {
         executorService.appendOutput('First time setup…\n')
         firstMessageShown = true
