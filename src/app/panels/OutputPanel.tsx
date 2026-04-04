@@ -34,6 +34,7 @@ export function OutputPanelHeader({
             value={progressValue}
             className="w-16 h-4"
             label="Download progress"
+            delayMs={750}
           />
         )}
         {isMobile && openByondModal && (

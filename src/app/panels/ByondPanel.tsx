@@ -378,6 +378,7 @@ export function ByondPanel() {
                           value={progress}
                           className="w-14 h-3"
                           label={`Downloading BYOND ${version}`}
+                          delayMs={750}
                         />
                       </div>
                     ) : (
