@@ -1,6 +1,6 @@
 const APP_SHELL_CACHE_PREFIX = 'app-shell'
 const REMOTE_DEP_CACHE_PREFIX = 'remote-deps'
-const APP_SHELL_CACHE = `${APP_SHELL_CACHE_PREFIX}-v1`
+const APP_SHELL_CACHE = `${APP_SHELL_CACHE_PREFIX}-v2`
 const REMOTE_DEP_CACHE = `${REMOTE_DEP_CACHE_PREFIX}-v1`
 const REMOTE_CACHE_ORIGINS = new Set([
   'https://cdn.jsdelivr.net',
@@ -9,6 +9,7 @@ const REMOTE_CACHE_ORIGINS = new Set([
 
 const appRootUrl = new URL('./', self.location.href).toString()
 const appIndexUrl = new URL('./index.html', self.location.href).toString()
+const appShellNavigationCacheKey = new Request(appIndexUrl)
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -74,7 +75,9 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request, APP_SHELL_CACHE, appIndexUrl))
+    event.respondWith(
+      networkFirst(request, APP_SHELL_CACHE, appShellNavigationCacheKey)
+    )
     return
   }
 
@@ -156,24 +159,19 @@ async function cacheFirst(request, cacheName) {
   return response
 }
 
-async function networkFirst(request, cacheName, fallbackUrl) {
+async function networkFirst(request, cacheName, cacheKeyRequest) {
   const cache = await caches.open(cacheName)
 
   try {
     const response = await fetch(request)
     if (isCacheableResponse(response)) {
-      await cache.put(request, response.clone())
+      await cache.put(cacheKeyRequest, response.clone())
     }
     return response
   } catch {
-    const cachedResponse = await cache.match(request)
+    const cachedResponse = await cache.match(cacheKeyRequest)
     if (cachedResponse) {
       return cachedResponse
-    }
-
-    const fallbackResponse = await cache.match(fallbackUrl)
-    if (fallbackResponse) {
-      return fallbackResponse
     }
 
     throw new Error(`No cached response available for ${request.url}`)

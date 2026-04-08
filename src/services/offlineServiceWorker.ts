@@ -50,11 +50,7 @@ export async function registerOfflineServiceWorker() {
 }
 
 function collectOfflineCacheUrls() {
-  const currentUrl = new URL(window.location.href)
-  currentUrl.hash = ''
-
   const discoveredUrls = new Set<string>([
-    currentUrl.toString(),
     new URL(import.meta.env.BASE_URL, window.location.origin).toString(),
     new URL(
       `${import.meta.env.BASE_URL}index.html`,
