@@ -9,23 +9,48 @@ import { isEditorThemeId, type EditorThemeId } from '../monaco/themes'
 
 const searchParams = new URLSearchParams(window.location.search)
 
+const decodeBase64UrlText = (value: string): string => {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/')
+  const padded = normalized.padEnd(
+    normalized.length + ((4 - (normalized.length % 4)) % 4),
+    '='
+  )
+  const binary = atob(padded)
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
+  return new TextDecoder().decode(bytes)
+}
+
 const resolveProject = (): PlaygroundProject | null => {
   const hash = window.location.hash.startsWith('#')
     ? window.location.hash.slice(1)
     : window.location.hash
-  if (!hash) {
-    return null
+  const codeParam = searchParams.get('code')
+
+  // Hash is a compressed share string.
+  if (hash) {
+    try {
+      const decoded = CompressionService.decode<unknown>(hash)
+      return (
+        deserializeProject(decoded) ||
+        (typeof decoded === 'string'
+          ? createProjectFromMainCode(decoded)
+          : null)
+      )
+    } catch {
+      return null
+    }
   }
 
-  try {
-    const decoded = CompressionService.decode<unknown>(hash)
-    return (
-      deserializeProject(decoded) ||
-      (typeof decoded === 'string' ? createProjectFromMainCode(decoded) : null)
-    )
-  } catch {
-    return null
+  // `?code=` is URL-safe base64.
+  if (codeParam) {
+    try {
+      return createProjectFromMainCode(decodeBase64UrlText(codeParam))
+    } catch {
+      return null
+    }
   }
+
+  return null
 }
 
 const resolveTheme = (): EditorThemeId | null => {
