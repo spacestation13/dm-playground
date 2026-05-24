@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react'
 import { PanelId } from '../layout/layoutTypes'
 import { ByondPanel, ByondTitle } from './ByondPanel'
+import { BytecodePanel, BytecodePanelHeader } from './BytecodePanel'
 import { LazyEditorPanel } from './LazyEditorPanel'
 import { OutputPanel, OutputPanelHeader } from './OutputPanel'
 
 export interface PanelHeaderState {
   headerFunction?: () => void
+  bytecodeFunction?: () => void
   stopFunction?: () => void
   isLoading?: boolean
 }
@@ -47,5 +49,9 @@ export const PanelRegistry: Record<PanelId, PanelDescriptor> = {
   [PanelId.Byond]: {
     title: <ByondTitle />,
     render: ({ isMobile } = {}) => (isMobile ? null : <ByondPanel />),
+  },
+  [PanelId.Bytecode]: {
+    title: <BytecodePanelHeader />,
+    render: ({ isMobile } = {}) => (isMobile ? null : <BytecodePanel />),
   },
 }

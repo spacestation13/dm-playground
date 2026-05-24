@@ -1,8 +1,13 @@
 import {
+  DISASM_LIB_PATH,
+  DISASM_SO_NAME,
+} from '../app/editorProject/disasmProject'
+import {
   buildProjectExecutionFiles,
   type PlaygroundProject,
 } from '../app/editorProject/projectState'
 import useLocalSettings from '../app/settings/localSettings'
+import useBytecodeStore from '../app/stores/bytecodeStore'
 import {
   type OutputSegment,
   parseCompilerErrorLine,
@@ -13,6 +18,7 @@ import {
   type Process,
   type ProcessExit,
 } from './CommandQueueService'
+import { createDisasmInterceptor, fetchDisasmSo } from './DisassemblyService'
 import { emulatorService } from './EmulatorService'
 import { ensureRuntime } from './runtimeBootstrap'
 
@@ -24,6 +30,7 @@ export class ExecutorService {
   private activePids = new Set<number>()
   private status: 'running' | 'idle' = 'idle'
   private cancelled = false
+  private disasmInterceptor: ((text: string) => string) | null = null
 
   addEventListener(
     type: ExecutorEventType,
@@ -81,7 +88,30 @@ export class ExecutorService {
     }
 
     try {
-      const executionFiles = buildProjectExecutionFiles(project)
+      const showBytecodePanel = useLocalSettings.getState().showBytecodePanel
+
+      // Pre-fetch the disasm .so before building execution files so we know
+      // whether to inject the disasm DM code.
+      let disasmSo: Uint8Array | null = null
+      if (showBytecodePanel) {
+        disasmSo = await fetchDisasmSo()
+        if (disasmSo === null) {
+          useBytecodeStore.getState().setError('Disassembly library not available')
+        }
+      }
+      const effectiveDisasm = showBytecodePanel && disasmSo !== null
+
+      const executionFiles = buildProjectExecutionFiles(project, {
+        disassembly: effectiveDisasm,
+      })
+
+      // Set up disasm interceptor if bytecode panel is active
+      if (effectiveDisasm) {
+        this.disasmInterceptor = createDisasmInterceptor()
+      } else {
+        this.disasmInterceptor = null
+      }
+
       const hostDme = `/mnt/host/${executionFiles.dmeName}`
       const hostDmb = `/mnt/host/${executionFiles.dmbName}`
       const hostCleanupTargets = [
@@ -89,9 +119,10 @@ export class ExecutorService {
         executionFiles.dmbName,
         ...executionFiles.files.map((file) => file.name),
       ]
-      const cleanupArgs = hostCleanupTargets
-        .map((fileName) => `/mnt/host/${fileName}`)
-        .join('\0')
+      const cleanupArgs = [
+        ...hostCleanupTargets.map((fileName) => `/mnt/host/${fileName}`),
+        ...(effectiveDisasm ? [DISASM_LIB_PATH] : []),
+      ].join('\0')
       const encoder = new TextEncoder()
 
       await Promise.all([
@@ -102,6 +133,9 @@ export class ExecutorService {
         ...executionFiles.files.map((file) =>
           emulatorService.sendFile(file.name, encoder.encode(file.value))
         ),
+        ...(effectiveDisasm && disasmSo !== null
+          ? [emulatorService.sendFile(DISASM_SO_NAME, disasmSo.slice())]
+          : []),
       ])
 
       const env = new Map<string, string>([['LD_LIBRARY_PATH', byondPath]])
@@ -128,6 +162,12 @@ export class ExecutorService {
               'var(--editor-button-border-hover)'
             )
             try {
+              if (effectiveDisasm) {
+                await commandQueueService.runProcess(
+                  '/bin/cp',
+                  `/mnt/host/${DISASM_SO_NAME}\0${DISASM_LIB_PATH}`
+                )
+              }
               const ddProcess = await commandQueueService.runProcess(
                 `${byondPath}DreamDaemon`,
                 `${hostDmb}\0-trusted\0-invisible`,
@@ -231,6 +271,12 @@ export class ExecutorService {
                 if (warnItems.length > 0) {
                   for (const it of warnItems) this.appendOutput(it)
                 }
+              }
+              if (effectiveDisasm) {
+                await commandQueueService.runProcess(
+                  '/bin/cp',
+                  `/mnt/host/${DISASM_SO_NAME}\0${DISASM_LIB_PATH}`
+                )
               }
               const ddProcess = await commandQueueService.runProcess(
                 `${byondPath}DreamDaemon`,
@@ -381,7 +427,10 @@ export class ExecutorService {
       const handleStdout = (event: Event) => {
         if (this.cancelled) return
         const detail = (event as CustomEvent<string>).detail
-        const output = dropInitialDaemonBannerLines(detail)
+        let output = dropInitialDaemonBannerLines(detail)
+        if (this.disasmInterceptor) {
+          output = this.disasmInterceptor(output)
+        }
         if (output) {
           this.appendOutput(output)
         }
@@ -389,7 +438,10 @@ export class ExecutorService {
       const handleStderr = (event: Event) => {
         if (this.cancelled) return
         const detail = (event as CustomEvent<string>).detail
-        const output = dropInitialDaemonBannerLines(detail)
+        let output = dropInitialDaemonBannerLines(detail)
+        if (this.disasmInterceptor) {
+          output = this.disasmInterceptor(output)
+        }
         if (output) {
           this.appendOutput(output)
         }

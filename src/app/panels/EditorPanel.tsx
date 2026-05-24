@@ -8,6 +8,7 @@ import {
   useShowAdvancedEditorTabsSetting,
   useThemeSetting,
 } from '../settings/localSettings'
+import useBytecodeStore from '../stores/bytecodeStore'
 import type { ExecutorState } from '../stores/executorStore'
 import useExecutorStore from '../stores/executorStore'
 import useProjectStore, {
@@ -42,6 +43,17 @@ export function EditorPanel() {
       void bootstrapRuntime()
     }
   }, [bootstrapRuntime])
+
+  // Switch editor tab when a bytecode click targets a different file
+  useEffect(() => {
+    return useBytecodeStore.subscribe((state, prev) => {
+      const focus = state.pendingFocus
+      if (focus == null || focus === prev.pendingFocus) return
+      if (focus.file !== resolvedActiveFile) {
+        setActiveFile(focus.file as EditableProjectFileName)
+      }
+    })
+  }, [resolvedActiveFile, setActiveFile])
 
   const handleRun = useCallback(() => {
     void (async () => {

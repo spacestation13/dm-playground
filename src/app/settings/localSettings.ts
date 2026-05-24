@@ -24,6 +24,8 @@ type LocalSettingsState = {
   setShowConsolePanel: (v: boolean) => void
   showAdvancedEditorTabs: boolean
   setShowAdvancedEditorTabs: (v: boolean) => void
+  showBytecodePanel: boolean
+  setShowBytecodePanel: (v: boolean) => void
 }
 
 const DEFAULT_FONT_FAMILY = 'Consolas, "Liberation Mono", Courier, monospace'
@@ -72,6 +74,8 @@ export const useLocalSettings = create<LocalSettingsState>()(
       showAdvancedEditorTabs: false,
       setShowAdvancedEditorTabs: (v: boolean) =>
         set({ showAdvancedEditorTabs: v }),
+      showBytecodePanel: true,
+      setShowBytecodePanel: (v: boolean) => set({ showBytecodePanel: v }),
     }),
     {
       name: 'local-settings',
@@ -148,4 +152,14 @@ export const useShowAdvancedEditorTabsSetting = () => {
     (s: LocalSettingsState) => s.setShowAdvancedEditorTabs
   )
   return [showAdvancedEditorTabs, setShowAdvancedEditorTabs] as const
+}
+
+export const useShowBytecodePanelSetting = () => {
+  const showBytecodePanel = useLocalSettings(
+    (s: LocalSettingsState) => s.showBytecodePanel
+  )
+  const setShowBytecodePanel = useLocalSettings(
+    (s: LocalSettingsState) => s.setShowBytecodePanel
+  )
+  return [showBytecodePanel, setShowBytecodePanel] as const
 }

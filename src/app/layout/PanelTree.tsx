@@ -5,12 +5,18 @@ import {
   Panel as ResizablePanel,
   Separator,
 } from 'react-resizable-panels'
-import type { LayoutBranch, LayoutLeaf } from './layoutTypes'
+import { useLocalSettings } from '../settings/localSettings'
+import { type LayoutBranch, type LayoutLeaf, PanelId } from './layoutTypes'
 import { Panel } from './Panel'
 import { useLayoutContext } from './useLayoutContext'
 
 export function PanelTree({ node }: { node: LayoutBranch | LayoutLeaf }) {
+  const showBytecodePanel = useLocalSettings((s) => s.showBytecodePanel)
+
   if (node.type === 'leaf') {
+    if (node.id === PanelId.Bytecode && !showBytecodePanel) {
+      return null
+    }
     return <Panel id={node.id} showTitlebar={node.showTitlebar} />
   }
 
@@ -23,19 +29,32 @@ interface PanelTreeBranchProps {
 
 function PanelTreeBranch({ node }: PanelTreeBranchProps) {
   const { updateBranchSizes } = useLayoutContext()
+  const showBytecodePanel = useLocalSettings((s) => s.showBytecodePanel)
 
   const direction = node.split
   const isVertical = direction === 'vertical'
+
+  const visibleChildren = useMemo(
+    () =>
+      node.children.filter(
+        (child) =>
+          child.type !== 'leaf' ||
+          child.id !== PanelId.Bytecode ||
+          showBytecodePanel
+      ),
+    [node.children, showBytecodePanel]
+  )
+
   const panelIds = useMemo(
-    () => node.children.map((_, index) => `${node.id}-${index}`),
-    [node.id, node.children]
+    () => visibleChildren.map((_, index) => `${node.id}-${index}`),
+    [node.id, visibleChildren]
   )
   const lastSizesRef = useRef<number[] | null>(null)
 
   const handleLayoutChanged = useCallback(
     (layout: Layout) => {
       const sizes = panelIds.map(
-        (id, index) => layout[id] ?? node.children[index]?.size ?? 0
+        (id, index) => layout[id] ?? visibleChildren[index]?.size ?? 0
       )
       if (sizes.every((value) => value === 0)) {
         return
@@ -54,7 +73,7 @@ function PanelTreeBranch({ node }: PanelTreeBranchProps) {
       lastSizesRef.current = sizes
       updateBranchSizes(node.id, sizes)
     },
-    [node.id, panelIds, node.children, updateBranchSizes]
+    [node.id, panelIds, visibleChildren, updateBranchSizes]
   )
 
   return (
@@ -63,7 +82,7 @@ function PanelTreeBranch({ node }: PanelTreeBranchProps) {
       className="h-full w-full"
       onLayoutChanged={handleLayoutChanged}
     >
-      {node.children.map((child, index) => (
+      {visibleChildren.map((child, index) => (
         <Fragment key={child.id}>
           <ResizablePanel
             id={panelIds[index]}
@@ -73,7 +92,7 @@ function PanelTreeBranch({ node }: PanelTreeBranchProps) {
           >
             <PanelTree node={child} />
           </ResizablePanel>
-          {index < node.children.length - 1 && (
+          {index < visibleChildren.length - 1 && (
             <Separator
               className={
                 isVertical

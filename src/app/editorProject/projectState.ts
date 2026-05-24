@@ -2,6 +2,8 @@ export const MAIN_FILE_NAME = 'main'
 export const BOOTSTRAP_FILE_NAME = 'boot'
 export const GENERATED_DME_FILE_NAME = 'play.dme'
 
+import { DISASM_DM_CONTENT, DISASM_FILE_NAME } from './disasmProject'
+
 export type EditableProjectFileName =
   | typeof MAIN_FILE_NAME
   | typeof BOOTSTRAP_FILE_NAME
@@ -37,7 +39,7 @@ export const PROJECT_FILE_DEFINITIONS: ProjectFileDefinition[] = [
 ]
 
 const DEFAULT_MAIN_FILE = `/proc/main()\n  world.log << "meow"\n`
-const DEFAULT_BOOTSTRAP_FILE = `/world/New()\n  ..()\n  main()\n  eval("")\n  shutdown()\n`
+const DEFAULT_BOOTSTRAP_FILE = `/world/New()\n  ..()\n  dmasm_init()\n  main()\n  eval("")\n  shutdown()\n`
 
 export function createDefaultProject(): PlaygroundProject {
   return {
@@ -180,21 +182,39 @@ export function generateProjectDme(
   return `${includes.join('\n')}\n`
 }
 
-export function buildProjectExecutionFiles(project: PlaygroundProject) {
+export function buildProjectExecutionFiles(
+  project: PlaygroundProject,
+  options?: { disassembly?: boolean }
+) {
   const normalized = cloneProject(project)
   const fileNames: Record<EditableProjectFileName, string> = {
     [MAIN_FILE_NAME]: `${MAIN_FILE_NAME}.dm`,
     [BOOTSTRAP_FILE_NAME]: `${BOOTSTRAP_FILE_NAME}.dm`,
   }
 
+  const files = getEditableProjectFiles(normalized).map((file) => ({
+    name: fileNames[file.name],
+    value: file.value,
+  }))
+
+  let dmeContent = generateProjectDme(fileNames)
+
+  if (options?.disassembly) {
+    dmeContent = `#define DEBUG\n${dmeContent}`
+    files.push({ name: DISASM_FILE_NAME, value: DISASM_DM_CONTENT })
+  } else {
+    files.push({
+      name: DISASM_FILE_NAME,
+      value: '/proc/dmasm_init()\n\treturn\n',
+    })
+  }
+  dmeContent += `#include "${DISASM_FILE_NAME}"\n`
+
   return {
     dmeName: GENERATED_DME_FILE_NAME,
     dmbName: GENERATED_DME_FILE_NAME.replace(/\.dme$/, '.dmb'),
-    files: getEditableProjectFiles(normalized).map((file) => ({
-      name: fileNames[file.name],
-      value: file.value,
-    })),
-    dmeContent: generateProjectDme(fileNames),
+    files,
+    dmeContent,
   }
 }
 

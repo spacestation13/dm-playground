@@ -1,7 +1,7 @@
 import MonacoEditor, { type OnMount } from '@monaco-editor/react'
 import type * as Monaco from 'monaco-editor'
 import type { MouseEvent } from 'react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { createDefaultProject } from '../editorProject/projectState'
 import { buildShareUrl, embedParams } from '../embed/embedParams'
@@ -22,6 +22,7 @@ import {
   useFontSizeSetting,
   useTabSizeSetting,
 } from '../settings/localSettings'
+import useBytecodeStore from '../stores/bytecodeStore'
 import useUIStore from '../stores/uiStore'
 import { MobileEditorClipboardButtons } from './MobileEditorClipboardButtons'
 import { SmallButton } from './SmallButton'
@@ -63,6 +64,7 @@ export function Editor({
   const pasteCleanupRef = useRef<(() => void) | null>(null)
   const touchSelectionCleanupRef = useRef<(() => void) | null>(null)
   const touchScrollCleanupRef = useRef<(() => void) | null>(null)
+  const [editorMountKey, setEditorMountKey] = useState(0)
   const [tabSize, setTabSize] = useTabSizeSetting()
   const [fontSize, setFontSize] = useFontSizeSetting()
   const [fontFamily] = useFontFamilySetting()
@@ -142,44 +144,45 @@ export function Editor({
     }
   }
 
-  const installPasteNormalization = useCallback((
-    editor: Monaco.editor.IStandaloneCodeEditor,
-    currentTabSize: number
-  ) => {
-    const pasteListener = editor.onDidPaste((event) => {
-      const model = editor.getModel()
-      if (!model) {
-        return
+  const installPasteNormalization = useCallback(
+    (editor: Monaco.editor.IStandaloneCodeEditor, currentTabSize: number) => {
+      const pasteListener = editor.onDidPaste((event) => {
+        const model = editor.getModel()
+        if (!model) {
+          return
+        }
+
+        const pastedText = model.getValueInRange(event.range)
+        if (!pastedText.includes('\t')) {
+          return
+        }
+
+        const normalizedText = normalizePastedText(pastedText, currentTabSize)
+        if (normalizedText === pastedText) {
+          return
+        }
+
+        editor.executeEdits('editor-paste-normalize', [
+          {
+            range: event.range,
+            text: normalizedText,
+            forceMoveMarkers: true,
+          },
+        ])
+      })
+
+      return () => {
+        pasteListener.dispose()
       }
-
-      const pastedText = model.getValueInRange(event.range)
-      if (!pastedText.includes('\t')) {
-        return
-      }
-
-      const normalizedText = normalizePastedText(pastedText, currentTabSize)
-      if (normalizedText === pastedText) {
-        return
-      }
-
-      editor.executeEdits('editor-paste-normalize', [
-        {
-          range: event.range,
-          text: normalizedText,
-          forceMoveMarkers: true,
-        },
-      ])
-    })
-
-    return () => {
-      pasteListener.dispose()
-    }
-  }, [])
+    },
+    []
+  )
 
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco
     editorRef.current = editor
     bindEditor(editor)
+    setEditorMountKey((k) => k + 1)
     syncTouchSelectionMode(editor, touchSelectionEnabled)
     touchSelectionCleanupRef.current?.()
     touchScrollCleanupRef.current?.()
@@ -297,6 +300,106 @@ export function Editor({
       indentSize: tabSize,
     })
   }, [tabSize, fontSize, fontFamily, bindEditor, touchSelectionEnabled])
+
+  // Bytecode panel <-> editor bidirectional highlighting
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional trigger to re-run when editor mounts or active file changes
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor) return
+
+    const collection = editor.createDecorationsCollection()
+
+    let prevLine: number | null = null
+    let prevFile: string | null = null
+    const unsub = useBytecodeStore.subscribe((state) => {
+      const hovered = state.hoveredSource
+      if (hovered?.line === prevLine && hovered?.file === prevFile) return
+      prevLine = hovered?.line ?? null
+      prevFile = hovered?.file ?? null
+
+      if (hovered != null && hovered.file === activeFileId) {
+        collection.set([
+          {
+            range: {
+              startLineNumber: hovered.line,
+              startColumn: 1,
+              endLineNumber: hovered.line,
+              endColumn: 1,
+            },
+            options: {
+              isWholeLine: true,
+              className: 'bytecode-highlight-line',
+            },
+          },
+        ])
+      } else {
+        collection.clear()
+      }
+    })
+
+    return () => {
+      unsub()
+      collection.clear()
+    }
+  }, [editorMountKey, activeFileId])
+
+  // Editor cursor -> bytecode panel highlight
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional trigger to re-run when editor mounts or active file changes
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor) return
+
+    const disposable = editor.onDidChangeCursorPosition((e) => {
+      const line = e.position.lineNumber
+      const { sourceToByteMap, setHoveredBytecodeOffsets } =
+        useBytecodeStore.getState()
+      const keys = sourceToByteMap.get(activeFileId)?.get(line)
+      setHoveredBytecodeOffsets(keys ? new Set(keys) : null)
+    })
+
+    return () => disposable.dispose()
+  }, [editorMountKey, activeFileId])
+
+  // Bytecode click -> editor focus line
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional trigger to re-run when editor mounts or active file changes
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor) return
+
+    let rafId: number | null = null
+
+    function applyFocus(line: number) {
+      if (rafId != null) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        rafId = null
+        const e = editorRef.current
+        if (!e) return
+        e.setPosition({ lineNumber: line, column: 1 })
+        e.revealLineInCenter(line)
+        e.focus()
+        useBytecodeStore.getState().setPendingFocus(null)
+      })
+    }
+
+    const unsub = useBytecodeStore.subscribe((state, prev) => {
+      const focus = state.pendingFocus
+      if (focus == null || focus === prev.pendingFocus) return
+      if (focus.file !== activeFileId) return
+      applyFocus(focus.line)
+    })
+
+    // Consume any pendingFocus already set when this file became active
+    const { pendingFocus } = useBytecodeStore.getState()
+    if (pendingFocus != null && pendingFocus.file === activeFileId) {
+      applyFocus(pendingFocus.line)
+    }
+
+    return () => {
+      if (rafId != null) cancelAnimationFrame(rafId)
+      unsub()
+    }
+  }, [editorMountKey, activeFileId])
 
   useEffect(() => {
     return () => {
@@ -463,8 +566,8 @@ export function Editor({
             insertSpaces: true,
             // lightbulb: { enabled: Monaco.editor.ShowLightbulbIconMode.Off },
             lineNumbers: 'on',
-            lineNumbersMinChars: 2,
-            lineDecorationsWidth: 3,
+            lineNumbersMinChars: 3,
+            lineDecorationsWidth: 0,
             links: false,
             minimap: { enabled: false },
             scrollBeyondLastLine: false,

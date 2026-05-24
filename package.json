@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:disasm": "cargo build --release --target i686-unknown-linux-gnu --manifest-path crates/dm-disasm/Cargo.toml && cp crates/dm-disasm/target/i686-unknown-linux-gnu/release/libdm_disasm.so public/lib/libdm_disasm.so",
     "lint": "biome lint .",
     "test": "playwright test",
     "format": "biome format --write .",
