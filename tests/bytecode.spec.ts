@@ -1,19 +1,10 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('bytecode panel', () => {
-  test.beforeAll(async ({ browser }) => {
-    // Clear the BYOND archive cache once before all tests so we start fresh,
-    // but don't repeat it per-test — re-downloading BYOND for every test is slow.
-    const page = await browser.newPage()
-    await page.goto('/')
-    await page.evaluate(() => indexedDB.deleteDatabase('byond-archives'))
-    await page.close()
-  })
-
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'load' })
     await page.evaluate(() => localStorage.clear())
-    await page.reload()
+    await page.reload({ waitUntil: 'load' })
     // Wait for the app to load
     await expect(page.locator('.monaco-editor').first()).toBeVisible()
   })
