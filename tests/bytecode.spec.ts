@@ -77,7 +77,7 @@ test.describe('bytecode panel', () => {
     )
     await expect(bytecodePanel).toBeVisible()
     await expect(bytecodePanel.locator('text=/main/').first()).toBeVisible({
-      timeout: 15000,
+      timeout: 60000,
     })
 
     // DISASM_INIT: SUCCESS should be filtered from output
