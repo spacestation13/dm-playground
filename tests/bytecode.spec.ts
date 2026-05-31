@@ -57,16 +57,15 @@ test.describe('bytecode panel', () => {
 
     // Wait for execution to complete - look for output content
     // The markers \x01DMASM_BEGIN\x01 are intercepted by ExecutorService,
-    // so we look for DISASM_INIT in the visible output
+    // so we wait for execution output or a bytecode panel state change
     await page.waitForFunction(
       () => {
         const text = document.body.textContent ?? ''
-        // Wait for bytecode panel to show disassembled content or error
+        // Wait for either: bytecode opcodes visible, any disassembly error, or program output
         return (
           text.includes('GetVar') ||
-          text.includes('DMASM_ERROR') ||
-          text.includes('DISASM_EXCEPTION') ||
-          text.includes('Disassembly failed')
+          text.includes('Disassembly') ||
+          text.includes('meow')
         )
       },
       { timeout: 120000 }
