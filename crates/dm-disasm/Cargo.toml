@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-auxtools = { path = "auxtools-local/auxtools" }
+auxtools = { git = "https://github.com/ZeWaka/auxtools", rev = "e43d3129932e5e5d0388e5810f774bc361615c44", package = "auxtools" }
 dmasm = { git = "https://github.com/willox/dmasm", branch = "master" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
