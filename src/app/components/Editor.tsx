@@ -142,39 +142,39 @@ export function Editor({
     }
   }
 
-  const installPasteNormalization = useCallback((
-    editor: Monaco.editor.IStandaloneCodeEditor,
-    currentTabSize: number
-  ) => {
-    const pasteListener = editor.onDidPaste((event) => {
-      const model = editor.getModel()
-      if (!model) {
-        return
+  const installPasteNormalization = useCallback(
+    (editor: Monaco.editor.IStandaloneCodeEditor, currentTabSize: number) => {
+      const pasteListener = editor.onDidPaste((event) => {
+        const model = editor.getModel()
+        if (!model) {
+          return
+        }
+
+        const pastedText = model.getValueInRange(event.range)
+        if (!pastedText.includes('\t')) {
+          return
+        }
+
+        const normalizedText = normalizePastedText(pastedText, currentTabSize)
+        if (normalizedText === pastedText) {
+          return
+        }
+
+        editor.executeEdits('editor-paste-normalize', [
+          {
+            range: event.range,
+            text: normalizedText,
+            forceMoveMarkers: true,
+          },
+        ])
+      })
+
+      return () => {
+        pasteListener.dispose()
       }
-
-      const pastedText = model.getValueInRange(event.range)
-      if (!pastedText.includes('\t')) {
-        return
-      }
-
-      const normalizedText = normalizePastedText(pastedText, currentTabSize)
-      if (normalizedText === pastedText) {
-        return
-      }
-
-      editor.executeEdits('editor-paste-normalize', [
-        {
-          range: event.range,
-          text: normalizedText,
-          forceMoveMarkers: true,
-        },
-      ])
-    })
-
-    return () => {
-      pasteListener.dispose()
-    }
-  }, [])
+    },
+    []
+  )
 
   const handleMount: OnMount = async (editor, monaco) => {
     monacoRef.current = monaco as typeof Monaco

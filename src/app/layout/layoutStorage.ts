@@ -1,4 +1,7 @@
-import { decode as compressionDecode, encode as compressionEncode } from '../../services/CompressionService'
+import {
+  decode as compressionDecode,
+  encode as compressionEncode,
+} from '../../services/CompressionService'
 import {
   defaultLayouts,
   type LayoutBranch,

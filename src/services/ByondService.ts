@@ -5,6 +5,7 @@ import { ensurePersistentStorage } from './storagePersistence'
 
 const LATEST_VERSION_URL = 'https://byond-builds.dm-lang.org/version.txt'
 const DOWNLOAD_BASE_URL = 'https://byond-builds.dm-lang.org'
+const DOWNLOAD_BASE_FALLBACK_URL = 'https://www.byond.com/download/build/'
 
 const ACTIVE_VERSION_KEY = 'byondActiveVersion'
 
@@ -163,14 +164,6 @@ export class ByondService {
     const url = `${DOWNLOAD_BASE_URL}/${major}/${version}_byond_linux.zip`
 
     try {
-      const response = await fetch(url)
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to download BYOND ${version}: ${response.status}`
-        )
-      }
-
       const progressHandler = (v: number) => {
         onProgress?.(v)
         this.events.dispatchEvent(
@@ -180,7 +173,28 @@ export class ByondService {
         )
       }
 
-      await byondArchiveStorage.writeArchive(version, response, progressHandler)
+      const response = await fetch(url)
+
+      if (response.ok) {
+        await byondArchiveStorage.writeArchive(
+          version,
+          response,
+          progressHandler
+        )
+      } else {
+        const fallback_url = `${DOWNLOAD_BASE_FALLBACK_URL}/${major}/${version}_byond_linux.zip`
+        const fallback_response = await fetch(fallback_url)
+        if (!fallback_response.ok) {
+          throw new Error(
+            `Failed to download BYOND ${version}: ${response.status}`
+          )
+        }
+        await byondArchiveStorage.writeArchive(
+          version,
+          fallback_response,
+          progressHandler
+        )
+      }
 
       progressHandler(1)
       void ensurePersistentStorage()
