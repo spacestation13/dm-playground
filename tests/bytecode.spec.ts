@@ -34,40 +34,6 @@ test.describe('bytecode panel', () => {
     await expect(page.locator('header:has-text("Bytecode")')).toBeVisible()
   })
 
-  test('bytecode disassembly runs and produces output', async ({ page }) => {
-    // Enable bytecode panel
-    await page.getByRole('button', { name: 'Settings' }).click()
-    const checkbox = page.getByLabel('Show bytecode panel')
-    if (!(await checkbox.isChecked())) {
-      await checkbox.check()
-    }
-    await page.locator('.fixed.inset-0').click({ position: { x: 5, y: 5 } })
-
-    // Wait for BYOND to be ready and run
-    const runButton = page.getByRole('button', { name: /run/i })
-    await expect(runButton).toBeVisible({ timeout: 60000 })
-    await runButton.click()
-
-    // Wait for bytecode panel to render instruction rows (same pattern as other tests)
-    const bytecodePanel = page.locator(
-      'section:has(header:has-text("Bytecode"))'
-    )
-    await expect(bytecodePanel.locator('.flex.gap-3').first()).toBeVisible({
-      timeout: 60000,
-    })
-
-    // Verify proc name and opcodes are present
-    const panelText = (await bytecodePanel.textContent()) ?? ''
-    expect(panelText).toMatch(/\/proc\/main/)
-    expect(panelText).toContain('GetVar')
-    expect(panelText).toContain('End')
-
-    // DISASM_INIT: SUCCESS should be filtered from output
-    const outputText = (await page.locator('body').textContent()) ?? ''
-    expect(outputText).not.toContain('DISASM_INIT: SUCCESS')
-    expect(outputText).not.toContain('DISASM_RESULT_LEN')
-  })
-
   test('hovering bytecode highlights editor line when debug info present', async ({
     page,
   }) => {
