@@ -11,6 +11,9 @@ dist
 dist-ssr
 *.local
 
+# Built native library (run `pnpm run build:disasm` to generate)
+public/lib/libdm_disasm.so
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -20,3 +23,6 @@ dist-ssr
 # Playwright
 playwright-report
 test-results
+
+# Rust
+crates/*/target

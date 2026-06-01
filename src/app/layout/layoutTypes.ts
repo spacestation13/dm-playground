@@ -3,6 +3,7 @@ export const PanelId = {
   Editor: 'Editor',
   Output: 'Output',
   Byond: 'Byond',
+  Bytecode: 'Bytecode',
 } as const
 
 export type PanelId = (typeof PanelId)[keyof typeof PanelId]
@@ -24,6 +25,7 @@ export const layoutPanelIds = [
   PanelId.Editor,
   PanelId.Output,
   PanelId.Byond,
+  PanelId.Bytecode,
 ] as const satisfies readonly PanelId[]
 
 export type SplitDirection = 'horizontal' | 'vertical'
@@ -61,24 +63,37 @@ export function resolveLayoutMode(
 }
 
 export const defaultDesktopLayout: LayoutRoot = {
-  version: 3,
-  nextBranchId: 2,
+  version: 4,
+  nextBranchId: 3,
   root: {
     type: 'branch',
     id: 0,
     split: 'horizontal',
     children: [
       {
-        type: 'leaf',
-        id: PanelId.Editor,
-        size: 75,
-        showTitlebar: false,
+        type: 'branch',
+        id: 2,
+        split: 'vertical',
+        size: 70,
+        children: [
+          {
+            type: 'leaf',
+            id: PanelId.Editor,
+            size: 65,
+            showTitlebar: false,
+          },
+          {
+            type: 'leaf',
+            id: PanelId.Bytecode,
+            size: 35,
+          },
+        ],
       },
       {
         type: 'branch',
         id: 1,
         split: 'vertical',
-        size: 25,
+        size: 30,
         children: [
           {
             type: 'leaf',

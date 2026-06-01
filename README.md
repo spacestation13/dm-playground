@@ -80,6 +80,18 @@ pnpm install
 pnpm run dev # Starts development server with hot reload
 ```
 
+### Build the disassembler
+
+The bytecode panel relies on a Rust library compiled for i686 Linux.
+You need the i686 cross-compilation toolchain installed:
+
+```bash
+rustup target add i686-unknown-linux-gnu
+sudo apt-get install gcc-multilib # Debian/Ubuntu
+
+pnpm run build:disasm
+```
+
 ### Build for production
 
 ```bash

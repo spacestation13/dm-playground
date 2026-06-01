@@ -16,6 +16,7 @@ import {
   useFontSizeSetting,
   useLayoutModeSetting,
   useShowAdvancedEditorTabsSetting,
+  useShowBytecodePanelSetting,
   useShowConsoleSetting,
   useStreamCompilerSetting,
   useTabSizeSetting,
@@ -57,6 +58,8 @@ function FullApp() {
   const [showConsolePanel, setShowConsolePanel] = useShowConsoleSetting()
   const [showAdvancedEditorTabs, setShowAdvancedEditorTabs] =
     useShowAdvancedEditorTabsSetting()
+  const [showBytecodePanel, setShowBytecodePanel] =
+    useShowBytecodePanelSetting()
 
   const project = useProjectStore((s) => s.project)
   const [shareLabel, setShareLabel] = useState('🔗 Share Code')
@@ -291,6 +294,16 @@ function FullApp() {
                   }}
                 />
                 <span className="text-xs">Show advanced editor tabs</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showBytecodePanel}
+                  onChange={(e) => {
+                    setShowBytecodePanel(e.target.checked)
+                  }}
+                />
+                <span className="text-xs">Show bytecode panel</span>
               </label>
               <div className="pt-2">
                 <button

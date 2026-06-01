@@ -50,3 +50,7 @@ body {
 .dm-editor-shell-touch .monaco-editor .view-line {
   -webkit-touch-callout: default;
 }
+
+.bytecode-highlight-line {
+  background-color: rgba(255, 213, 79, 0.25);
+}

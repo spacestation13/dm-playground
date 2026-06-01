@@ -2,19 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { executorService } from '../../services/ExecutorService'
 import { ProgressBar } from '../components/ProgressBar'
 import { useFontFamilySetting } from '../settings/localSettings'
+import useBytecodeStore from '../stores/bytecodeStore'
 import type { ExecutorState } from '../stores/executorStore'
 import useExecutorStore from '../stores/executorStore'
 import { ByondPanel } from './ByondPanel'
+import { BytecodePanel } from './BytecodePanel'
 import type { PanelHeaderProps, PanelRenderProps } from './PanelRegistry'
 import { useOutputPanelProgress } from './useOutputPanelProgress'
 
 export function OutputPanelHeader({
   isMobile,
   headerFunction: openByondModal,
+  bytecodeFunction: openBytecodeModal,
   stopFunction,
   isLoading = false,
 }: PanelHeaderProps) {
   const { progressValue } = useOutputPanelProgress()
+  const bytecodeDisassembly = useBytecodeStore((s) => s.disassembly)
+  const bytecodeStatus = useBytecodeStore((s) => s.status)
+  const hasBytecodeOutput =
+    bytecodeDisassembly != null || bytecodeStatus === 'error'
 
   return (
     <div className="flex w-full min-w-0 items-center justify-between gap-2">
@@ -36,6 +43,15 @@ export function OutputPanelHeader({
             label="Download progress"
             delayMs={750}
           />
+        )}
+        {isMobile && hasBytecodeOutput && openBytecodeModal && (
+          <button
+            type="button"
+            className="rounded border border-slate-700 bg-[var(--editor-tab-bar-bg)] px-2 py-1 text-xs text-[var(--editor-text)] hover:border-slate-500"
+            onClick={openBytecodeModal}
+          >
+            Bytecode
+          </button>
         )}
         {isMobile && openByondModal && (
           <button
@@ -70,6 +86,7 @@ export function OutputPanel({
   const outputRef = useRef<HTMLDivElement | null>(null)
   const [fontFamily] = useFontFamilySetting()
   const [showByondModal, setShowByondModal] = useState(false)
+  const [showBytecodeModal, setShowBytecodeModal] = useState(false)
 
   const handleOpenByondModal = useCallback(() => {
     setShowByondModal(true)
@@ -77,6 +94,14 @@ export function OutputPanel({
 
   const handleCloseByondModal = useCallback(() => {
     setShowByondModal(false)
+  }, [])
+
+  const handleOpenBytecodeModal = useCallback(() => {
+    setShowBytecodeModal(true)
+  }, [])
+
+  const handleCloseBytecodeModal = useCallback(() => {
+    setShowBytecodeModal(false)
   }, [])
 
   const handleStopExecution = useCallback(() => {
@@ -96,6 +121,7 @@ export function OutputPanel({
 
     registerHeaderState({
       headerFunction: isMobile ? handleOpenByondModal : undefined,
+      bytecodeFunction: isMobile ? handleOpenBytecodeModal : undefined,
       stopFunction: handleStopExecution,
       isLoading: status === 'running',
     })
@@ -105,6 +131,7 @@ export function OutputPanel({
     }
   }, [
     handleOpenByondModal,
+    handleOpenBytecodeModal,
     handleStopExecution,
     isMobile,
     registerHeaderState,
@@ -132,13 +159,43 @@ export function OutputPanel({
           })}
         </div>
       </div>
+      {isMobile && showBytecodeModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/70"
+          onClick={handleCloseBytecodeModal}
+        >
+          <div
+            className="w-125 max-h-[88vh] flex flex-col rounded-lg border border-[var(--editor-border)] bg-[var(--editor-tab-bar-bg)] p-3 text-[var(--editor-text)] shadow-lg"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Bytecode"
+          >
+            <div className="mb-1 flex justify-between">
+              <h2 className="text-sm font-semibold text-[var(--editor-text)]">
+                Bytecode
+              </h2>
+              <button
+                type="button"
+                onClick={handleCloseBytecodeModal}
+                className="text-xs text-[var(--editor-text)] hover:text-[var(--editor-text)]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <BytecodePanel />
+            </div>
+          </div>
+        </div>
+      )}
       {isMobile && showByondModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/70"
           onClick={handleCloseByondModal}
         >
           <div
-            className="w-100 rounded-lg border border-[var(--editor-border)] bg-[var(--editor-tab-bar-bg)] p-4 text-[var(--editor-text)] shadow-lg"
+            className="w-100 rounded-lg border border-[var(--editor-border)] bg-[var(--editor-tab-bar-bg)] p-3 text-[var(--editor-text)] shadow-lg"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
