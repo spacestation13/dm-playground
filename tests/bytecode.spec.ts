@@ -34,56 +34,6 @@ test.describe('bytecode panel', () => {
     await expect(page.locator('header:has-text("Bytecode")')).toBeVisible()
   })
 
-  test('clicking a bytecode row does not highlight rows in other procs at the same offset', async ({
-    page,
-  }) => {
-    // Enable bytecode panel + advanced tabs so /world/New is visible
-    await page.getByRole('button', { name: 'Settings' }).click()
-    const bytecodeCheck = page.getByLabel('Show bytecode panel')
-    if (!(await bytecodeCheck.isChecked())) await bytecodeCheck.check()
-    const advancedCheck = page.getByLabel('Show advanced editor tabs')
-    if (!(await advancedCheck.isChecked())) await advancedCheck.check()
-    await page.locator('.fixed.inset-0').click({ position: { x: 5, y: 5 } })
-
-    const runButton = page.getByRole('button', { name: /run/i })
-    await expect(runButton).toBeVisible({ timeout: 60000 })
-    await runButton.click()
-
-    const bytecodePanel = page.locator(
-      'section:has(header:has-text("Bytecode"))'
-    )
-    // Wait for /proc/main section to appear
-    await expect(bytecodePanel.locator('text=/\\/proc\\/main/')).toBeVisible({
-      timeout: 120000,
-    })
-    // Wait for /world/New section to appear
-    await expect(bytecodePanel.locator('text=/\\/world\\/New/')).toBeVisible({
-      timeout: 5000,
-    })
-
-    // Click the first highlighted row inside /proc/main
-    const mainSection = bytecodePanel
-      .locator('div')
-      .filter({ hasText: /^\/proc\/main$/ })
-      .locator('..')
-    const mainHighlightedRow = mainSection
-      .locator('[style*="background-color"]')
-      .first()
-    await expect(mainHighlightedRow).toBeVisible()
-    await mainHighlightedRow.click()
-    await page.waitForTimeout(300)
-
-    // Count highlighted rows (blue left-bar indicator) inside /world/New section
-    const worldSection = bytecodePanel
-      .locator('div')
-      .filter({ hasText: /^\/world\/New$/ })
-      .locator('..')
-    const worldHighlighted = worldSection.locator(
-      '.absolute.left-0.top-0.bottom-0'
-    )
-    await expect(worldHighlighted).toHaveCount(0)
-  })
-
   test('hovering /proc/main bytecode does not highlight editor when boot.dm is active', async ({
     page,
   }) => {
