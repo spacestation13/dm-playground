@@ -14,7 +14,12 @@ export async function fetchDisasmSo(): Promise<Uint8Array | null> {
   const data = new Uint8Array(await resp.arrayBuffer())
   // Vite dev server returns a 200 HTML fallback for missing public files.
   // Verify the ELF magic bytes (\x7fELF) to confirm we got an actual binary.
-  if (data[0] !== 0x7f || data[1] !== 0x45 || data[2] !== 0x4c || data[3] !== 0x46) {
+  if (
+    data[0] !== 0x7f ||
+    data[1] !== 0x45 ||
+    data[2] !== 0x4c ||
+    data[3] !== 0x46
+  ) {
     return null
   }
   disasmSoCache = data

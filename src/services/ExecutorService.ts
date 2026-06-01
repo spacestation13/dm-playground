@@ -96,7 +96,9 @@ export class ExecutorService {
       if (showBytecodePanel) {
         disasmSo = await fetchDisasmSo()
         if (disasmSo === null) {
-          useBytecodeStore.getState().setError('Disassembly library not available')
+          useBytecodeStore
+            .getState()
+            .setError('Disassembly library not available')
         }
       }
       const effectiveDisasm = showBytecodePanel && disasmSo !== null
