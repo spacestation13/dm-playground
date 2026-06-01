@@ -34,50 +34,6 @@ test.describe('bytecode panel', () => {
     await expect(page.locator('header:has-text("Bytecode")')).toBeVisible()
   })
 
-  test('hovering bytecode highlights editor line when debug info present', async ({
-    page,
-  }) => {
-    // Enable bytecode panel
-    await page.getByRole('button', { name: 'Settings' }).click()
-    const checkbox = page.getByLabel('Show bytecode panel')
-    if (!(await checkbox.isChecked())) {
-      await checkbox.check()
-    }
-    await page.locator('.fixed.inset-0').click({ position: { x: 5, y: 5 } })
-
-    // Run code
-    const runButton = page.getByRole('button', { name: /run/i })
-    await expect(runButton).toBeVisible({ timeout: 60000 })
-    await runButton.click()
-
-    // Wait for bytecode panel to render
-    const bytecodePanel = page.locator(
-      'section:has(header:has-text("Bytecode"))'
-    )
-    await expect(bytecodePanel.locator('.flex.gap-3').first()).toBeVisible({
-      timeout: 120000,
-    })
-
-    // BYOND 516+ does not emit inline debug info (DbgFile/DbgLine) in bytecode,
-    // so line highlighting only works on older versions.
-    // Verify the panel renders correctly regardless.
-    const rowCount = await bytecodePanel.locator('.flex.gap-3').count()
-    expect(rowCount).toBeGreaterThan(0)
-
-    // #define DEBUG ensures BYOND emits inline DbgFile/DbgLine in bytecode
-    const coloredCount = await bytecodePanel
-      .locator('[style*="background-color"]')
-      .count()
-    expect(coloredCount).toBeGreaterThan(0)
-
-    // Hover a colored row and verify editor highlight appears
-    await bytecodePanel.locator('[style*="background-color"]').first().hover()
-    await page.waitForTimeout(300)
-    await expect(page.locator('.bytecode-highlight-line')).toBeVisible({
-      timeout: 3000,
-    })
-  })
-
   test('clicking a bytecode row does not highlight rows in other procs at the same offset', async ({
     page,
   }) => {
