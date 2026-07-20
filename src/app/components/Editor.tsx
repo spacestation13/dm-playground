@@ -1,5 +1,8 @@
-import MonacoEditor, { type OnMount } from '@monaco-editor/react'
+import MonacoEditor, { loader, type OnMount } from '@monaco-editor/react'
+import * as monaco from 'monaco-editor'
 import type * as Monaco from 'monaco-editor'
+
+loader.config({ monaco })
 import type { MouseEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EditableProjectFileName } from '../editorProject/projectState'

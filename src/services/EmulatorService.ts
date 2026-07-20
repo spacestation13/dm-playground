@@ -1,5 +1,7 @@
 export type EmulatorPort = 'console' | 'screen' | 'controller'
 
+import { isDiscordActivity } from '../discord/discordSdk'
+import { getWorkerAssetUrls } from '../discord/urlMappings'
 import { commandQueueService } from './CommandQueueService'
 
 export type EmulatorOutboundMessage =
@@ -12,6 +14,12 @@ export type EmulatorOutboundMessage =
       commandId: string
       name: string
       data: Uint8Array
+    }
+  | {
+      type: 'setAssetUrls'
+      vmRemoteUrl: string
+      seaBiosUrl: string
+      vgaBiosUrl: string
     }
 
 export type EmulatorInboundMessage =
@@ -97,6 +105,10 @@ export class EmulatorService {
         )
       }
     )
+    if (isDiscordActivity()) {
+      const urls = getWorkerAssetUrls()
+      this.post({ type: 'setAssetUrls', ...urls })
+    }
     this.post({ type: 'start' })
   }
 

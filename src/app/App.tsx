@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { useDiscordActivity } from '../discord/DiscordActivityProvider'
+import { shareToDiscord } from '../discord/shareToDiscord'
+import { decode as compressionDecode } from '../services/CompressionService'
 import { byondService } from '../services/ByondService'
+import {
+  createProjectFromMainCode,
+  deserializeProject,
+} from './editorProject/projectState'
 import { clearOfflineCaches } from '../services/offlineServiceWorker'
 import { clearRuntimeAssetCaches } from '../services/runtimeAssetCache'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -22,6 +29,7 @@ import {
   useTabSizeSetting,
   useThemeSetting,
 } from './settings/localSettings'
+import useExecutorStore from './stores/executorStore'
 import useProjectStore from './stores/projectStore'
 
 function PlaygroundLayout({
@@ -61,8 +69,32 @@ function FullApp() {
   const [showBytecodePanel, setShowBytecodePanel] =
     useShowBytecodePanelSetting()
 
+  const { isActivity, ready: discordReady, customId } = useDiscordActivity()
+  const setProject = useProjectStore((s) => s.setProject)
+
+  useEffect(() => {
+    if (!customId) return
+    const botUrl = (import.meta.env.VITE_BOT_BACKEND_URL as string) ?? ''
+    fetch(`${botUrl}/api/snippets/${customId}`)
+      .then((r) => {
+        if (!r.ok) throw new Error('Snippet not found')
+        return r.json() as Promise<{ hash: string }>
+      })
+      .then(({ hash }) => {
+        const decoded = compressionDecode<unknown>(hash)
+        const loaded = deserializeProject(decoded)
+          ?? (typeof decoded === 'string' ? createProjectFromMainCode(decoded) : null)
+        if (loaded) setProject(loaded)
+      })
+      .catch((err) => {
+        console.warn('Failed to load shared code from Activity link:', err)
+      })
+  }, [customId, setProject])
+
   const project = useProjectStore((s) => s.project)
   const [shareLabel, setShareLabel] = useState('🔗 Share Code')
+  const [shareToDiscordLabel, setShareToDiscordLabel] =
+    useState('Share to Discord')
   const shareTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(
     null
   )
@@ -92,6 +124,27 @@ function FullApp() {
       }
     } catch (err) {
       console.warn('Failed to build share url', err)
+    }
+  }
+
+  const handleShareToDiscord = async () => {
+    const currentProject = useProjectStore.getState().project
+    const output = useExecutorStore.getState().output
+    const code = currentProject.files.main
+    const outputText = output.map((s) => s.text ?? '').join('')
+    const shareUrl = buildShareUrl(currentProject)
+    const shareHash = new URL(shareUrl).hash.slice(1)
+
+    try {
+      setShareToDiscordLabel('Sharing...')
+      const botUrl = (import.meta.env.VITE_BOT_BACKEND_URL as string) ?? ''
+      await shareToDiscord(code, outputText, shareHash, botUrl)
+      setShareToDiscordLabel('Shared!')
+      setTimeout(() => setShareToDiscordLabel('Share to Discord'), 3000)
+    } catch (err) {
+      console.error('Failed to share to Discord:', err)
+      setShareToDiscordLabel('Failed')
+      setTimeout(() => setShareToDiscordLabel('Share to Discord'), 3000)
     }
   }
 
@@ -140,13 +193,24 @@ function FullApp() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <SmallButton
-            aria-label="Share"
-            onClick={() => void handleShareClick()}
-            size="md"
-          >
-            {shareLabel}
-          </SmallButton>
+          {!isActivity && (
+            <SmallButton
+              aria-label="Share"
+              onClick={() => void handleShareClick()}
+              size="md"
+            >
+              {shareLabel}
+            </SmallButton>
+          )}
+          {isActivity && discordReady && (
+            <SmallButton
+              aria-label="Share to Discord"
+              onClick={() => void handleShareToDiscord()}
+              size="md"
+            >
+              {shareToDiscordLabel}
+            </SmallButton>
+          )}
           <SmallButton
             aria-label="Settings"
             onClick={() => setShowSettings(true)}

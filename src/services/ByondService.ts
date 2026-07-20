@@ -1,11 +1,24 @@
+import { isDiscordActivity } from '../discord/discordSdk'
 import { byondArchiveStorage } from './ByondArchiveStorage'
 import { commandQueueService } from './CommandQueueService'
 import { emulatorService } from './EmulatorService'
 import { ensurePersistentStorage } from './storagePersistence'
 
-const LATEST_VERSION_URL = 'https://byond-builds.dm-lang.org/version.txt'
-const DOWNLOAD_BASE_URL = 'https://byond-builds.dm-lang.org'
-const DOWNLOAD_BASE_FALLBACK_URL = 'https://www.byond.com/download/build/'
+function getByondUrls() {
+  if (isDiscordActivity()) {
+    const origin = window.location.origin
+    return {
+      latestVersion: `${origin}/.proxy/ext/byond-builds/version.txt`,
+      downloadBase: `${origin}/.proxy/ext/byond-builds`,
+      downloadFallback: `${origin}/.proxy/ext/byond-fallback/`,
+    }
+  }
+  return {
+    latestVersion: 'https://byond-builds.dm-lang.org/version.txt',
+    downloadBase: 'https://byond-builds.dm-lang.org',
+    downloadFallback: 'https://www.byond.com/download/build/',
+  }
+}
 
 const ACTIVE_VERSION_KEY = 'byondActiveVersion'
 
@@ -109,7 +122,7 @@ export class ByondService {
   }
 
   async getLatestVersion() {
-    const response = await fetch(LATEST_VERSION_URL)
+    const response = await fetch(getByondUrls().latestVersion)
     if (!response.ok) {
       throw new Error(`Failed to fetch version.txt: ${response.status}`)
     }
@@ -161,7 +174,8 @@ export class ByondService {
   async downloadVersion(version: string, onProgress?: (value: number) => void) {
     this.setStatus(version, ByondStatus.Fetching)
     const major = version.split('.')[0]
-    const url = `${DOWNLOAD_BASE_URL}/${major}/${version}_byond_linux.zip`
+    const urls = getByondUrls()
+    const url = `${urls.downloadBase}/${major}/${version}_byond_linux.zip`
 
     try {
       const progressHandler = (v: number) => {
@@ -182,7 +196,7 @@ export class ByondService {
           progressHandler
         )
       } else {
-        const fallback_url = `${DOWNLOAD_BASE_FALLBACK_URL}/${major}/${version}_byond_linux.zip`
+        const fallback_url = `${urls.downloadFallback}/${major}/${version}_byond_linux.zip`
         const fallback_response = await fetch(fallback_url)
         if (!fallback_response.ok) {
           throw new Error(
