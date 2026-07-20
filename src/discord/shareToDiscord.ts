@@ -101,7 +101,12 @@ export async function shareToDiscord(
 ): Promise<void> {
   if (isDiscordDm()) {
     await shareViaLink(code, output, shareHash, botBackendUrl)
-  } else {
+    return
+  }
+
+  try {
     await shareViaBot(code, output, shareHash, botBackendUrl)
+  } catch {
+    await shareViaLink(code, output, shareHash, botBackendUrl)
   }
 }

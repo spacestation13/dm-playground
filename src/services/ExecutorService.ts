@@ -52,7 +52,7 @@ export class ExecutorService {
   }
 
   appendOutput(
-    value: string | { text: string; color?: string; bold?: boolean },
+    value: string | { text: string; color?: string; bold?: boolean; system?: boolean },
     color?: string
   ) {
     const item = typeof value === 'string' ? { text: value, color } : value
@@ -153,16 +153,17 @@ export class ExecutorService {
       )
 
       if (streamCompilerOutput) {
-        this.attachProcess(dmProcess, { suppressIdleOnExit: true })
+        this.attachProcess(dmProcess, { suppressIdleOnExit: true, system: true })
 
         const handleDmExit = async (event: Event) => {
           const detail = (event as CustomEvent<ProcessExit>).detail
           const code = detail.cause === 'exit' ? detail.code : null
           if (code === 0) {
-            this.appendOutput(
-              '-- DreamDaemon --\n',
-              'var(--editor-button-border-hover)'
-            )
+            this.appendOutput({
+              text: '-- DreamDaemon --\n',
+              color: 'var(--editor-button-border-hover)',
+              system: true,
+            })
             try {
               if (effectiveDisasm) {
                 await commandQueueService.runProcess(
@@ -175,7 +176,7 @@ export class ExecutorService {
                 `${hostDmb}\0-trusted\0-invisible`,
                 env
               )
-              this.attachProcess(ddProcess)
+              this.attachProcess(ddProcess, { tagDaemonBannerAsSystem: true })
               ddProcess.addEventListener(
                 'exit',
                 () => {
@@ -393,60 +394,78 @@ export class ExecutorService {
     opts: {
       pipeOutput?: boolean
       suppressDaemonBanner?: boolean
+      tagDaemonBannerAsSystem?: boolean
       suppressIdleOnExit?: boolean
+      system?: boolean
     } = {
       pipeOutput: true,
     }
   ) {
     this.activePids.add(process.pid)
-    let remainingBannerLines = opts.suppressDaemonBanner
-      ? DREAM_DAEMON_STARTUP_BANNER_LINES
-      : 0
+    const bannerMode = opts.suppressDaemonBanner
+      ? 'suppress'
+      : opts.tagDaemonBannerAsSystem
+        ? 'tag'
+        : 'none'
+    let remainingBannerLines =
+      bannerMode !== 'none' ? DREAM_DAEMON_STARTUP_BANNER_LINES : 0
 
-    // DreamDaemon emits a startup banner.
-    // This drops it, then passes all later output through.
-    const dropInitialDaemonBannerLines = (value: string) => {
+    const processBannerLines = (
+      value: string
+    ): { text: string; system?: boolean }[] => {
       if (remainingBannerLines <= 0) {
-        return value
+        return [{ text: value }]
       }
 
       const lines = value.split('\n')
-      const output: string[] = []
+      const segments: { text: string; system?: boolean }[] = []
+      const bannerParts: string[] = []
+      const outputParts: string[] = []
 
       for (const line of lines) {
         if (remainingBannerLines > 0 && line.trim().length > 0) {
           remainingBannerLines -= 1
+          if (bannerMode === 'tag') {
+            bannerParts.push(line)
+          }
           continue
         }
-
-        output.push(line)
+        outputParts.push(line)
       }
 
-      return output.join('\n')
+      if (bannerParts.length > 0) {
+        segments.push({ text: bannerParts.join('\n') + '\n', system: true })
+      }
+      const remaining = outputParts.join('\n')
+      if (remaining) {
+        segments.push({ text: remaining })
+      }
+
+      return segments
     }
 
     if (opts.pipeOutput !== false) {
+      const isSystem = opts.system ?? false
+      const emitOutput = (detail: string) => {
+        const segments = processBannerLines(detail)
+        for (const seg of segments) {
+          let text = seg.text
+          if (this.disasmInterceptor) {
+            text = this.disasmInterceptor(text)
+          }
+          if (text) {
+            const system = seg.system || isSystem || undefined
+            this.appendOutput({ text, system })
+          }
+        }
+      }
       const handleStdout = (event: Event) => {
         if (this.cancelled) return
-        const detail = (event as CustomEvent<string>).detail
-        let output = dropInitialDaemonBannerLines(detail)
-        if (this.disasmInterceptor) {
-          output = this.disasmInterceptor(output)
-        }
-        if (output) {
-          this.appendOutput(output)
-        }
+        emitOutput((event as CustomEvent<string>).detail)
       }
       const handleStderr = (event: Event) => {
         if (this.cancelled) return
-        const detail = (event as CustomEvent<string>).detail
-        let output = dropInitialDaemonBannerLines(detail)
-        if (this.disasmInterceptor) {
-          output = this.disasmInterceptor(output)
-        }
-        if (output) {
-          this.appendOutput(output)
-        }
+        emitOutput((event as CustomEvent<string>).detail)
       }
 
       process.addEventListener('stdout', handleStdout)

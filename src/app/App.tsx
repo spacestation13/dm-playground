@@ -128,11 +128,20 @@ function FullApp() {
   }
 
   const handleShareToDiscord = async () => {
-    const currentProject = useProjectStore.getState().project
-    const output = useExecutorStore.getState().output
-    const code = currentProject.files.main
-    const outputText = output.map((s) => s.text ?? '').join('')
-    const shareUrl = buildShareUrl(currentProject)
+    const { output, lastExecutedCode } = useExecutorStore.getState()
+    if (!lastExecutedCode) {
+      setShareToDiscordLabel('Run code first')
+      setTimeout(() => setShareToDiscordLabel('Share to Discord'), 3000)
+      return
+    }
+    const code = lastExecutedCode
+    const outputText = output
+      .filter((s) => !s.system)
+      .map((s) => s.text ?? '')
+      .join('')
+      .trim()
+    const shareProject = createProjectFromMainCode(code)
+    const shareUrl = buildShareUrl(shareProject)
     const shareHash = new URL(shareUrl).hash.slice(1)
 
     try {
