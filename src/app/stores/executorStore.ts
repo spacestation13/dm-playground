@@ -32,6 +32,7 @@ const initializer: StateCreator<ExecutorState> = (set) => {
       text: s.text,
       color: s.color,
       bold: s.bold,
+      system: detail.system,
     }))
 
     if (newItems.length === 0) {
