@@ -51,6 +51,20 @@ export default defineConfig({
       perf_hooks: perfHooksStubPath,
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (
+            id.includes('@monaco-editor/react') ||
+            id.includes('monaco-editor')
+          ) {
+            return 'monaco'
+          }
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
