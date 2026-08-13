@@ -1,4 +1,4 @@
-import { isDiscordActivity } from '../discord/discordSdk'
+import { isDiscordActivity } from '../discord/activity'
 import { byondArchiveStorage } from './ByondArchiveStorage'
 import { commandQueueService } from './CommandQueueService'
 import { emulatorService } from './EmulatorService'

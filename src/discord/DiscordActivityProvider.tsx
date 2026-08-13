@@ -5,11 +5,11 @@ import {
   useEffect,
   useState,
 } from 'react'
+import { isDiscordActivity } from './activity'
 import {
   getDiscordChannelId,
   getDiscordCustomId,
   initDiscordSdk,
-  isDiscordActivity,
 } from './discordSdk'
 
 interface DiscordActivityState {

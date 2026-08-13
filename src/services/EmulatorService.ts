@@ -1,7 +1,6 @@
 export type EmulatorPort = 'console' | 'screen' | 'controller'
 
-import { isDiscordActivity } from '../discord/discordSdk'
-import { getWorkerAssetUrls } from '../discord/urlMappings'
+import { getWorkerAssetUrls, isDiscordActivity } from '../discord/activity'
 import { commandQueueService } from './CommandQueueService'
 
 export type EmulatorOutboundMessage =

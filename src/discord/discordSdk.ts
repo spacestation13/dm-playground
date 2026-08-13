@@ -1,5 +1,5 @@
-import { DiscordSDK } from '@discord/embedded-app-sdk'
-import { applyDiscordUrlMappings } from './urlMappings'
+import type { DiscordSDK } from '@discord/embedded-app-sdk'
+import { isDiscordActivity } from './activity'
 
 let discordSdk: DiscordSDK | null = null
 let discordAuth: { access_token: string } | null = null
@@ -8,18 +8,13 @@ let guildId: string | null = null
 let clientId: string | null = null
 let customId: string | null = null
 
-export function isDiscordActivity(): boolean {
-  if (typeof window === 'undefined') return false
-  try {
-    const params = new URLSearchParams(window.location.search)
-    return params.has('frame_id') && params.has('instance_id')
-  } catch {
-    return false
-  }
-}
-
 export async function initDiscordSdk(id: string): Promise<void> {
   if (!isDiscordActivity()) return
+
+  const [{ DiscordSDK }, { applyDiscordUrlMappings }] = await Promise.all([
+    import('@discord/embedded-app-sdk'),
+    import('./urlMappings'),
+  ])
 
   clientId = id
   discordSdk = new DiscordSDK(id)

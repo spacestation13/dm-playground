@@ -71,7 +71,7 @@ const localThemeLoaders: Partial<
   'gruvbox-light': async () => ({ default: gruvboxLightTheme }),
 }
 
-import { isDiscordActivity } from '../../discord/discordSdk'
+import { isDiscordActivity } from '../../discord/activity'
 
 function themeUrl(file: string): string {
   if (isDiscordActivity()) {

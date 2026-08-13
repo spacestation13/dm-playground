@@ -25,16 +25,3 @@ export const DISCORD_URL_MAPPINGS: Array<{
 export function applyDiscordUrlMappings(): void {
   patchUrlMappings(DISCORD_URL_MAPPINGS)
 }
-
-export function getWorkerAssetUrls(): {
-  vmRemoteUrl: string
-  seaBiosUrl: string
-  vgaBiosUrl: string
-} {
-  const origin = window.location.origin
-  return {
-    vmRemoteUrl: `${origin}/.proxy/ext/vm-assets/`,
-    seaBiosUrl: `${origin}/.proxy/ext/v86-bios/seabios.bin`,
-    vgaBiosUrl: `${origin}/.proxy/ext/v86-bios/vgabios.bin`,
-  }
-}
