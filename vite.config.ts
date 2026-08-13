@@ -27,6 +27,16 @@ const getAppVersion = () => {
   }
 }
 
+const normalizeMonacoWindowsImports = () => ({
+  name: 'normalize-monaco-windows-imports',
+  transform(code: string, id: string) {
+    if (!/[\\/]esm[\\/]vs[\\/]editor[\\/]editor\.main\.js(?:$|\?)/.test(id)) {
+      return
+    }
+    return code.replaceAll('\\', '/')
+  },
+})
+
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
@@ -69,5 +79,6 @@ export default defineConfig({
         // 'wordOperations',
       ],
     }),
+    normalizeMonacoWindowsImports(),
   ],
 })
