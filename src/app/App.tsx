@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDiscordActivity } from '../discord/DiscordActivityProvider'
 import { shareToDiscord } from '../discord/shareToDiscord'
-import { decode as compressionDecode } from '../services/CompressionService'
 import { byondService } from '../services/ByondService'
-import {
-  createProjectFromMainCode,
-  deserializeProject,
-} from './editorProject/projectState'
+import { decode as compressionDecode } from '../services/CompressionService'
 import { clearOfflineCaches } from '../services/offlineServiceWorker'
 import { clearRuntimeAssetCaches } from '../services/runtimeAssetCache'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SmallButton } from './components/SmallButton'
+import {
+  createProjectFromMainCode,
+  deserializeProject,
+} from './editorProject/projectState'
 import { buildShareUrl, embedParams } from './embed/embedParams'
+import { useIsMobile } from './hooks/useIsMobile'
 import { LayoutProvider } from './layout/LayoutProvider'
 import { LayoutMode, type LayoutRoot } from './layout/layoutTypes'
 import { PanelTree } from './layout/PanelTree'
@@ -82,8 +83,11 @@ function FullApp() {
       })
       .then(({ hash }) => {
         const decoded = compressionDecode<unknown>(hash)
-        const loaded = deserializeProject(decoded)
-          ?? (typeof decoded === 'string' ? createProjectFromMainCode(decoded) : null)
+        const loaded =
+          deserializeProject(decoded) ??
+          (typeof decoded === 'string'
+            ? createProjectFromMainCode(decoded)
+            : null)
         if (loaded) setProject(loaded)
       })
       .catch((err) => {

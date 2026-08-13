@@ -1,5 +1,10 @@
 // parse compiler output into text segments with optional color/bold
-export type OutputSegment = { text: string; color?: string; bold?: boolean; system?: boolean }
+export type OutputSegment = {
+  text: string
+  color?: string
+  bold?: boolean
+  system?: boolean
+}
 
 // Modified, originally from Wrench by Lohikar 💜
 const LINE_RE =

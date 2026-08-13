@@ -7,7 +7,7 @@ import {
 } from './discordSdk'
 
 function truncate(s: string, max: number): string {
-  return s.length <= max ? s : s.slice(0, max - 1) + '…'
+  return s.length <= max ? s : `${s.slice(0, max - 1)}…`
 }
 
 function buildShareMessage(code: string, output: string): string {

@@ -52,7 +52,9 @@ export class ExecutorService {
   }
 
   appendOutput(
-    value: string | { text: string; color?: string; bold?: boolean; system?: boolean },
+    value:
+      | string
+      | { text: string; color?: string; bold?: boolean; system?: boolean },
     color?: string
   ) {
     const item = typeof value === 'string' ? { text: value, color } : value
@@ -153,7 +155,10 @@ export class ExecutorService {
       )
 
       if (streamCompilerOutput) {
-        this.attachProcess(dmProcess, { suppressIdleOnExit: true, system: true })
+        this.attachProcess(dmProcess, {
+          suppressIdleOnExit: true,
+          system: true,
+        })
 
         const handleDmExit = async (event: Event) => {
           const detail = (event as CustomEvent<ProcessExit>).detail
@@ -434,7 +439,7 @@ export class ExecutorService {
       }
 
       if (bannerParts.length > 0) {
-        segments.push({ text: bannerParts.join('\n') + '\n', system: true })
+        segments.push({ text: `${bannerParts.join('\n')}\n`, system: true })
       }
       const remaining = outputParts.join('\n')
       if (remaining) {

@@ -1,15 +1,15 @@
 import {
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useState,
-  type ReactNode,
 } from 'react'
 import {
-  initDiscordSdk,
-  isDiscordActivity,
   getDiscordChannelId,
   getDiscordCustomId,
+  initDiscordSdk,
+  isDiscordActivity,
 } from './discordSdk'
 
 interface DiscordActivityState {
@@ -36,9 +36,7 @@ const DISCORD_CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID as
   | string
   | undefined
 
-export function DiscordActivityProvider({
-  children,
-}: { children: ReactNode }) {
+export function DiscordActivityProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<DiscordActivityState>({
     isActivity: isDiscordActivity(),
     ready: false,
