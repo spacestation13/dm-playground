@@ -56,6 +56,7 @@ function PlaygroundLayout({
 
 function FullApp() {
   const { layout, handleUpdateBranchSizes } = useLayoutManager()
+  const isMobile = useIsMobile()
   const [showSettings, setShowSettings] = useState(false)
   const [themeId, setThemeId] = useThemeSetting()
   const [layoutMode, setLayoutMode] = useLayoutModeSetting()
@@ -198,7 +199,12 @@ function FullApp() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-2 p-2">
+    <div
+      className={[
+        'flex h-full flex-col gap-2 p-2',
+        isActivity && isMobile ? 'pt-10' : '',
+      ].join(' ')}
+    >
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-slate-100">
