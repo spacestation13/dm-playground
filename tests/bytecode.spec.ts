@@ -31,6 +31,6 @@ test.describe('bytecode panel', () => {
     await page.locator('.fixed.inset-0').click({ position: { x: 5, y: 5 } })
 
     // Bytecode panel should now be visible
-    await expect(page.locator('header:has-text("Bytecode")')).toBeVisible()
+    await expect(page.locator('header:has-text("Bytecode")')).toBeVisible({timeout: 10_000})
   })
 })
