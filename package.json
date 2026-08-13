@@ -28,7 +28,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-resizable-panels": "^4.12.2",
-    "v86": "^0.5.199",
+    "v86": "=0.5.199",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

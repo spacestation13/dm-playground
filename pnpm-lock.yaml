@@ -42,8 +42,8 @@ importers:
         specifier: ^4.12.2
         version: 4.12.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       v86:
-        specifier: ^0.5.199
-        version: 0.5.432
+        specifier: '=0.5.199'
+        version: 0.5.199
       zustand:
         specifier: ^5.0.14
         version: 5.0.14(@types/react@19.2.18)(react@19.2.8)
@@ -734,8 +734,8 @@ packages:
     resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
     hasBin: true
 
-  v86@0.5.432:
-    resolution: {integrity: sha512-/aZwi0WWvbab5k7+bkjKMhSNoj+60eqRIZ9urNwKTI4i1JbyK1Ja2QSFEay/M9uE0qIte+SncncAHYqRsLJNiw==}
+  v86@0.5.199:
+    resolution: {integrity: sha512-glha3ak1QX8AzmHtEyYrXWEf990LfdkMpa0fhWWf0p0BsP/95BvawBY2UjNud+0HYupvKg+nZH+kDej12YW5gA==}
 
   vite@8.2.1:
     resolution: {integrity: sha512-EU/eS7BH3XROHh2YnBefjM6DBKA6ZeMZEYQbj7NLWg5wHYlhB8B/Mayd5XsgWq+NFYccDOTemRpdETWR6Ka/lw==}
@@ -1275,7 +1275,7 @@ snapshots:
 
   uuid@11.1.1: {}
 
-  v86@0.5.432: {}
+  v86@0.5.199: {}
 
   vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0):
     dependencies:
