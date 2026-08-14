@@ -1,8 +1,9 @@
 import MonacoEditor, { loader, type OnMount } from '@monaco-editor/react'
 import * as monaco from 'monaco-editor'
 import type * as Monaco from 'monaco-editor'
+import { isDiscordActivity } from '../../discord/activity'
 
-if (import.meta.env.VITE_BUNDLE_MONACO === 'true') {
+if (isDiscordActivity()) {
   loader.config({ monaco })
 }
 import type { MouseEvent } from 'react'
