@@ -34,10 +34,12 @@ export async function fetchDisasmSo(): Promise<Uint8Array | null> {
 export function createDisasmInterceptor() {
   let capturing = false
   let buffer = ''
+  let pendingMarker = ''
 
   return function intercept(text: string): string {
     let passthrough = ''
-    let remaining = text
+    let remaining = pendingMarker + text
+    pendingMarker = ''
 
     while (remaining.length > 0) {
       if (capturing) {
@@ -93,7 +95,7 @@ export function createDisasmInterceptor() {
           ) {
             // Could be a partial marker; buffer it for next call
             passthrough += remaining.slice(0, lastSoh)
-            buffer = remaining.slice(lastSoh)
+            pendingMarker = remaining.slice(lastSoh)
             remaining = ''
             // Not capturing yet — will resolve on next chunk
           } else {

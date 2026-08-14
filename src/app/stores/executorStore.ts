@@ -8,9 +8,11 @@ import {
 export type ExecutorState = {
   status: 'running' | 'idle'
   output: OutputSegment[]
+  lastExecutedCode: string | null
   appendOutput: (item: OutputSegment) => void
   resetOutput: () => void
   setStatus: (s: 'running' | 'idle') => void
+  setLastExecutedCode: (code: string) => void
 }
 
 const initializer: StateCreator<ExecutorState> = (set) => {
@@ -30,6 +32,7 @@ const initializer: StateCreator<ExecutorState> = (set) => {
       text: s.text,
       color: s.color,
       bold: s.bold,
+      system: detail.system,
     }))
 
     if (newItems.length === 0) {
@@ -54,9 +57,11 @@ const initializer: StateCreator<ExecutorState> = (set) => {
   return {
     status: executorService.getStatus(),
     output: [],
+    lastExecutedCode: null,
     appendOutput: (item) => set((s) => ({ output: [...s.output, item] })),
     resetOutput: () => set({ output: [] }),
     setStatus: (s) => set({ status: s }),
+    setLastExecutedCode: (code) => set({ lastExecutedCode: code }),
   }
 }
 

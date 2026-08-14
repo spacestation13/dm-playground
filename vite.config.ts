@@ -4,7 +4,7 @@ import { monaco } from '@bithero/monaco-editor-vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import packageJson from './package.json'
+import packageJson from './package.json' with { type: 'json' }
 
 const nodeCryptoStubPath = fileURLToPath(
   new URL('./src/utils/nodeCryptoStub.ts', import.meta.url)
@@ -27,6 +27,16 @@ const getAppVersion = () => {
   }
 }
 
+const normalizeMonacoWindowsImports = () => ({
+  name: 'normalize-monaco-windows-imports',
+  transform(code: string, id: string) {
+    if (!/[\\/]esm[\\/]vs[\\/]editor[\\/]editor\.main\.js(?:$|\?)/.test(id)) {
+      return
+    }
+    return code.replaceAll('\\', '/')
+  },
+})
+
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
@@ -39,6 +49,20 @@ export default defineConfig({
       'node:crypto': nodeCryptoStubPath,
       'node:fs/promises': nodeFsPromisesStubPath,
       perf_hooks: perfHooksStubPath,
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (
+            id.includes('@monaco-editor/react') ||
+            id.includes('monaco-editor')
+          ) {
+            return 'monaco'
+          }
+        },
+      },
     },
   },
   plugins: [
@@ -69,5 +93,6 @@ export default defineConfig({
         // 'wordOperations',
       ],
     }),
+    normalizeMonacoWindowsImports(),
   ],
 })

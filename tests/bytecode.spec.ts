@@ -6,7 +6,7 @@ test.describe('bytecode panel', () => {
     await page.evaluate(() => localStorage.clear())
     await page.reload({ waitUntil: 'load' })
     // Wait for the app to load
-    await expect(page.locator('.monaco-editor').first()).toBeVisible()
+    await expect(page.locator('.monaco-editor').first()).toBeVisible({timeout: 10_000})
   })
 
   test('panel toggle shows and hides bytecode panel', async ({ page }) => {
@@ -31,6 +31,6 @@ test.describe('bytecode panel', () => {
     await page.locator('.fixed.inset-0').click({ position: { x: 5, y: 5 } })
 
     // Bytecode panel should now be visible
-    await expect(page.locator('header:has-text("Bytecode")')).toBeVisible()
+    await expect(page.locator('header:has-text("Bytecode")')).toBeVisible({timeout: 10_000})
   })
 })

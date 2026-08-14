@@ -19,6 +19,12 @@ type EmulatorInboundMessage =
       name: string
       data: Uint8Array
     }
+  | {
+      type: 'setAssetUrls'
+      vmRemoteUrl: string
+      seaBiosUrl: string
+      vgaBiosUrl: string
+    }
 
 type EmulatorOutboundMessage =
   | { type: 'receivedOutput'; port: EmulatorPort; data: string }
@@ -26,7 +32,9 @@ type EmulatorOutboundMessage =
   | AssetDownloadProgressMessage
   | { type: 'asyncResponse'; commandId: string; error?: string }
 
-const vmRemoteUrl = 'https://spacestation13.github.io/dm-playground-linux/'
+let vmRemoteUrl = 'https://spacestation13.github.io/dm-playground-linux/'
+let seaBiosUrlOverride: string | null = null
+let vgaBiosUrlOverride: string | null = null
 
 const decoder = new TextDecoder()
 const portToIndex: Record<EmulatorPort, number> = {
@@ -50,8 +58,10 @@ const initEmulator = async () => {
   const bzImageUrl = `${vmRemoteUrl}bzImage`
   const rootfsUrl = `${vmRemoteUrl}rootfs.cpio.lz4`
   const seaBiosUrl =
+    seaBiosUrlOverride ??
     'https://raw.githubusercontent.com/copy/v86/master/bios/seabios.bin'
   const vgaBiosUrl =
+    vgaBiosUrlOverride ??
     'https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin'
   const [
     bzImageBufferRaw,
@@ -272,6 +282,12 @@ self.addEventListener(
             })
           }
         )
+        break
+      }
+      case 'setAssetUrls': {
+        vmRemoteUrl = data.vmRemoteUrl
+        seaBiosUrlOverride = data.seaBiosUrl
+        vgaBiosUrlOverride = data.vgaBiosUrl
         break
       }
       default:

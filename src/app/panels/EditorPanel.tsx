@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { executorService } from '../../services/ExecutorService'
+import { ensureRuntime } from '../../services/runtimeBootstrap'
 import { Editor } from '../components/Editor'
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { embedParams } from '../embed/embedParams'
@@ -39,10 +40,8 @@ export function EditorPanel() {
   )
 
   useEffect(() => {
-    if (embedParams.isEmbed && embedParams.autorun) {
-      void bootstrapRuntime()
-    }
-  }, [bootstrapRuntime])
+    void ensureRuntime().catch(() => {})
+  }, [])
 
   // Switch editor tab when a bytecode click targets a different file
   useEffect(() => {
@@ -64,6 +63,7 @@ export function EditorPanel() {
         }
       }
 
+      useExecutorStore.getState().setLastExecutedCode(project.files.main)
       void executorService.executeImmediate(project)
     })()
   }, [bootstrapRuntime, canRun, project])

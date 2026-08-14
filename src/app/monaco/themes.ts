@@ -71,16 +71,23 @@ const localThemeLoaders: Partial<
   'gruvbox-light': async () => ({ default: gruvboxLightTheme }),
 }
 
-const remoteThemeUrls: Record<RemoteThemeId, string> = {
-  monokai: 'https://unpkg.com/monaco-themes/themes/Monokai.json',
-  dracula: 'https://unpkg.com/monaco-themes/themes/Dracula.json',
-  nord: 'https://unpkg.com/monaco-themes/themes/Nord.json',
-  'solarized-dark':
-    'https://unpkg.com/monaco-themes/themes/Solarized-dark.json',
-  'solarized-light':
-    'https://unpkg.com/monaco-themes/themes/Solarized-light.json',
-  'github-dark': 'https://unpkg.com/monaco-themes/themes/GitHub Dark.json',
-  'github-light': 'https://unpkg.com/monaco-themes/themes/GitHub Light.json',
+import { isDiscordActivity } from '../../discord/activity'
+
+function themeUrl(file: string): string {
+  if (isDiscordActivity()) {
+    return `${window.location.origin}/.proxy/ext/monaco-themes/${file}`
+  }
+  return `https://unpkg.com/monaco-themes/themes/${file}`
+}
+
+const remoteThemeUrls: Record<RemoteThemeId, () => string> = {
+  monokai: () => themeUrl('Monokai.json'),
+  dracula: () => themeUrl('Dracula.json'),
+  nord: () => themeUrl('Nord.json'),
+  'solarized-dark': () => themeUrl('Solarized-dark.json'),
+  'solarized-light': () => themeUrl('Solarized-light.json'),
+  'github-dark': () => themeUrl('GitHub Dark.json'),
+  'github-light': () => themeUrl('GitHub Light.json'),
 }
 
 const loadedThemes = new Set<EditorThemeId>()
@@ -111,12 +118,12 @@ export async function ensureMonacoTheme(
     return
   }
 
-  const remoteUrl = remoteThemeUrls[themeId as RemoteThemeId]
-  if (!remoteUrl) {
+  const remoteUrlFn = remoteThemeUrls[themeId as RemoteThemeId]
+  if (!remoteUrlFn) {
     return
   }
 
-  const response = await fetch(remoteUrl)
+  const response = await fetch(remoteUrlFn())
   if (!response.ok) {
     return
   }
