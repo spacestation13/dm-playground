@@ -202,7 +202,7 @@ function FullApp() {
     <div
       className={[
         'flex h-full flex-col gap-2 p-2',
-        isActivity && isMobile ? 'pt-10' : '',
+        isActivity && isMobile ? 'pt-12' : '',
       ].join(' ')}
     >
       <header className="flex items-center justify-between">
