@@ -1,15 +1,9 @@
 import { patchUrlMappings } from '@discord/embedded-app-sdk'
 
-const BOT_BACKEND_HOST = ((import.meta.env.VITE_BOT_BACKEND_URL as string) ?? '')
-  .replace(/^https?:\/\//, '')
-
 export const DISCORD_URL_MAPPINGS: Array<{
   prefix: string
   target: string
 }> = [
-  ...(BOT_BACKEND_HOST
-    ? [{ prefix: '/ext/bot', target: BOT_BACKEND_HOST }]
-    : []),
   {
     prefix: '/ext/vm-assets',
     target: 'spacestation13.github.io/dm-playground-linux',

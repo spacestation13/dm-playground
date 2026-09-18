@@ -9,6 +9,9 @@ let clientId: string | null = null
 let customId: string | null = null
 
 export function getBotBackendUrl(): string {
+  if (isDiscordActivity()) {
+    return ''
+  }
   return (import.meta.env.VITE_BOT_BACKEND_URL as string) ?? ''
 }
 
