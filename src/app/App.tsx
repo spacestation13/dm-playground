@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDiscordActivity } from '../discord/DiscordActivityProvider'
+import { getBotBackendUrl } from '../discord/discordSdk'
 import { shareToDiscord } from '../discord/shareToDiscord'
 import { byondService } from '../services/ByondService'
 import { decode as compressionDecode } from '../services/CompressionService'
@@ -76,7 +77,7 @@ function FullApp() {
 
   useEffect(() => {
     if (!customId) return
-    const botUrl = (import.meta.env.VITE_BOT_BACKEND_URL as string) ?? ''
+    const botUrl = getBotBackendUrl()
     fetch(`${botUrl}/api/snippets/${customId}`)
       .then((r) => {
         if (!r.ok) throw new Error('Snippet not found')
@@ -151,7 +152,7 @@ function FullApp() {
 
     try {
       setShareToDiscordLabel('Sharing...')
-      const botUrl = (import.meta.env.VITE_BOT_BACKEND_URL as string) ?? ''
+      const botUrl = getBotBackendUrl()
       await shareToDiscord(code, outputText, shareHash, botUrl)
       setShareToDiscordLabel('Shared!')
       setTimeout(() => setShareToDiscordLabel('Share to Discord'), 3000)

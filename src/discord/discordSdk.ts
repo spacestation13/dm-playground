@@ -8,6 +8,13 @@ let guildId: string | null = null
 let clientId: string | null = null
 let customId: string | null = null
 
+export function getBotBackendUrl(): string {
+  if (isDiscordActivity()) {
+    return ''
+  }
+  return (import.meta.env.VITE_BOT_BACKEND_URL as string) ?? ''
+}
+
 export async function initDiscordSdk(id: string): Promise<void> {
   if (!isDiscordActivity()) return
 
@@ -44,7 +51,7 @@ export async function authorizeDiscord(): Promise<void> {
     scope: ['identify'],
   })
 
-  const response = await fetch('/api/discord/token', {
+  const response = await fetch(`${getBotBackendUrl()}/api/discord/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
