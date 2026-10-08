@@ -68,6 +68,7 @@ const resolveTheme = (): EditorThemeId | null => {
 export const embedParams = {
   isEmbed: searchParams.has('embed'),
   autorun: searchParams.has('autorun'),
+  noBytecode: searchParams.has('nobyte'),
   project: resolveProject(),
   theme: resolveTheme(),
 }

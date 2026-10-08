@@ -382,7 +382,8 @@ function FullApp() {
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={showBytecodePanel}
+                  checked={showBytecodePanel && !embedParams.noBytecode}
+                  disabled={embedParams.noBytecode}
                   onChange={(e) => {
                     setShowBytecodePanel(e.target.checked)
                   }}

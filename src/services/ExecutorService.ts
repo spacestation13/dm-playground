@@ -6,7 +6,9 @@ import {
   buildProjectExecutionFiles,
   type PlaygroundProject,
 } from '../app/editorProject/projectState'
-import useLocalSettings from '../app/settings/localSettings'
+import useLocalSettings, {
+  selectBytecodeEnabled,
+} from '../app/settings/localSettings'
 import useBytecodeStore from '../app/stores/bytecodeStore'
 import {
   type OutputSegment,
@@ -90,7 +92,9 @@ export class ExecutorService {
     }
 
     try {
-      const showBytecodePanel = useLocalSettings.getState().showBytecodePanel
+      const showBytecodePanel = selectBytecodeEnabled(
+        useLocalSettings.getState()
+      )
 
       // Pre-fetch the disasm .so before building execution files so we know
       // whether to inject the disasm DM code.

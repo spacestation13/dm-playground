@@ -5,13 +5,16 @@ import {
   Panel as ResizablePanel,
   Separator,
 } from 'react-resizable-panels'
-import { useLocalSettings } from '../settings/localSettings'
+import {
+  selectBytecodeEnabled,
+  useLocalSettings,
+} from '../settings/localSettings'
 import { type LayoutBranch, type LayoutLeaf, PanelId } from './layoutTypes'
 import { Panel } from './Panel'
 import { useLayoutContext } from './useLayoutContext'
 
 export function PanelTree({ node }: { node: LayoutBranch | LayoutLeaf }) {
-  const showBytecodePanel = useLocalSettings((s) => s.showBytecodePanel)
+  const showBytecodePanel = useLocalSettings(selectBytecodeEnabled)
 
   if (node.type === 'leaf') {
     if (node.id === PanelId.Bytecode && !showBytecodePanel) {
@@ -29,7 +32,7 @@ interface PanelTreeBranchProps {
 
 function PanelTreeBranch({ node }: PanelTreeBranchProps) {
   const { updateBranchSizes } = useLayoutContext()
-  const showBytecodePanel = useLocalSettings((s) => s.showBytecodePanel)
+  const showBytecodePanel = useLocalSettings(selectBytecodeEnabled)
 
   const direction = node.split
   const isVertical = direction === 'vertical'

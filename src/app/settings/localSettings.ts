@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { embedParams } from '../embed/embedParams'
 import { LayoutMode } from '../layout/layoutTypes'
 import type { EditorThemeId } from '../monaco/themes'
 
@@ -163,3 +164,7 @@ export const useShowBytecodePanelSetting = () => {
   )
   return [showBytecodePanel, setShowBytecodePanel] as const
 }
+
+/** Whether the bytecode panel is shown and disassembly computed; `?nobyte` overrides the stored setting. */
+export const selectBytecodeEnabled = (s: LocalSettingsState) =>
+  s.showBytecodePanel && !embedParams.noBytecode

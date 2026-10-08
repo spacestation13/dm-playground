@@ -24,6 +24,7 @@ Supported URL parameters:
 
 - `embed`: enables the minimized embedded layout.
 - `autorun`: runs the snippet automatically after the runtime is ready.
+- `nobyte`: hides the bytecode panel and skips disassembly, overriding the local setting without changing it.
 - `theme=<themeId>`: sets the editor theme for the embed. Example values: `vs-light`, `one-dark`, `dracula`.
 - `code=<base64>`: seeds the editor with base64 text.
 - `#<share-b64>`: the anchor seeds the editor in the [compressed share string](#share-payload-helpers) format.
