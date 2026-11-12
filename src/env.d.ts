@@ -9,6 +9,9 @@ declare module 'v86' {
     create_file: (name: string, data: Uint8Array) => Promise<void>
     run: () => Promise<void>
     stop: () => Promise<void>
+    destroy: () => Promise<void>
+    save_state: () => Promise<ArrayBuffer>
+    restore_state: (state: ArrayBuffer) => Promise<void>
   }
 
   export default V86

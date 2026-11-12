@@ -50,7 +50,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('message', (event) => {
   const data = event.data
-  if (!data || data.type !== 'CACHE_URLS' || !Array.isArray(data.urls)) {
+  if (data?.type !== 'CACHE_URLS' || !Array.isArray(data.urls)) {
     return
   }
 
