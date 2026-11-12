@@ -1,5 +1,6 @@
 import {
   DISASM_LIB_PATH,
+  DISASM_PARAMS,
   DISASM_SO_NAME,
 } from '../app/editorProject/disasmProject'
 import {
@@ -32,7 +33,6 @@ export class ExecutorService {
   private activePids = new Set<number>()
   private status: 'running' | 'idle' = 'idle'
   private cancelled = false
-  private disasmInterceptor: ((text: string) => string) | null = null
 
   addEventListener(
     type: ExecutorEventType,
@@ -113,13 +113,6 @@ export class ExecutorService {
         disassembly: effectiveDisasm,
       })
 
-      // Set up disasm interceptor if bytecode panel is active
-      if (effectiveDisasm) {
-        this.disasmInterceptor = createDisasmInterceptor()
-      } else {
-        this.disasmInterceptor = null
-      }
-
       const hostDme = `/mnt/host/${executionFiles.dmeName}`
       const hostDmb = `/mnt/host/${executionFiles.dmbName}`
       const hostCleanupTargets = [
@@ -174,29 +167,14 @@ export class ExecutorService {
               system: true,
             })
             try {
-              if (effectiveDisasm) {
-                await commandQueueService.runToSuccess(
-                  '/bin/cp',
-                  `/mnt/host/${DISASM_SO_NAME}\0${DISASM_LIB_PATH}`
-                )
-              }
-              const ddProcess = await commandQueueService.runProcess(
-                `${byondPath}DreamDaemon`,
-                `${hostDmb}\0-trusted\0-invisible`,
-                env
-              )
-              this.attachProcess(ddProcess, { tagDaemonBannerAsSystem: true })
-              ddProcess.addEventListener(
-                'exit',
-                () => {
-                  commandQueueService
-                    .runProcess('/bin/rm', cleanupArgs)
-                    .catch((error) => {
-                      this.appendOutput(`Cleanup failed: ${String(error)}\n`)
-                    })
-                },
-                { once: true }
-              )
+              await this.startDaemons({
+                byondPath,
+                hostDmb,
+                env,
+                cleanupArgs,
+                disassembly: effectiveDisasm,
+                display: { tagDaemonBannerAsSystem: true },
+              })
             } catch (error) {
               this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
               this.setStatus('idle')
@@ -284,29 +262,14 @@ export class ExecutorService {
                   for (const it of warnItems) this.appendOutput(it)
                 }
               }
-              if (effectiveDisasm) {
-                await commandQueueService.runToSuccess(
-                  '/bin/cp',
-                  `/mnt/host/${DISASM_SO_NAME}\0${DISASM_LIB_PATH}`
-                )
-              }
-              const ddProcess = await commandQueueService.runProcess(
-                `${byondPath}DreamDaemon`,
-                `${hostDmb}\0-trusted\0-invisible`,
-                env
-              )
-              this.attachProcess(ddProcess, { suppressDaemonBanner: true })
-              ddProcess.addEventListener(
-                'exit',
-                () => {
-                  commandQueueService
-                    .runProcess('/bin/rm', cleanupArgs)
-                    .catch((error) => {
-                      this.appendOutput(`Cleanup failed: ${String(error)}\n`)
-                    })
-                },
-                { once: true }
-              )
+              await this.startDaemons({
+                byondPath,
+                hostDmb,
+                env,
+                cleanupArgs,
+                disassembly: effectiveDisasm,
+                display: { suppressDaemonBanner: true },
+              })
             } catch (error) {
               this.appendOutput(`DreamDaemon failed: ${String(error)}\n`)
               this.setStatus('idle')
@@ -398,6 +361,79 @@ export class ExecutorService {
     this.setStatus('idle')
   }
 
+  /**
+   * Starts the program's DreamDaemon and, with bytecode on, a second one that only disassembles the world,
+   * so the program's output isn't held up by the disassembly. Cleans up once both have exited.
+   */
+  private async startDaemons(opts: {
+    byondPath: string
+    hostDmb: string
+    env: Map<string, string>
+    cleanupArgs: string
+    disassembly: boolean
+    display: {
+      suppressDaemonBanner?: boolean
+      tagDaemonBannerAsSystem?: boolean
+    }
+  }) {
+    if (opts.disassembly) {
+      // Wait for the copy: a library still being written crashes DreamDaemon when it loads it.
+      await commandQueueService.runToSuccess(
+        '/bin/cp',
+        `/mnt/host/${DISASM_SO_NAME}\0${DISASM_LIB_PATH}`
+      )
+    }
+
+    const daemon = `${opts.byondPath}DreamDaemon`
+    const args = `${opts.hostDmb}\0-trusted\0-invisible`
+    const program = await commandQueueService.runProcess(daemon, args, opts.env)
+    this.attachProcess(program, opts.display)
+    const exits = [commandQueueService.waitForExit(program)]
+
+    if (opts.disassembly) {
+      const disassembler = await commandQueueService.runProcess(
+        daemon,
+        `${args}\0-params\0${DISASM_PARAMS}`,
+        opts.env
+      )
+      this.attachDisassembler(disassembler)
+      exits.push(commandQueueService.waitForExit(disassembler))
+    }
+
+    void Promise.all(exits)
+      .then(() => commandQueueService.runProcess('/bin/rm', opts.cleanupArgs))
+      .catch((error) => {
+        this.appendOutput(`Cleanup failed: ${String(error)}\n`)
+      })
+  }
+
+  /** Feeds the disassembling DreamDaemon's output to the bytecode panel; none of it is shown as output. */
+  private attachDisassembler(process: Process) {
+    this.activePids.add(process.pid)
+    const intercept = createDisasmInterceptor()
+    const handleOutput = (event: Event) => {
+      intercept((event as CustomEvent<string>).detail)
+    }
+    process.addEventListener('stdout', handleOutput)
+    process.addEventListener('stderr', handleOutput)
+    process.addEventListener(
+      'exit',
+      () => {
+        process.removeEventListener('stdout', handleOutput)
+        process.removeEventListener('stderr', handleOutput)
+        const bytecode = useBytecodeStore.getState()
+        if (!this.cancelled && bytecode.status === 'loading') {
+          bytecode.setError('Disassembly failed')
+        }
+        this.activePids.delete(process.pid)
+        if (this.activePids.size === 0) {
+          this.setStatus('idle')
+        }
+      },
+      { once: true }
+    )
+  }
+
   private attachProcess(
     process: Process,
     opts: {
@@ -458,10 +494,7 @@ export class ExecutorService {
       const emitOutput = (detail: string) => {
         const segments = processBannerLines(detail)
         for (const seg of segments) {
-          let text = seg.text
-          if (this.disasmInterceptor) {
-            text = this.disasmInterceptor(text)
-          }
+          const text = seg.text
           if (text) {
             const system = seg.system || isSystem || undefined
             this.appendOutput({ text, system })

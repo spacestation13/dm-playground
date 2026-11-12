@@ -2,7 +2,13 @@ export const DISASM_SO_NAME = 'libdm_disasm.so'
 export const DISASM_LIB_PATH = '/tmp/libdm_disasm.so'
 
 export const DISASM_FILE_NAME = '_disasm.dm'
+/** DreamDaemon parameter for the separate run that only disassembles the world */
+export const DISASM_PARAMS = 'dmasm=1'
+// The bootstrap calls dmasm_init() first. In the program's own run it returns at once,
+// a second DreamDaemon started with DISASM_PARAMS disassembles instead and stops before main() runs.
 export const DISASM_DM_CONTENT = `/proc/dmasm_init()
+	if(!world.params["dmasm"])
+		return
 	try
 		var/init_res = call_ext("${DISASM_LIB_PATH}", "auxtools_init")()
 		world.log << "DISASM_INIT: [init_res]"
@@ -17,4 +23,5 @@ export const DISASM_DM_CONTENT = `/proc/dmasm_init()
 	catch(var/exception/e)
 		world.log << "DISASM_EXCEPTION: [e.name]: [e.desc]"
 		world.log << "\\x01DMASM_ERROR\\x01"
+	shutdown()
 `

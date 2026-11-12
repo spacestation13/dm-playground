@@ -439,7 +439,7 @@ export class CommandQueueService {
     this.updateBusy()
   }
 
-  private waitForExit(process: Process): Promise<ProcessExit> {
+  waitForExit(process: Process): Promise<ProcessExit> {
     return new Promise((resolve) => {
       const handler = (event: Event) => {
         resolve((event as CustomEvent<ProcessExit>).detail)
