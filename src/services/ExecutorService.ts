@@ -175,7 +175,7 @@ export class ExecutorService {
             })
             try {
               if (effectiveDisasm) {
-                await commandQueueService.runProcess(
+                await commandQueueService.runToSuccess(
                   '/bin/cp',
                   `/mnt/host/${DISASM_SO_NAME}\0${DISASM_LIB_PATH}`
                 )
@@ -285,7 +285,7 @@ export class ExecutorService {
                 }
               }
               if (effectiveDisasm) {
-                await commandQueueService.runProcess(
+                await commandQueueService.runToSuccess(
                   '/bin/cp',
                   `/mnt/host/${DISASM_SO_NAME}\0${DISASM_LIB_PATH}`
                 )
