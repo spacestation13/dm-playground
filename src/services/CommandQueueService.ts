@@ -132,6 +132,8 @@ export class CommandQueueService {
   private initialized = false
   private trackedProcesses = new Map<number, Process>()
   private idlePollDelay = 75
+  // While a process runs, poll often so its exit is noticed quickly.
+  private busyPollDelay = 10
   private events = new EventTarget()
 
   setSender(sender: (value: string) => void) {
@@ -238,6 +240,24 @@ export class CommandQueueService {
     return this.queueCommand({ type: 'signal', pid, signal })
   }
 
+  /** For a VM restored from a snapshot: its controller already said HELLO before the snapshot. */
+  resumeRestored() {
+    if (this.initialized) {
+      return
+    }
+    this.initialized = true
+    this.tickQueue()
+  }
+
+  /** Resolves once no command is queued or in flight and no process is tracked. */
+  async whenIdle() {
+    while (this.isBusy) {
+      await new Promise((resolve) => {
+        this.events.addEventListener('busy', resolve, { once: true })
+      })
+    }
+  }
+
   private tickQueue() {
     if (!this.queue.length && !this.trackedProcesses.size) {
       this.queueEmpty = true
@@ -315,10 +335,13 @@ export class CommandQueueService {
       if (this.queue.length) {
         this.tickQueue()
       } else {
-        if (this.idlePollDelay === -1) {
+        const delay = this.trackedProcesses.size
+          ? this.busyPollDelay
+          : this.idlePollDelay
+        if (delay === -1) {
           this.tickQueue()
         } else {
-          setTimeout(() => this.tickQueue(), this.idlePollDelay)
+          setTimeout(() => this.tickQueue(), delay)
         }
       }
       return

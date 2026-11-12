@@ -58,6 +58,47 @@ export async function cacheRuntimeAsset(url: string, response: Response) {
   }
 }
 
+// VM snapshots live in the runtime asset cache under a synthetic URL, so bumping the cache version or
+// clearing site data drops them with the assets they were booted from. Only the latest one is kept.
+const VM_SNAPSHOT_PATH = '/__vm-snapshot__/'
+
+function vmSnapshotUrl(key: string) {
+  return new URL(
+    `${VM_SNAPSHOT_PATH}${encodeURIComponent(key)}`,
+    self.location.origin
+  ).toString()
+}
+
+export async function getCachedVmSnapshot(key: string) {
+  const cache = await openRuntimeAssetCache()
+  return (await cache?.match(vmSnapshotUrl(key))) ?? null
+}
+
+export async function cacheVmSnapshot(key: string, response: Response) {
+  const cache = await openRuntimeAssetCache()
+  if (!cache) {
+    return
+  }
+
+  const url = vmSnapshotUrl(key)
+  const keys = await cache.keys()
+  await Promise.all(
+    keys
+      .filter(
+        (request) =>
+          new URL(request.url).pathname.startsWith(VM_SNAPSHOT_PATH) &&
+          request.url !== url
+      )
+      .map((request) => cache.delete(request))
+  )
+  await cache.put(url, response)
+}
+
+export async function deleteCachedVmSnapshot(key: string) {
+  const cache = await openRuntimeAssetCache()
+  await cache?.delete(vmSnapshotUrl(key))
+}
+
 export async function clearRuntimeAssetCaches() {
   const storage = getCacheStorage()
   runtimeAssetCachePromise = null

@@ -22,8 +22,10 @@ function getByondUrls() {
 
 const ACTIVE_VERSION_KEY = 'byondActiveVersion'
 
-const HOST_BYOND_PATH = '/mnt/host/byond'
+// Installed into the guest's RAM-backed root filesystem
+const INSTALL_ROOT = '/opt/byond'
 const ACTIVE_BYOND_PATH = '/var/lib/byond'
+const STAGED_FILE_PREFIX = 'byond-staged-'
 
 export enum ByondStatus {
   Idle = 'idle',
@@ -46,7 +48,6 @@ export class ByondService {
   private events = new EventTarget()
   private initialized = false
   private loading = false
-  private runtimePreparationPromise: Promise<void> | null = null
 
   private static readonly LOCAL_VERSION_STATUSES = new Set<ByondStatus>([
     ByondStatus.Fetched,
@@ -93,8 +94,6 @@ export class ByondService {
     const localVersions = await this.getLocalVersions()
     const storedActive = localStorage.getItem(ACTIVE_VERSION_KEY)
 
-    await this.ensureRuntimePrepared()
-
     if (storedActive && localVersions.includes(storedActive)) {
       this.activeVersion = storedActive
       try {
@@ -119,6 +118,26 @@ export class ByondService {
     const latestVersion = await this.getLatestVersion()
     await this.downloadVersion(latestVersion)
     await this.load(latestVersion, true)
+  }
+
+  /** The version a VM snapshot would have active: the stored active one, if it's still downloaded. */
+  async getSnapshotVersion() {
+    const storedActive = localStorage.getItem(ACTIVE_VERSION_KEY)
+    if (!storedActive) {
+      return null
+    }
+    const localVersions = await this.getLocalVersions()
+    return localVersions.includes(storedActive) ? storedActive : null
+  }
+
+  /** Takes over a VM restored from a snapshot, which has `version` installed and active. */
+  adoptRestoredVersion(version: string) {
+    this.initialized = true
+    this.setStatus(version, ByondStatus.Installed)
+    this.activeVersion = version
+    this.events.dispatchEvent(
+      new CustomEvent(ByondEvent.Active, { detail: version })
+    )
   }
 
   async getLatestVersion() {
@@ -225,7 +244,7 @@ export class ByondService {
       throw new Error('Another version is currently being loaded')
     }
 
-    await this.ensureRuntimePrepared()
+    void emulatorService.start()
 
     const status = this.versions.get(version)
     if (
@@ -240,32 +259,39 @@ export class ByondService {
       new CustomEvent(ByondEvent.Loading, { detail: true })
     )
     try {
-      const installPath = `${HOST_BYOND_PATH}/${version}`
-      const stagedArchiveName = `${version}.zip`
-      const stagedArchivePath = `/mnt/host/${stagedArchiveName}`
+      const installPath = `${INSTALL_ROOT}/${version}`
+      const commands: string[] = []
 
       if (status !== ByondStatus.Installed) {
         this.setStatus(version, ByondStatus.Loading)
         const zipFile = await this.getVersion(version)
-        await emulatorService.sendFile(
-          stagedArchiveName,
-          new Uint8Array(await zipFile.arrayBuffer())
+        await emulatorService.extractZip(
+          new Uint8Array(await zipFile.arrayBuffer()),
+          'byond/bin/',
+          STAGED_FILE_PREFIX
         )
-        await commandQueueService.runToSuccess([
+        commands.push(
           `/bin/rm -rf ${installPath}`,
           `/bin/mkdir -p ${installPath}`,
-          `/bin/unzip ${stagedArchivePath} 'byond/bin*' -j -d ${installPath}`,
-          `/bin/rm -f ${stagedArchivePath}`,
-        ])
-        this.setStatus(version, ByondStatus.Installed)
+          `for f in /mnt/host/${STAGED_FILE_PREFIX}*; do /bin/mv "$f" "${installPath}/\${f#/mnt/host/${STAGED_FILE_PREFIX}}"; done`,
+          `/bin/chmod +x ${installPath}/*`
+        )
       }
 
       if (setActive) {
-        await commandQueueService.runToSuccess([
+        commands.push(
           '/bin/mkdir -p /var/lib',
           `/bin/rm -rf ${ACTIVE_BYOND_PATH}`,
-          `/bin/ln -s ${installPath} ${ACTIVE_BYOND_PATH}`,
-        ])
+          `/bin/ln -s ${installPath} ${ACTIVE_BYOND_PATH}`
+        )
+      }
+
+      if (commands.length > 0) {
+        await commandQueueService.runToSuccess(commands)
+      }
+      this.setStatus(version, ByondStatus.Installed)
+
+      if (setActive) {
         this.activeVersion = version
         localStorage.setItem(ACTIVE_VERSION_KEY, version)
         this.events.dispatchEvent(
@@ -281,7 +307,7 @@ export class ByondService {
   }
 
   async deleteVersion(version: string) {
-    await this.ensureRuntimePrepared()
+    void emulatorService.start()
 
     const wasActive = this.activeVersion === version
 
@@ -301,10 +327,7 @@ export class ByondService {
       )
     }
 
-    const pathsToRemove = [
-      `${HOST_BYOND_PATH}/${version}`,
-      `${HOST_BYOND_PATH}/${version}.zip`,
-    ]
+    const pathsToRemove = [`${INSTALL_ROOT}/${version}`]
     if (wasActive) {
       pathsToRemove.unshift(ACTIVE_BYOND_PATH)
     }
@@ -354,23 +377,6 @@ export class ByondService {
         detail: { version, status: ByondStatus.Idle },
       })
     )
-  }
-
-  private ensureRuntimePrepared() {
-    if (!this.runtimePreparationPromise) {
-      this.runtimePreparationPromise = (async () => {
-        emulatorService.start()
-        await commandQueueService.runToSuccess(
-          '/bin/mkdir',
-          `-p\0${HOST_BYOND_PATH}`
-        )
-      })().catch((error) => {
-        this.runtimePreparationPromise = null
-        throw error
-      })
-    }
-
-    return this.runtimePreparationPromise
   }
 }
 

@@ -74,6 +74,8 @@ The buildroot linux image code is found here: https://github.com/spacestation13/
 
 If you change the emulator runtime files or BIOS/runtime URLs, bump the cache version so existing entries are invalidated.
 
+After the first boot, the VM's state is saved to that cache and restored on later visits. Bump `SNAPSHOT_FORMAT` whenever you change how the guest is set up.
+
 ### Build the UI
 
 ```bash

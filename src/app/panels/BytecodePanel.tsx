@@ -1,10 +1,105 @@
-import { useEffect, useRef } from 'react'
+import { loader } from '@monaco-editor/react'
+import { useEffect, useRef, useState } from 'react'
+import {
+  DM_ASM_HEX_LANGUAGE_ID,
+  DM_ASM_LANGUAGE_ID,
+  ensureDmAsmLanguages,
+} from '../monaco/dmAsmLanguage'
 import {
   useFontFamilySetting,
   useShowAdvancedEditorTabsSetting,
 } from '../settings/localSettings'
-import type { BytecodeInstruction, BytecodeProc } from '../stores/bytecodeStore'
+import type {
+  BytecodeInstruction,
+  BytecodeProc,
+  DisassemblyResult,
+} from '../stores/bytecodeStore'
 import useBytecodeStore from '../stores/bytecodeStore'
+import useUIStore from '../stores/uiStore'
+
+/** One proc's colorized HTML, one string per instruction */
+type ColorizedProc = { text: string[]; hex: string[] }
+
+type ColorizedDisassembly = {
+  source: DisassemblyResult
+  theme: string
+  procs: Map<string, ColorizedProc>
+}
+
+/**
+ * Highlights the instructions with the editor theme's colors.
+ */
+function useColorizedDisassembly(disassembly: DisassemblyResult | null) {
+  const theme = useUIStore((s) => s.monacoTheme)
+  const [colorized, setColorized] = useState<ColorizedDisassembly | null>(null)
+
+  useEffect(() => {
+    if (!disassembly || !theme) {
+      return
+    }
+
+    let cancelled = false
+    void (async () => {
+      const monaco = await loader.init()
+      ensureDmAsmLanguages(monaco)
+      const colorize = async (lines: string[], languageId: string) =>
+        (await monaco.editor.colorize(lines.join('\n'), languageId, {})).split(
+          '<br/>'
+        )
+
+      const procs = new Map<string, ColorizedProc>()
+      for (const proc of disassembly.procs) {
+        procs.set(proc.path, {
+          text: await colorize(
+            proc.instructions.map((ins) => ins.text),
+            DM_ASM_LANGUAGE_ID
+          ),
+          hex: await colorize(
+            proc.instructions.map((ins) => ins.hex),
+            DM_ASM_HEX_LANGUAGE_ID
+          ),
+        })
+      }
+      if (!cancelled) {
+        setColorized({ source: disassembly, theme, procs })
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [disassembly, theme])
+
+  return colorized?.source === disassembly && colorized.theme === theme
+    ? colorized.procs
+    : null
+}
+
+/** Monaco's colorizer escapes the text and only adds its own token spans. */
+function ColorizedText({
+  html,
+  text,
+  className,
+  title,
+}: {
+  html: string | undefined
+  text: string
+  className: string
+  title?: string
+}) {
+  return html === undefined ? (
+    <span className={className} title={title}>
+      {text}
+    </span>
+  ) : (
+    <span
+      className={className}
+      title={title}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: Monaco-escaped markup
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  )
+}
 
 /** Godbolt-style alternating line-group colors */
 const LINE_COLORS = [
@@ -26,6 +121,7 @@ function getLineColor(
 
 function InstructionRow({
   ins,
+  colorized,
   isHighlighted,
   baseColor,
   onMouseEnter,
@@ -33,6 +129,7 @@ function InstructionRow({
   onClick,
 }: {
   ins: BytecodeInstruction
+  colorized: { text: string; hex: string } | undefined
   isHighlighted: boolean
   baseColor: number
   onMouseEnter: () => void
@@ -55,20 +152,29 @@ function InstructionRow({
       <span className="text-slate-500 select-none w-6 text-right shrink-0">
         {ins.offset.toString(16).padStart(4, '0')}
       </span>
-      <span className="text-slate-400 w-29 shrink-0 truncate" title={ins.hex}>
-        {ins.hex}
-      </span>
-      <span className="text-[var(--editor-text)]">{ins.text}</span>
+      <ColorizedText
+        className="w-29 shrink-0 truncate text-slate-400"
+        title={ins.hex}
+        text={ins.hex}
+        html={colorized?.hex}
+      />
+      <ColorizedText
+        className="text-[var(--editor-text)]"
+        text={ins.text}
+        html={colorized?.text}
+      />
     </div>
   )
 }
 
 function ProcSection({
   proc,
+  colorized,
   highlightedKeys,
   onLeave,
 }: {
   proc: BytecodeProc
+  colorized: ColorizedProc | undefined
   highlightedKeys: Set<string>
   onLeave: () => void
 }) {
@@ -83,10 +189,16 @@ function ProcSection({
       <div className="px-2 py-1 text-xs font-semibold text-[var(--editor-button-border-hover)] border-b border-[var(--editor-border)] mb-1 sticky top-0 bg-[var(--editor-header-bg)] z-10">
         {proc.path}
       </div>
-      {proc.instructions.map((ins) => (
+      {proc.instructions.map((ins, index) => (
         <InstructionRow
           key={ins.offset}
           ins={ins}
+          colorized={
+            colorized && {
+              text: colorized.text[index],
+              hex: colorized.hex[index],
+            }
+          }
           isHighlighted={highlightedKeys.has(`${proc.path}::${ins.offset}`)}
           baseColor={baseColor}
           onMouseEnter={() =>
@@ -122,6 +234,7 @@ export function BytecodePanel() {
   const [fontFamily] = useFontFamilySetting()
   const [showAdvancedEditorTabs] = useShowAdvancedEditorTabsSetting()
   const containerRef = useRef<HTMLDivElement>(null)
+  const colorized = useColorizedDisassembly(disassembly)
 
   const highlightedKeys = hoveredBytecodeOffsets ?? new Set<string>()
 
@@ -170,6 +283,7 @@ export function BytecodePanel() {
         .map((proc) => (
           <ProcSection
             key={proc.path}
+            colorized={colorized?.get(proc.path)}
             proc={proc}
             highlightedKeys={highlightedKeys}
             onLeave={handleLeave}

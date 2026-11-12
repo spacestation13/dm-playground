@@ -6,7 +6,7 @@ import { commandQueueService } from './CommandQueueService'
 export type EmulatorOutboundMessage =
   | { type: 'sendPort'; port: EmulatorPort; data: string }
   | { type: 'resizePort'; port: EmulatorPort; rows: number; cols: number }
-  | { type: 'start' }
+  | { type: 'start'; snapshotKey: string | null }
   | { type: 'pause' }
   | {
       type: 'sendFile'
@@ -14,6 +14,14 @@ export type EmulatorOutboundMessage =
       name: string
       data: Uint8Array
     }
+  | {
+      type: 'extractZip'
+      commandId: string
+      data: Uint8Array
+      entryPrefix: string
+      namePrefix: string
+    }
+  | { type: 'saveSnapshot'; snapshotKey: string }
   | {
       type: 'setAssetUrls'
       vmRemoteUrl: string
@@ -31,9 +39,11 @@ export type EmulatorInboundMessage =
       total: number | null
     }
   | { type: 'asyncResponse'; commandId: string; error?: string }
+  | { type: 'started'; restored: boolean }
 
 export class EmulatorService {
   private worker: Worker | null = null
+  private startPromise: Promise<boolean> | null = null
   private events = new EventTarget()
   private assetDownloadProgress = new Map<
     'bzimage' | 'rootfs' | 'v86wasm' | 'seabios' | 'vgabios',
@@ -66,10 +76,20 @@ export class EmulatorService {
     return new Map(this.assetDownloadProgress)
   }
 
-  start() {
-    if (this.worker) {
-      return
+  /**
+   * Starts the VM once; later calls get the first call's result. With a snapshot key, the VM is
+   * restored from the snapshot saved under it if there is one. Resolves when the VM runs, with
+   * whether it was restored.
+   */
+  start(snapshotKey: string | null = null) {
+    if (this.startPromise) {
+      return this.startPromise
     }
+
+    let resolveStarted: (restored: boolean) => void = () => {}
+    this.startPromise = new Promise<boolean>((resolve) => {
+      resolveStarted = resolve
+    })
 
     this.worker = new Worker(
       new URL('../workers/emulator.worker.ts', import.meta.url),
@@ -85,6 +105,10 @@ export class EmulatorService {
             loaded: payload.loaded,
             total: payload.total,
           })
+        }
+
+        if (payload.type === 'started') {
+          resolveStarted(payload.restored)
         }
 
         if (payload.type === 'asyncResponse') {
@@ -108,7 +132,13 @@ export class EmulatorService {
       const urls = getWorkerAssetUrls()
       this.post({ type: 'setAssetUrls', ...urls })
     }
-    this.post({ type: 'start' })
+    this.post({ type: 'start', snapshotKey })
+    return this.startPromise
+  }
+
+  /** Saves the VM's state under `snapshotKey` for {@link start} to restore on a later visit. */
+  saveSnapshot(snapshotKey: string) {
+    this.post({ type: 'saveSnapshot', snapshotKey })
   }
 
   pause() {
@@ -124,16 +154,40 @@ export class EmulatorService {
   }
 
   sendFile(name: string, data: Uint8Array) {
+    return this.request((commandId) => ({
+      type: 'sendFile',
+      commandId,
+      name,
+      data,
+    }))
+  }
+
+  /** Writes the files under `entryPrefix` in a zip to the shared folder, named `namePrefix` + basename. */
+  extractZip(data: Uint8Array, entryPrefix: string, namePrefix: string) {
+    return this.request((commandId) => ({
+      type: 'extractZip',
+      commandId,
+      data,
+      entryPrefix,
+      namePrefix,
+    }))
+  }
+
+  private request(
+    build: (
+      commandId: string
+    ) => EmulatorOutboundMessage & { commandId: string }
+  ) {
     if (!this.worker) {
       return Promise.reject(new Error('Emulator has not been started'))
     }
 
-    const commandId = `send-file-${this.nextCommandId}`
+    const commandId = `request-${this.nextCommandId}`
     this.nextCommandId += 1
 
     return new Promise<void>((resolve, reject) => {
       this.pendingResponses.set(commandId, { resolve, reject })
-      this.post({ type: 'sendFile', commandId, name, data })
+      this.post(build(commandId))
     })
   }
 
@@ -141,7 +195,10 @@ export class EmulatorService {
     if (!this.worker) {
       return
     }
-    if (message.type === 'sendFile' && message.data instanceof Uint8Array) {
+    if (
+      (message.type === 'sendFile' || message.type === 'extractZip') &&
+      message.data instanceof Uint8Array
+    ) {
       try {
         this.worker.postMessage(message, [message.data.buffer])
         return
