@@ -1,13 +1,8 @@
 import MonacoEditor, { loader, type OnMount } from '@monaco-editor/react'
-import * as monaco from 'monaco-editor'
 import type * as Monaco from 'monaco-editor'
-import { isDiscordActivity } from '../../discord/activity'
-
-if (isDiscordActivity()) {
-  loader.config({ monaco })
-}
 import type { MouseEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { isDiscordActivity } from '../../discord/activity'
 import type { EditableProjectFileName } from '../editorProject/projectState'
 import { createDefaultProject } from '../editorProject/projectState'
 import { buildShareUrl, embedParams } from '../embed/embedParams'
@@ -33,6 +28,12 @@ import useUIStore from '../stores/uiStore'
 import { MobileEditorClipboardButtons } from './MobileEditorClipboardButtons'
 import { SmallButton } from './SmallButton'
 import { SmallInput } from './SmallInput'
+
+// Elsewhere @monaco-editor/react loads the editor from its CDN; Discord activities can't reach it directly,
+// so they get the bundled copy. Importing it lazily keeps it out of everyone else's download.
+if (isDiscordActivity()) {
+  loader.config({ monaco: await import('monaco-editor') })
+}
 
 interface EditorFileTab {
   id: EditableProjectFileName
@@ -256,6 +257,7 @@ export function Editor({
     await ensureMonacoTheme(monaco as typeof Monaco, themeId)
     monaco.editor.setTheme(themeId)
     applyThemeVariables(themeId)
+    useUIStore.getState().setMonacoTheme(themeId)
   }
 
   useEffect(() => {
@@ -267,6 +269,7 @@ export function Editor({
       await ensureMonacoTheme(monacoRef.current as typeof Monaco, themeId)
       monacoRef.current?.editor.setTheme(themeId)
       applyThemeVariables(themeId)
+      useUIStore.getState().setMonacoTheme(themeId)
     })()
   }, [themeId, applyThemeVariables])
 

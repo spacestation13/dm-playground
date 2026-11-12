@@ -5,6 +5,9 @@ type UIState = {
   setIsMobile: (v: boolean) => void
   isWideEditorControls: boolean
   setIsWideEditorControls: (v: boolean) => void
+  /** The theme Monaco has applied; colorized HTML is only valid for the theme it was made with. */
+  monacoTheme: string | null
+  setMonacoTheme: (theme: string) => void
 }
 
 const getInitialIsMobile = () =>
@@ -18,6 +21,8 @@ const initializer: StateCreator<UIState> = (set) => ({
   setIsMobile: (v: boolean) => set({ isMobile: v }),
   isWideEditorControls: getInitialIsWideEditorControls(),
   setIsWideEditorControls: (v: boolean) => set({ isWideEditorControls: v }),
+  monacoTheme: null,
+  setMonacoTheme: (theme: string) => set({ monacoTheme: theme }),
 })
 
 const useUIStore = create<UIState>(initializer)
